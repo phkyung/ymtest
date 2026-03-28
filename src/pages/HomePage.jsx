@@ -2,11 +2,10 @@
 // HomePage.jsx — 공연 목록 + 오늘 공연 필터
 // ─────────────────────────────────────────────
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useShows } from '../hooks/useShows'
 import ShowCard from '../components/ShowCard'
-import { db, isFirebaseConfigured } from '../firebase'
-import { collection, getDocs } from 'firebase/firestore'
+import { isFirebaseConfigured } from '../firebase'
 
 // 오늘 공연 여부 판단
 function isPlayingToday(startDate, endDate) {
@@ -21,26 +20,6 @@ export default function HomePage() {
   const { shows, loading } = useShows()
   const [filter, setFilter]     = useState('전체')   // 장르 필터
   const [todayOnly, setTodayOnly] = useState(false)  // 오늘 공연만
-
-  // ── 임시 디버그: shows 컬렉션 문서 ID vs data.id 비교 ──
-  useEffect(() => {
-    if (!isFirebaseConfigured || !db) return
-    getDocs(collection(db, 'shows')).then(snap => {
-      console.group('[DEBUG] shows 컬렉션 문서 ID 점검')
-      snap.docs.forEach(d => {
-        const docId  = d.id
-        const dataId = d.data().id
-        const match  = docId === dataId
-        console.log(
-          match ? '✅' : '❌ 불일치',
-          `doc.id="${docId}"`,
-          `data.id="${dataId ?? '(없음)'}"`
-        )
-      })
-      console.groupEnd()
-    })
-  }, [])
-  // ── 임시 디버그 끝 ──
 
   // 필터 적용
   const filtered = useMemo(() => {
@@ -116,20 +95,18 @@ export default function HomePage() {
 
       {/* 로딩 */}
       {loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1,2,3,4,5,6].map(i => (
-            <div key={i} className="bg-white rounded-xl border border-stone-100 h-64 animate-pulse">
-              <div className="h-36 bg-stone-100 rounded-t-xl" />
-              <div className="p-4 space-y-2">
-                <div className="h-4 bg-stone-100 rounded w-3/4" />
-                <div className="h-3 bg-stone-100 rounded w-1/2" />
-              </div>
-            </div>
+        <ul className="space-y-2">
+          {[1,2,3,4,5,6,7,8].map(i => (
+            <li key={i} className="bg-white rounded-xl border border-stone-100 h-12 animate-pulse flex items-center gap-3 px-3">
+              <div className="h-5 w-12 bg-stone-100 rounded-full" />
+              <div className="h-4 bg-stone-100 rounded w-1/3" />
+              <div className="h-3 bg-stone-100 rounded w-1/4 ml-auto hidden sm:block" />
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
-      {/* 공연 카드 그리드 */}
+      {/* 공연 목록 */}
       {!loading && filtered.length === 0 && (
         <div className="text-center py-16 text-stone-400">
           <p className="text-4xl mb-3">🎭</p>
@@ -144,11 +121,11 @@ export default function HomePage() {
       )}
 
       {!loading && filtered.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <ul className="space-y-2">
           {filtered.map(show => (
             <ShowCard key={show.id} show={show} />
           ))}
-        </div>
+        </ul>
       )}
     </div>
   )
