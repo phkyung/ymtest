@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── shows: 누구나 읽기 가능, 쓰기는 인증된 사용자만 ──
+    match /shows/{showId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── actors: 누구나 읽기 가능, 쓰기는 인증된 사용자만 ──
+    match /actors/{actorId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── votes: 누구나 읽기, 본인만 쓰기 (익명 포함) ──
+    match /votes/{voteId} {
+      allow read: if true;
+      // 투표 생성: 로그인된 사용자(익명 포함)만 가능
+      allow create: if request.auth != null
+        && request.resource.data.count == 1
+        && request.resource.data.voterIds.size() == 1
+        && request.resource.data.voterIds[0] == request.auth.uid;
+      // 투표 업데이트: count+1, voterIds에 본인 추가만 허용
+      allow update: if request.auth != null
+        && !(request.auth.uid in resource.data.voterIds)
+        && request.resource.data.count == resource.data.count + 1
+        && request.resource.data.voterIds.hasAll(resource.data.voterIds)
+        && request.resource.data.voterIds.size() == resource.data.voterIds.size() + 1;
+    }
+
+    // ── comments: 누구나 읽기, 본인만 쓰기 ──
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 500;
+      // 댓글 삭제: 본인만 가능
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+  }
+}
