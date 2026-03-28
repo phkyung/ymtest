@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── 전역 폰트 적용 ─────────────────────────── */
+@layer base {
+  body {
+    @apply font-body bg-stone-50 text-stone-800 antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+
+  /* 스크롤바 스타일링 (선택) */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-stone-100;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-stone-300 rounded-full;
+  }
+}
+
+/* ─── 공연 카드 애니메이션 ─────────────────────── */
+@layer utilities {
+  .card-hover {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md;
+  }
+
+  .keyword-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-body
+           border cursor-pointer select-none transition-all duration-150;
+  }
+
+  .keyword-badge:hover {
+    @apply scale-105;
+  }
+
+  .keyword-badge-voted {
+    @apply bg-amber-500 border-amber-500 text-white;
+  }
+
+  .keyword-badge-unvoted {
+    @apply bg-white border-stone-200 text-stone-600 hover:border-amber-400 hover:text-amber-700;
+  }
+}

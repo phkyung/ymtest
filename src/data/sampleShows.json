@@ -1,0 +1,107 @@
+[
+  {
+    "id": "show_001",
+    "title": "레미제라블",
+    "subtitle": "Les Misérables",
+    "genre": "뮤지컬",
+    "venue": "충무아트센터 대극장",
+    "address": "서울 중구 퇴계로 387",
+    "startDate": "2025-06-10",
+    "endDate": "2025-09-28",
+    "runtime": 185,
+    "intermission": 1,
+    "synopsis": "프랑스 작가 빅토르 위고의 소설을 원작으로 한 뮤지컬. 19세기 프랑스를 배경으로, 빵 한 조각을 훔친 죄로 19년을 감옥에서 보낸 장발장이 인간으로서의 존엄과 사랑을 되찾아가는 이야기. 세계 최장기 흥행 뮤지컬 중 하나.",
+    "ticketUrl": "https://tickets.interpark.com",
+    "imageUrl": "",
+    "tags": ["대형뮤지컬", "명작", "감동"],
+    "cast": [
+      { "actorId": "actor_001", "actorName": "김준현", "roleName": "장발장", "isDouble": false },
+      { "actorId": "actor_002", "actorName": "박성환", "roleName": "장발장", "isDouble": true },
+      { "actorId": "actor_003", "actorName": "이현우", "roleName": "자베르", "isDouble": false },
+      { "actorId": "actor_004", "actorName": "최수진", "roleName": "판틴", "isDouble": false },
+      { "actorId": "actor_005", "actorName": "정다은", "roleName": "에포닌", "isDouble": false }
+    ]
+  },
+  {
+    "id": "show_002",
+    "title": "헤드윅",
+    "subtitle": "Hedwig and the Angry Inch",
+    "genre": "뮤지컬",
+    "venue": "대학로 예스24스테이지 1관",
+    "address": "서울 종로구 대학로 86",
+    "startDate": "2025-07-01",
+    "endDate": "2025-08-31",
+    "runtime": 100,
+    "intermission": 0,
+    "synopsis": "베를린 장벽이 무너지던 날 태어난 동독 출신 록 뮤지션 헤드윅의 이야기. 성정체성, 사랑, 자아 찾기에 대한 날카롭고 아름다운 1인극 뮤지컬. 배우의 역량이 극대화되는 작품.",
+    "ticketUrl": "https://tickets.interpark.com",
+    "imageUrl": "",
+    "tags": ["소극장", "1인극", "록뮤지컬", "대학로"],
+    "cast": [
+      { "actorId": "actor_006", "actorName": "오만석", "roleName": "헤드윅", "isDouble": false },
+      { "actorId": "actor_007", "actorName": "강태을", "roleName": "헤드윅", "isDouble": true }
+    ]
+  },
+  {
+    "id": "show_003",
+    "title": "햄릿",
+    "subtitle": "Hamlet",
+    "genre": "연극",
+    "venue": "국립극단 명동예술극장",
+    "address": "서울 중구 명동길 35",
+    "startDate": "2025-07-15",
+    "endDate": "2025-08-17",
+    "runtime": 150,
+    "intermission": 1,
+    "synopsis": "셰익스피어의 대표 비극. 아버지를 죽이고 왕위를 빼앗은 삼촌에게 복수하려는 덴마크 왕자 햄릿의 이야기. '사느냐 죽느냐, 그것이 문제로다'라는 대사로 유명한 인간 실존의 이야기.",
+    "ticketUrl": "https://ntck.co.kr",
+    "imageUrl": "",
+    "tags": ["연극", "고전", "셰익스피어", "명동"],
+    "cast": [
+      { "actorId": "actor_008", "actorName": "이봉련", "roleName": "햄릿", "isDouble": false },
+      { "actorId": "actor_009", "actorName": "정보석", "roleName": "클로디어스", "isDouble": false },
+      { "actorId": "actor_010", "actorName": "윤석화", "roleName": "거트루드", "isDouble": false }
+    ]
+  },
+  {
+    "id": "show_004",
+    "title": "넥스트 투 노멀",
+    "subtitle": "Next to Normal",
+    "genre": "뮤지컬",
+    "venue": "두산아트센터 연강홀",
+    "address": "서울 종로구 연지동 270",
+    "startDate": "2025-08-01",
+    "endDate": "2025-09-14",
+    "runtime": 130,
+    "intermission": 1,
+    "synopsis": "양극성 장애를 앓고 있는 어머니 다이애나와 그 가족의 이야기를 다룬 뮤지컬. 퓰리처상 수상작. 정신 건강과 가족 관계를 깊이 있게 탐구하는 작품.",
+    "ticketUrl": "https://tickets.interpark.com",
+    "imageUrl": "",
+    "tags": ["소극장뮤지컬", "퓰리처상", "가족"],
+    "cast": [
+      { "actorId": "actor_011", "actorName": "최정원", "roleName": "다이애나", "isDouble": false },
+      { "actorId": "actor_012", "actorName": "박은태", "roleName": "댄", "isDouble": false },
+      { "actorId": "actor_013", "actorName": "김소현", "roleName": "나탈리", "isDouble": false }
+    ]
+  },
+  {
+    "id": "show_005",
+    "title": "형제는 용감했다",
+    "subtitle": "",
+    "genre": "연극",
+    "venue": "대학로 아르코예술극장 소극장",
+    "address": "서울 종로구 동숭길 3",
+    "startDate": "2025-09-05",
+    "endDate": "2025-10-12",
+    "runtime": 90,
+    "intermission": 0,
+    "synopsis": "두 형제의 우정과 갈등을 따뜻하고 유머러스하게 그린 창작 연극. 세대 차이와 화해, 가족의 의미를 이야기한다. 대학로를 대표하는 장기 흥행 창작극.",
+    "ticketUrl": "https://tickets.interpark.com",
+    "imageUrl": "",
+    "tags": ["창작연극", "코미디", "대학로", "가족"],
+    "cast": [
+      { "actorId": "actor_014", "actorName": "윤나무", "roleName": "형", "isDouble": false },
+      { "actorId": "actor_015", "actorName": "장성범", "roleName": "동생", "isDouble": false }
+    ]
+  }
+]
