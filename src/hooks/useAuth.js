@@ -1,12 +1,16 @@
 // ─────────────────────────────────────────────
-// useAuth.js — Firebase 익명 로그인 훅
+// useAuth.js — Firebase 구글 로그인 훅
 // ─────────────────────────────────────────────
-// 사용자가 페이지를 열면 자동으로 익명 로그인합니다.
 // 투표, 댓글 작성에 사용됩니다.
 // ─────────────────────────────────────────────
 
 import { useState, useEffect } from 'react'
-import { signInAnonymously, onAuthStateChanged } from 'firebase/auth'
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+} from 'firebase/auth'
 import { auth, isFirebaseConfigured } from '../firebase'
 
 export function useAuth() {
@@ -14,31 +18,38 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Firebase 미설정 시 더미 UID 반환 (로컬 개발용)
+    // Firebase 미설정 시 비로그인 상태로 시작
     if (!isFirebaseConfigured || !auth) {
-      setUser({ uid: 'local_dev_user', isAnonymous: true })
       setLoading(false)
       return
     }
 
-    // Auth 상태 변화 감지
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser)
-      } else {
-        // 로그인 안 된 상태면 익명으로 자동 로그인
-        try {
-          const credential = await signInAnonymously(auth)
-          setUser(credential.user)
-        } catch (err) {
-          console.error('익명 로그인 실패:', err)
-        }
-      }
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser ?? null)
       setLoading(false)
     })
 
     return () => unsubscribe()
   }, [])
 
-  return { user, loading }
+  async function signIn() {
+    if (!isFirebaseConfigured || !auth) return
+    const provider = new GoogleAuthProvider()
+    try {
+      await signInWithPopup(auth, provider)
+    } catch (err) {
+      console.error('구글 로그인 실패:', err)
+    }
+  }
+
+  async function signOut() {
+    if (!isFirebaseConfigured || !auth) return
+    try {
+      await firebaseSignOut(auth)
+    } catch (err) {
+      console.error('로그아웃 실패:', err)
+    }
+  }
+
+  return { user, loading, signIn, signOut }
 }

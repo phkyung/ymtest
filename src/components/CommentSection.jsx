@@ -42,7 +42,7 @@ function timeAgo(date) {
 }
 
 export default function CommentSection({ targetId, targetType }) {
-  const { user }           = useAuth()
+  const { user, signIn }   = useAuth()
   const [comments, setComments] = useState([])
   const [text, setText]   = useState('')
   const [loading, setLoading] = useState(false)
@@ -129,33 +129,44 @@ export default function CommentSection({ targetId, targetType }) {
         댓글 <span className="text-stone-400 font-body font-normal text-sm">({displayComments.length})</span>
       </h3>
 
-      {/* 작성 폼 */}
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <textarea
-          value={text}
-          onChange={e => setText(e.target.value)}
-          onKeyDown={e => {
-            // Ctrl+Enter 또는 Cmd+Enter 로 제출
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleSubmit(e)
-          }}
-          placeholder="이 공연에 대한 생각을 남겨주세요... (500자 이내)"
-          maxLength={500}
-          rows={2}
-          className="flex-1 border border-stone-200 rounded-lg px-3 py-2 text-sm
-                     resize-none focus:outline-none focus:ring-2 focus:ring-amber-300
-                     placeholder:text-stone-300"
-        />
-        <button
-          type="submit"
-          disabled={!text.trim() || loading}
-          className="px-4 py-2 bg-stone-800 text-white text-sm rounded-lg
-                     hover:bg-amber-700 transition-colors disabled:opacity-40
-                     self-end shrink-0"
-        >
-          등록
-        </button>
-      </form>
-      <p className="text-xs text-stone-400">Ctrl+Enter로 빠르게 등록</p>
+      {/* 작성 폼 또는 로그인 안내 */}
+      {user ? (
+        <>
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <textarea
+              value={text}
+              onChange={e => setText(e.target.value)}
+              onKeyDown={e => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleSubmit(e)
+              }}
+              placeholder="이 공연에 대한 생각을 남겨주세요... (500자 이내)"
+              maxLength={500}
+              rows={2}
+              className="flex-1 border border-stone-200 rounded-lg px-3 py-2 text-sm
+                         resize-none focus:outline-none focus:ring-2 focus:ring-amber-300
+                         placeholder:text-stone-300"
+            />
+            <button
+              type="submit"
+              disabled={!text.trim() || loading}
+              className="px-4 py-2 bg-stone-800 text-white text-sm rounded-lg
+                         hover:bg-amber-700 transition-colors disabled:opacity-40
+                         self-end shrink-0"
+            >
+              등록
+            </button>
+          </form>
+          <p className="text-xs text-stone-400">Ctrl+Enter로 빠르게 등록</p>
+        </>
+      ) : (
+        <p className="text-sm text-stone-400 py-2">
+          댓글을 남기려면{' '}
+          <button onClick={signIn} className="text-amber-600 underline hover:text-amber-500">
+            구글 로그인
+          </button>
+          이 필요합니다.
+        </p>
+      )}
 
       {/* 댓글 목록 */}
       {displayComments.length === 0 ? (

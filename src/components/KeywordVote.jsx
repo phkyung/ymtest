@@ -25,7 +25,7 @@ const PRESET_KEYWORDS = [
 const localVotes = {}
 
 export default function KeywordVote({ showId, actorId, roleName }) {
-  const { user } = useAuth()
+  const { user, signIn } = useAuth()
   const [votes, setVotes]         = useState({}) // { keyword: { count, voted } }
   const [loading, setLoading]     = useState(false)
 
@@ -132,32 +132,44 @@ export default function KeywordVote({ showId, actorId, roleName }) {
         </span>
       </h3>
 
-      <div className="flex flex-wrap gap-2">
-        {sorted.map(kw => {
-          const count = votes[kw]?.count ?? 0
-          const voted = votes[kw]?.voted ?? false
+      {!user ? (
+        <p className="text-sm text-stone-400 py-2">
+          투표하려면{' '}
+          <button onClick={signIn} className="text-amber-600 underline hover:text-amber-500">
+            구글 로그인
+          </button>
+          이 필요합니다.
+        </p>
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-2">
+            {sorted.map(kw => {
+              const count = votes[kw]?.count ?? 0
+              const voted = votes[kw]?.voted ?? false
 
-          return (
-            <button
-              key={kw}
-              onClick={() => handleVote(kw)}
-              disabled={voted || loading}
-              className={`keyword-badge ${voted ? 'keyword-badge-voted' : 'keyword-badge-unvoted'}`}
-            >
-              <span>{kw}</span>
-              {count > 0 && (
-                <span className={`text-xs font-medium ${voted ? 'text-amber-100' : 'text-stone-400'}`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
+              return (
+                <button
+                  key={kw}
+                  onClick={() => handleVote(kw)}
+                  disabled={voted || loading}
+                  className={`keyword-badge ${voted ? 'keyword-badge-voted' : 'keyword-badge-unvoted'}`}
+                >
+                  <span>{kw}</span>
+                  {count > 0 && (
+                    <span className={`text-xs font-medium ${voted ? 'text-amber-100' : 'text-stone-400'}`}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
 
-      <p className="text-xs text-stone-400 mt-3">
-        * 키워드는 한 번 누르면 취소되지 않습니다
-      </p>
+          <p className="text-xs text-stone-400 mt-3">
+            * 키워드는 한 번 누르면 취소되지 않습니다
+          </p>
+        </>
+      )}
     </div>
   )
 }
