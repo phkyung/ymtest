@@ -3,9 +3,12 @@
 // ─────────────────────────────────────────────
 
 import { useParams, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { useShow } from '../hooks/useShows'
 import KeywordVote from '../components/KeywordVote'
 import CommentSection from '../components/CommentSection'
+import { db, isFirebaseConfigured } from '../firebase'
+import { collection, getDocs } from 'firebase/firestore'
 
 function formatDateRange(start, end) {
   if (!start) return ''
@@ -18,6 +21,21 @@ function formatDateRange(start, end) {
 export default function ShowPage() {
   const { showId } = useParams()
   const { show, loading } = useShow(showId)
+
+  // 배우 이름 → actorId 매핑 (actors 컬렉션에 등록된 배우만)
+  const [actorIdMap, setActorIdMap] = useState({})
+
+  useEffect(() => {
+    if (!show?.cast?.length || !isFirebaseConfigured || !db) return
+    getDocs(collection(db, 'actors')).then(snap => {
+      const map = {}
+      snap.docs.forEach(d => {
+        const name = d.data().name
+        if (name) map[name] = d.id
+      })
+      setActorIdMap(map)
+    }).catch(err => console.error('배우 ID 조회 오류:', err))
+  }, [show])
 
   if (loading) {
     return (
@@ -125,18 +143,26 @@ export default function ShowPage() {
           <h2 className="font-display text-xl text-stone-800 mb-4">출연진</h2>
 
           <div className="space-y-8">
-            {show.cast.map((castMember, idx) => (
+            {show.cast.map((castMember, idx) => {
+              const resolvedId = actorIdMap[castMember.actorName] || castMember.actorId
+              return (
               <div key={idx} className="bg-white border border-stone-100 rounded-xl p-5 space-y-4">
 
                 {/* 배우 정보 행 */}
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <Link
-                      to={`/actors/${castMember.actorId}`}
-                      className="font-display text-lg text-stone-800 hover:text-amber-700 transition-colors"
-                    >
-                      {castMember.actorName}
-                    </Link>
+                    {resolvedId ? (
+                      <Link
+                        to={`/actors/${resolvedId}`}
+                        className="font-display text-lg text-stone-800 hover:text-amber-700 transition-colors"
+                      >
+                        {castMember.actorName}
+                      </Link>
+                    ) : (
+                      <span className="font-display text-lg text-stone-800">
+                        {castMember.actorName}
+                      </span>
+                    )}
                     <p className="text-stone-400 text-sm mt-0.5">
                       {castMember.roleName} 역
                       {castMember.isDouble && (
@@ -147,12 +173,14 @@ export default function ShowPage() {
                     </p>
                   </div>
 
-                  <Link
-                    to={`/actors/${castMember.actorId}`}
-                    className="text-xs text-amber-600 hover:text-amber-700 border border-amber-200 px-2 py-1 rounded-lg shrink-0"
-                  >
-                    배우 페이지 →
-                  </Link>
+                  {resolvedId && (
+                    <Link
+                      to={`/actors/${resolvedId}`}
+                      className="text-xs text-amber-600 hover:text-amber-700 border border-amber-200 px-2 py-1 rounded-lg shrink-0"
+                    >
+                      배우 페이지 →
+                    </Link>
+                  )}
                 </div>
 
                 {/* 구분선 */}
@@ -161,11 +189,12 @@ export default function ShowPage() {
                 {/* 키워드 투표 */}
                 <KeywordVote
                   showId={show.id}
-                  actorId={castMember.actorId}
+                  actorId={resolvedId}
                   roleName={castMember.roleName}
                 />
               </div>
-            ))}
+              )
+            })}
           </div>
         </section>
       )}

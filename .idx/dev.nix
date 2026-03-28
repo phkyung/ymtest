@@ -6,6 +6,9 @@
   # Use https://search.nixos.org/packages to find packages
   packages = [
     pkgs.nodejs_22
+    pkgs.python3
+    pkgs.python3Packages.requests
+    pkgs.python3Packages.beautifulsoup4
   ];
   # Sets environment variables in the workspace
   env = {};

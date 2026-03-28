@@ -5,9 +5,8 @@
 // ─────────────────────────────────────────────
 
 import { useState, useEffect } from 'react'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
-import sampleShows from '../data/sampleShows.json'
 
 // 더미 배우 정보 (Firebase 미연결 시)
 const DUMMY_ACTORS = {
@@ -36,32 +35,54 @@ export function useActor(actorId) {
   useEffect(() => {
     if (!actorId) return
 
-    // 이 배우가 출연한 공연 목록 (더미에서 탐색)
-    const actorShows = sampleShows.filter(show =>
-      show.cast?.some(c => c.actorId === actorId)
-    )
-    setShows(actorShows)
-
-    // 더미 모드
+    // 더미 모드 (Firebase 미연결)
     if (!isFirebaseConfigured || !db) {
       setActor(DUMMY_ACTORS[actorId] ?? { id: actorId, name: '배우 정보 없음', bio: '' })
+      setShows([])
       setLoading(false)
       return
     }
 
-    // Firestore에서 배우 정보 조회
-    getDoc(doc(db, 'actors', actorId)).then(snap => {
-      if (snap.exists()) {
-        setActor({ id: snap.id, ...snap.data() })
-      } else {
-        // Firestore에 없으면 더미 사용
-        setActor(DUMMY_ACTORS[actorId] ?? { id: actorId, name: '배우 정보 없음', bio: '' })
+    let cancelled = false
+
+    async function load() {
+      try {
+        // 배우 정보 조회
+        const actorSnap = await getDoc(doc(db, 'actors', actorId))
+        if (cancelled) return
+
+        const actorData = actorSnap.exists()
+          ? { id: actorSnap.id, ...actorSnap.data() }
+          : DUMMY_ACTORS[actorId] ?? { id: actorId, name: '배우 정보 없음', bio: '' }
+
+        setActor(actorData)
+
+        // 이 배우가 출연한 공연 조회 (shows 컬렉션에서 actorName 매칭)
+        const showsSnap = await getDocs(collection(db, 'shows'))
+        if (cancelled) return
+
+        const actorName = actorData.name
+        const actorShows = showsSnap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(show =>
+            show.cast?.some(c => c.actorName === actorName || c.actorId === actorId)
+          )
+          .sort((a, b) => (b.startDate ?? '').localeCompare(a.startDate ?? ''))
+
+        setShows(actorShows)
+      } catch (err) {
+        console.error('배우 정보 로드 오류:', err)
+        if (!cancelled) {
+          setActor(DUMMY_ACTORS[actorId] ?? null)
+          setShows([])
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      setLoading(false)
-    }).catch(() => {
-      setActor(DUMMY_ACTORS[actorId] ?? null)
-      setLoading(false)
-    })
+    }
+
+    load()
+    return () => { cancelled = true }
   }, [actorId])
 
   return { actor, shows, loading }

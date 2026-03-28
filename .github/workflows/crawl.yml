@@ -1,0 +1,103 @@
+# ─────────────────────────────────────────────────────────────────
+# crawl.yml — 공연 정보 자동 수집 워크플로우
+# ─────────────────────────────────────────────────────────────────
+# 실행 시점:
+#   - 매일 오전 9시 KST (= UTC 00:00) 자동 실행
+#   - GitHub Actions 탭에서 수동 실행 가능
+#
+# 필요한 GitHub Secrets (Settings → Secrets and variables → Actions):
+#   FIREBASE_SERVICE_ACCOUNT_JSON  Firebase 서비스 계정 키 JSON 전체 내용
+#   KOPIS_API_KEY                  KOPIS 공연예술통합전산망 API 키
+#
+# Firebase 서비스 계정 키 발급:
+#   Firebase Console → 프로젝트 설정 → 서비스 계정
+#   → "새 비공개 키 생성" → JSON 파일 내용을 Secrets에 붙여넣기
+#
+# KOPIS API 키 발급:
+#   https://www.kopis.or.kr/por/cs/openapi/openApiGuide.do
+# ─────────────────────────────────────────────────────────────────
+
+name: 공연 정보 자동 수집
+
+on:
+  # 매일 KST 09:00 (UTC 00:00) 자동 실행
+  schedule:
+    - cron: "0 0 * * *"
+
+  # GitHub Actions 탭에서 수동 실행
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "수집 기간 (일수, 기본 180)"
+        required: false
+        default: "180"
+
+jobs:
+  crawl-and-upload:
+    name: KOPIS 수집 → Firestore 업로드
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 코드 체크아웃
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      # 2. Python 설치
+      - name: Python 3.11 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: scripts/crawlers/requirements.txt
+
+      # 3. 의존성 설치
+      - name: 의존성 설치
+        run: |
+          pip install -r scripts/crawlers/requirements.txt
+          pip install firebase-admin==6.6.0
+
+      # 4. KOPIS API로 공연 수집 (서울 연극+뮤지컬, 대학로 포함)
+      - name: 공연 정보 수집 (kopis.py)
+        env:
+          KOPIS_API_KEY: ${{ secrets.KOPIS_API_KEY }}
+        run: |
+          DAYS="${{ github.event.inputs.days || '180' }}"
+          echo "수집 기간: ${DAYS}일"
+          python scripts/crawlers/kopis.py --days "$DAYS" --rows 100
+
+      # 5. 수집 결과 확인 (로그용)
+      - name: 수집 결과 확인
+        run: |
+          if [ -f scripts/crawlers/pending_shows.json ]; then
+            COUNT=$(python -c "
+          import json
+          data = json.load(open('scripts/crawlers/pending_shows.json'))
+          genres = {}
+          for d in data:
+              g = d.get('genre','기타')
+              genres[g] = genres.get(g, 0) + 1
+          print(f'총 {len(data)}개')
+          for g, c in sorted(genres.items()):
+              print(f'  {g}: {c}개')
+          ")
+            echo "✅ 수집 결과:"
+            echo "$COUNT"
+          else
+            echo "❌ pending_shows.json 파일이 없습니다"
+            exit 1
+          fi
+
+      # 6. Firestore pending 컬렉션에 업로드
+      - name: Firestore 업로드 (upload.py)
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: python scripts/crawlers/upload.py
+
+      # 7. 수집 결과를 아티팩트로 저장 (7일간 보관)
+      - name: 수집 결과 저장
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kopis-shows-${{ github.run_number }}
+          path: scripts/crawlers/pending_shows.json
+          retention-days: 7

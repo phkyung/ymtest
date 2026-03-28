@@ -2,10 +2,11 @@
 // HomePage.jsx — 공연 목록 + 오늘 공연 필터
 // ─────────────────────────────────────────────
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useShows } from '../hooks/useShows'
 import ShowCard from '../components/ShowCard'
-import { isFirebaseConfigured } from '../firebase'
+import { db, isFirebaseConfigured } from '../firebase'
+import { collection, getDocs } from 'firebase/firestore'
 
 // 오늘 공연 여부 판단
 function isPlayingToday(startDate, endDate) {
@@ -20,6 +21,26 @@ export default function HomePage() {
   const { shows, loading } = useShows()
   const [filter, setFilter]     = useState('전체')   // 장르 필터
   const [todayOnly, setTodayOnly] = useState(false)  // 오늘 공연만
+
+  // ── 임시 디버그: shows 컬렉션 문서 ID vs data.id 비교 ──
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db) return
+    getDocs(collection(db, 'shows')).then(snap => {
+      console.group('[DEBUG] shows 컬렉션 문서 ID 점검')
+      snap.docs.forEach(d => {
+        const docId  = d.id
+        const dataId = d.data().id
+        const match  = docId === dataId
+        console.log(
+          match ? '✅' : '❌ 불일치',
+          `doc.id="${docId}"`,
+          `data.id="${dataId ?? '(없음)'}"`
+        )
+      })
+      console.groupEnd()
+    })
+  }, [])
+  // ── 임시 디버그 끝 ──
 
   // 필터 적용
   const filtered = useMemo(() => {

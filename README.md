@@ -17,7 +17,7 @@
 | 댓글 (공연/배우 단위) | ✅ MVP 포함 |
 | 관리자 JSON 업로드 | ✅ MVP 포함 |
 | 이미지 업로드 | 🔲 2차 예정 |
-| 공연 자동 크롤링 | 🔲 3차 예정 |
+| 공연 자동 크롤링 (musicaldb.com) | ✅ 구현됨 |
 
 ---
 
@@ -223,6 +223,61 @@ firebase deploy --only hosting
 - 수동 승인 후 Firestore 저장 워크플로우
 - Firebase Auth 이메일 로그인 + 관리자 역할
 - 관람 기록 / 위시리스트 기능
+
+---
+
+---
+
+## 공연 자동 수집 크롤러
+
+`scripts/crawlers/` 폴더에 musicaldb.com 크롤러가 포함되어 있습니다.
+수집된 공연은 Firestore `pending` 컬렉션에 저장되고, 관리자 페이지에서 검토 후 승인합니다.
+
+### 로컬에서 직접 실행
+
+```bash
+# 1. Python 가상환경 생성 (선택)
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+
+# 2. 의존성 설치
+pip install -r scripts/crawlers/requirements.txt
+
+# 3. 공연 정보 수집 (pending_shows.json 생성)
+python scripts/crawlers/musicaldb.py           # 기본 5페이지
+python scripts/crawlers/musicaldb.py --pages 10  # 10페이지까지
+
+# 4. Firestore에 업로드
+python scripts/crawlers/upload.py --key path/to/serviceAccountKey.json
+```
+
+### GitHub Actions 자동 실행 설정
+
+**1단계 — Firebase 서비스 계정 키 발급**
+1. [Firebase Console](https://console.firebase.google.com) → 프로젝트 설정 → 서비스 계정
+2. **"새 비공개 키 생성"** 클릭 → JSON 파일 다운로드
+
+**2단계 — GitHub Secrets 등록**
+1. GitHub 저장소 → Settings → Secrets and variables → Actions
+2. **New repository secret** 클릭
+3. Name: `FIREBASE_SERVICE_ACCOUNT_JSON`
+4. Secret: 다운로드한 JSON 파일의 **전체 내용** 붙여넣기
+
+**3단계 — 완료**
+- 매일 오전 9시 KST에 자동 실행됩니다
+- Actions 탭 → "공연 정보 자동 수집" → **Run workflow**로 수동 실행 가능
+- 수집 결과는 Actions 아티팩트에 7일간 보관
+
+### 크롤러 선택자 조정
+
+musicaldb.com HTML 구조가 바뀌면 `musicaldb.py` 상단의 `SEL_*` 상수만 수정하세요:
+
+```python
+SEL_LIST_ITEM   = "ul.perf-list li"       # 목록 페이지 카드
+SEL_DETAIL_TITLE = "h1.perf-name"         # 상세 페이지 제목
+SEL_DETAIL_DATE  = ".perf-info .date"     # 공연 기간
+# ... 등
+```
 
 ---
 

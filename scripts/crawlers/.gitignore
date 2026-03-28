@@ -1,0 +1,7 @@
+# 서비스 계정 키 — 절대 커밋하지 마세요!
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
+*.key.json
+
+# 수집 결과물 (대용량 방지, 필요 시 주석 해제)
+# pending_shows.json
