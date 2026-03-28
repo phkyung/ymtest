@@ -3,8 +3,9 @@ kopis.py — KOPIS(공연예술통합전산망) 공공 API 공연 수집기
 ──────────────────────────────────────────────────────
 수집 대상:
   - 서울 지역 전체 (signgucode=11)
-  - 대학로 공연 (daehakro=Y)
-  - 장르: 연극 + 뮤지컬만 클라이언트 필터링
+  - 장르: 연극(AAAA) + 뮤지컬(BBAA) — shcate 파라미터로 API 필터
+  - 상태: 공연중(02) + 공연예정(01) — prfstate 파라미터로 API 필터
+  - 페이지당 100건, 최대 10페이지
 
 사용법:
     python kopis.py                          # 환경변수 KOPIS_API_KEY 사용
@@ -33,14 +34,25 @@ import httpx
 API_BASE    = "http://kopis.or.kr/openApi/restful"
 OUTPUT_FILE = Path(__file__).parent / "pending_shows.json"
 
-# 수집할 장르 (KOPIS genrenm 기준 — 이 값으로 클라이언트 필터링)
-TARGET_GENRES = {"연극", "뮤지컬"}
+# 수집할 장르 코드 (KOPIS shcate 파라미터) — API 레벨에서 필터
+# KOPIS 장르코드 전체 목록:
+#   AAAA: 연극   GGGA: 뮤지컬  BBBC: 무용(서양/현대무용)
+#   BSCD: 서양음악(클래식)     CCCA: 한국음악(국악)
+#   CCCC: 오페라  EEEA: 복합
+# ※ BBAA는 존재하지 않는 코드로 0건 반환 → GGGA로 수정
+GENRE_CODES = [
+    ("연극",   "AAAA"),
+    ("뮤지컬", "GGGA"),  # 수정: BBAA(잘못된 코드) → GGGA(공식 뮤지컬 코드)
+]
 
-# 수집할 지역 (KOPIS area 기준 — signgucode=11 으로 API 필터 + 이 값으로 이중 검증)
-TARGET_AREA = "서울특별시"
+# 수집할 공연 상태 코드 (KOPIS prfstate 파라미터) — API 레벨에서 필터
+STATE_CODES = [
+    ("공연예정", "01"),
+    ("공연중",   "02"),
+]
 
-# 공연 상태 (공연예정 + 공연중)
-TARGET_STATES = {"공연예정", "공연중"}
+# 최대 페이지 수 (페이지당 100건 × 최대 10페이지 = 최대 1000건/조합)
+MAX_PAGES = 10
 
 # 요청 간 대기 (KOPIS 서버 부하 방지)
 REQUEST_DELAY = 0.3
@@ -162,20 +174,21 @@ def get_facility_address(client: httpx.Client, api_key: str, mt10id: str) -> str
     return address
 
 
-# ── 목록 수집 (서울 전체 / 대학로) ───────────────────
+# ── 목록 수집 (장르 코드 × 상태 코드 × 페이지) ────────────
 def fetch_id_list(
-    client: httpx.Client,
-    api_key: str,
-    stdate: str,
-    eddate: str,
-    page: int,
-    rows: int,
-    daehakro: bool = False,
+    client:   httpx.Client,
+    api_key:  str,
+    stdate:   str,
+    eddate:   str,
+    page:     int,
+    rows:     int,
+    shcate:   str,   # 장르 코드: AAAA(연극) / BBAA(뮤지컬)
+    prfstate: str,   # 공연 상태: 01(공연예정) / 02(공연중)
 ) -> tuple[list[str], int]:
     """
-    공연 목록 API 한 페이지 → (mt20id 목록, 총 건수)
-    daehakro=True 이면 대학로 필터 적용.
-    장르 필터(shcate)는 이 API 키에서 작동하지 않아 클라이언트 필터링으로 대체.
+    공연 목록 API 한 페이지 → (mt20id 목록, 이번 페이지 건수)
+    - daehakro 파라미터 제거: 서울 전체 수집
+    - shcate/prfstate 로 API 레벨에서 필터링 → 클라이언트 필터 부하 최소화
     """
     params: dict = {
         "service":    api_key,
@@ -183,61 +196,70 @@ def fetch_id_list(
         "eddate":     eddate,
         "rows":       rows,
         "cpage":      page,
-        "signgucode": "11",   # 서울
+        "signgucode": "11",      # 서울 전체 (대학로 필터 제거)
+        "shcate":     shcate,    # 장르 코드 — API 필터
+        "prfstate":   prfstate,  # 공연 상태 코드 — API 필터
     }
-    if daehakro:
-        params["daehakro"] = "Y"
 
     root = _get(client, "pblprfr", params)
     if root is None:
         return [], 0
 
     items: list[str] = []
-    for db in root.findall("db"):
-        genre  = db.findtext("genrenm", "").strip()
-        state  = db.findtext("prfstate", "").strip()
-        area   = db.findtext("area", "").strip()
-        # 장르: 연극·뮤지컬 / 지역: 서울특별시 / 상태: 예정·공연중
-        if (genre in TARGET_GENRES
-                and state in TARGET_STATES
-                and area == TARGET_AREA):
-            mid = db.findtext("mt20id", "").strip()
-            if mid:
-                items.append(mid)
+    for db_el in root.findall("db"):
+        mid = db_el.findtext("mt20id", "").strip()
+        if mid:
+            items.append(mid)
 
-    # KOPIS 는 총 건수 태그가 없어 수신 건수로 마지막 페이지 판단
     total_on_page = len(root.findall("db"))
     return items, total_on_page
 
 
 def collect_all_ids(
-    client: httpx.Client,
-    api_key: str,
-    stdate: str,
-    eddate: str,
-    rows: int = 100,
+    client:      httpx.Client,
+    api_key:     str,
+    stdate:      str,
+    eddate:      str,
+    rows:        int = 100,
+    genre_codes: list[tuple[str, str]] | None = None,
 ) -> list[str]:
-    """서울 전체 + 대학로 공연 ID를 중복 없이 수집"""
-    seen: set[str] = set()
+    """
+    장르 × 상태(공연예정/공연중) 조합으로 공연 ID 수집.
+    중복 제거 후 반환. 각 조합은 최대 MAX_PAGES 페이지까지 수집.
+    genre_codes: [(장르명, shcate코드), ...] — 미지정 시 GENRE_CODES 전체 사용.
+    """
+    active_genres = genre_codes if genre_codes is not None else GENRE_CODES
+    seen:   set[str]  = set()
     result: list[str] = []
 
-    # 대학로(daehakro=Y)를 먼저 수집해 우선순위 부여, 이후 서울 전체로 나머지 보완
-    for label, daehakro in [("대학로(daehakro=Y)", True), ("서울 전체", False)]:
-        page = 1
-        while True:
-            print(f"  [{label}] 목록 {page}페이지 요청...")
-            ids, total_on_page = fetch_id_list(
-                client, api_key, stdate, eddate, page, rows, daehakro
-            )
-            for mid in ids:
-                if mid not in seen:
-                    seen.add(mid)
-                    result.append(mid)
-            print(f"    → 이번 페이지 {total_on_page}건 중 필터 통과 {len(ids)}건 (누적 {len(result)}개)")
-            if total_on_page < rows:
-                break   # 마지막 페이지
-            page += 1
-            time.sleep(REQUEST_DELAY)
+    for genre_label, shcate in active_genres:
+        for state_label, prfstate in STATE_CODES:
+            label = f"{genre_label}/{state_label}"
+            page  = 1
+
+            while page <= MAX_PAGES:
+                print(f"  [{label}] {page}페이지 요청 (rows={rows})...")
+
+                ids, total_on_page = fetch_id_list(
+                    client, api_key, stdate, eddate,
+                    page, rows, shcate, prfstate,
+                )
+
+                # 중복 없이 추가
+                new_count = 0
+                for mid in ids:
+                    if mid not in seen:
+                        seen.add(mid)
+                        result.append(mid)
+                        new_count += 1
+
+                print(f"    → 이번 페이지 {total_on_page}건 / 신규 {new_count}건 (누적 {len(result)}개)")
+
+                # 마지막 페이지 판단: 응답 건수가 요청 건수보다 적으면 종료
+                if total_on_page < rows:
+                    break
+                page += 1
+                time.sleep(REQUEST_DELAY)
 
     return result
 
@@ -253,37 +275,36 @@ def fetch_detail(client: httpx.Client, api_key: str, mt20id: str) -> dict | None
         return None
 
     # ── 기본 필드 ──
-    title       = _xml_text(db, "prfnm")
+    title = _xml_text(db, "prfnm")
     if not title:
         return None
 
-    genre_raw   = _xml_text(db, "genrenm")
+    genre_raw = _xml_text(db, "genrenm")
     # KOPIS 장르명 → 정규화
-    genre_map   = {"뮤지컬": "뮤지컬", "연극": "연극"}
-    genre       = genre_map.get(genre_raw, genre_raw)
+    genre_map = {"뮤지컬": "뮤지컬", "연극": "연극"}
+    genre     = genre_map.get(genre_raw, genre_raw)
 
-    venue_raw   = _xml_text(db, "fcltynm")
+    venue_raw = _xml_text(db, "fcltynm")
     # KOPIS는 "XX홀 (XX홀 부가설명)" 패턴으로 괄호 반복이 있어 첫 번째 괄호 전까지만 사용
-    venue       = re.split(r"\s*\(", venue_raw)[0].strip()
+    venue     = re.split(r"\s*\(", venue_raw)[0].strip()
 
-    start_date  = parse_date(_xml_text(db, "prfpdfrom"))
-    end_date    = parse_date(_xml_text(db, "prfpdto"))
-    runtime     = parse_runtime(_xml_text(db, "prfruntime"))
-    cast        = parse_cast(_xml_text(db, "prfcast"))
-    image_url   = _xml_text(db, "poster")
-    openrun     = _xml_text(db, "openrun") == "Y"   # 오픈런 여부
+    start_date = parse_date(_xml_text(db, "prfpdfrom"))
+    end_date   = parse_date(_xml_text(db, "prfpdto"))
+    runtime    = parse_runtime(_xml_text(db, "prfruntime"))
+    cast       = parse_cast(_xml_text(db, "prfcast"))
+    image_url  = _xml_text(db, "poster")
+    openrun    = _xml_text(db, "openrun") == "Y"   # 오픈런 여부
 
     # ── 줄거리 ──
-    # sty 필드(텍스트) + styurls(이미지 URL 목록) 병합
-    synopsis    = _xml_text(db, "sty")
-    sty_images  = _xml_children_text(db, "styurls")
+    synopsis   = _xml_text(db, "sty")
+    sty_images = _xml_children_text(db, "styurls")
 
     # ── 티켓 URL (relates에서 추출) ──
-    ticket_url  = pick_ticket_url(db.find("relates"))
+    ticket_url = pick_ticket_url(db.find("relates"))
 
     # ── 공연장 주소 ──
-    mt10id      = _xml_text(db, "mt10id")
-    address     = get_facility_address(client, api_key, mt10id)
+    mt10id  = _xml_text(db, "mt10id")
+    address = get_facility_address(client, api_key, mt10id)
 
     # ── 태그 ──
     tags: list[str] = []
@@ -302,47 +323,62 @@ def fetch_detail(client: httpx.Client, api_key: str, mt20id: str) -> dict | None
     )
 
     return {
-        "title":      title,
-        "subtitle":   "",
-        "genre":      genre,
-        "venue":      venue,
-        "address":    address,
-        "startDate":  start_date,
-        "endDate":    end_date,
-        "runtime":    runtime,
-        "synopsis":   synopsis,
-        "synopsisImages": sty_images,   # 줄거리 이미지 (없으면 [])
-        "ticketUrl":  ticket_url,
-        "imageUrl":   image_url,
-        "cast":       cast,             # [{actorName, roleName}]
-        "tags":       tags,
-        "source":     "KOPIS",
-        "sourceUrl":  source_url,
-        "collectedAt": datetime.now().isoformat(),
-        "status":     "pending",
+        "title":          title,
+        "subtitle":       "",
+        "genre":          genre,
+        "venue":          venue,
+        "address":        address,
+        "startDate":      start_date,
+        "endDate":        end_date,
+        "runtime":        runtime,
+        "synopsis":       synopsis,
+        "synopsisImages": sty_images,
+        "ticketUrl":      ticket_url,
+        "imageUrl":       image_url,
+        "cast":           cast,
+        "tags":           tags,
+        "source":         "KOPIS",
+        "sourceUrl":      source_url,
+        "collectedAt":    datetime.now().isoformat(),
+        "status":         "pending",
     }
 
 
 # ── 메인 ────────────────────────────────────────────
-def main(api_key: str, days: int = 180, rows: int = 100) -> None:
+def main(api_key: str, days: int = 180, rows: int = 100,
+         genre_codes: list[tuple[str, str]] | None = None) -> None:
+    # genre_codes 미지정 시 전체 장르(연극+뮤지컬) 수집
+    active_genres = genre_codes if genre_codes is not None else GENRE_CODES
+
     today  = datetime.today()
     stdate = today.strftime("%Y%m%d")
     eddate = (today + timedelta(days=days)).strftime("%Y%m%d")
 
+    genre_labels = " / ".join(f"{l}({c})" for l, c in active_genres)
+    state_labels = " / ".join(f"{l}({c})" for l, c in STATE_CODES)
+
     print(f"🎭 KOPIS 공연 수집 시작")
-    print(f"   기간: {stdate} ~ {eddate} ({days}일)")
-    print(f"   장르: {', '.join(TARGET_GENRES)}")
+    print(f"   기간   : {stdate} ~ {eddate} ({days}일)")
+    print(f"   장르   : {genre_labels}")
+    print(f"   상태   : {state_labels}")
+    print(f"   지역   : 서울(signgucode=11)")
+    print(f"   페이지 : 최대 {MAX_PAGES}페이지 × {rows}건")
 
     all_shows: list[dict] = []
 
     with httpx.Client(follow_redirects=True, timeout=20) as client:
-        # 1단계: 공연 ID 목록 수집 (서울 전체 + 대학로)
+        # 1단계: 공연 ID 목록 수집
         print("\n[1단계] 공연 ID 목록 수집")
-        mt20ids = collect_all_ids(client, api_key, stdate, eddate, rows)
-        print(f"  → 수집 대상: 총 {len(mt20ids)}개 공연\n")
+        mt20ids = collect_all_ids(client, api_key, stdate, eddate, rows, active_genres)
+        print(f"\n  → 수집 대상 ID: 총 {len(mt20ids)}개\n")
+
+        if len(mt20ids) == 0:
+            print("⚠️  수집된 공연이 없습니다. API 키와 파라미터를 확인하세요.")
+            return
 
         # 2단계: 공연별 상세 수집
         print("[2단계] 공연 상세 수집")
+        skipped = 0
         for i, mt20id in enumerate(mt20ids, 1):
             print(f"  [{i}/{len(mt20ids)}] {mt20id}", end=" ")
             show = fetch_detail(client, api_key, mt20id)
@@ -351,15 +387,28 @@ def main(api_key: str, days: int = 180, rows: int = 100) -> None:
                 print(f"✅ [{show['genre']}] {show['title'][:30]}"
                       f" ({show['startDate']} ~ {show['endDate']})")
             else:
+                skipped += 1
                 print("⚠️  스킵")
             time.sleep(REQUEST_DELAY)
+
+    # ── 수집 결과 요약 출력 ──────────────────────────
+    genre_count = {}
+    for show in all_shows:
+        genre_count[show["genre"]] = genre_count.get(show["genre"], 0) + 1
+
+    print(f"\n{'='*50}")
+    print(f"✅ 수집 완료")
+    print(f"   성공: {len(all_shows)}개 / 스킵: {skipped}개 / 대상: {len(mt20ids)}개")
+    for genre, cnt in sorted(genre_count.items()):
+        print(f"   - {genre}: {cnt}개")
+    print(f"{'='*50}")
 
     # 저장
     OUTPUT_FILE.write_text(
         json.dumps(all_shows, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-    print(f"\n✅ 수집 완료: 총 {len(all_shows)}개 → {OUTPUT_FILE}")
+    print(f"📁 저장 완료: {OUTPUT_FILE}")
 
 
 # ── CLI ─────────────────────────────────────────────
@@ -375,19 +424,115 @@ def _get_api_key(cli_key: str | None) -> str:
     return key
 
 
+def probe(api_key: str) -> None:
+    """
+    --probe 모드: 여러 shcate 코드로 각 1페이지씩 요청 후
+    반환된 genrenm 값과 건수를 출력해 올바른 코드를 확인한다.
+    signgucode 없이 전국 기준으로 요청해 필터 오류 가능성을 배제한다.
+    """
+    today  = datetime.today().strftime("%Y%m%d")
+    end    = (datetime.today() + timedelta(days=180)).strftime("%Y%m%d")
+
+    # 테스트할 shcate 코드 후보 (KOPIS 공식 장르코드 전체)
+    candidates = [
+        ("AAAA", "연극"),
+        ("GGGA", "뮤지컬(추정)"),
+        ("BBAA", "뮤지컬(기존코드)"),
+        ("BBBC", "무용(서양/현대)"),
+        ("BSCD", "서양음악(클래식)"),
+        ("CCCA", "한국음악(국악)"),
+        ("CCCC", "오페라"),
+        ("EEEA", "복합"),
+    ]
+
+    print("🔍 KOPIS shcate 코드 진단 (전국, 1페이지, rows=5)")
+    print(f"   기간: {today} ~ {end}")
+    print(f"   ※ signgucode 없음 — 필터 오류 배제용\n")
+
+    # 테스트 URL 출력 (브라우저에서 직접 확인 가능)
+    print("━" * 60)
+    print("📋 브라우저 테스트 URL (YOUR_API_KEY 교체 후 접속)")
+    print("━" * 60)
+    for code, label in candidates:
+        url = (
+            f"{API_BASE}/pblprfr"
+            f"?service=YOUR_API_KEY"
+            f"&stdate={today}&eddate={end}"
+            f"&rows=5&cpage=1"
+            f"&shcate={code}"
+        )
+        print(f"  [{code}] {label}")
+        print(f"  {url}\n")
+
+    # 실제 API 호출로 결과 확인
+    print("━" * 60)
+    print("🌐 실제 API 호출 결과")
+    print("━" * 60)
+
+    with httpx.Client(follow_redirects=True, timeout=15) as client:
+        for code, label in candidates:
+            params = {
+                "service": api_key,
+                "stdate":  today,
+                "eddate":  end,
+                "rows":    5,
+                "cpage":   1,
+                "shcate":  code,
+            }
+            root = _get(client, "pblprfr", params)
+            if root is None:
+                print(f"  [{code}] {label}: 요청 실패")
+                continue
+
+            dbs = root.findall("db")
+            genres = list({d.findtext("genrenm", "").strip() for d in dbs if d.findtext("genrenm")})
+            titles = [d.findtext("prfnm", "")[:20] for d in dbs[:2]]
+            print(f"  [{code}] {label}: {len(dbs)}건  genrenm={genres}  예시={titles}")
+            time.sleep(REQUEST_DELAY)
+
+    print("\n✅ 진단 완료 — 건수가 있는 코드가 유효한 장르코드입니다.")
+    print("   kopis.py의 GENRE_CODES에서 GGGA 코드 확인 후 수정하세요.")
+
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="KOPIS 공공 API 공연 크롤러 (연극+뮤지컬, 서울+대학로)")
+    parser = argparse.ArgumentParser(
+        description="KOPIS 공공 API 공연 크롤러 (연극+뮤지컬, 서울 전체)"
+    )
     parser.add_argument("--key",    default=None, help="KOPIS API 키 (없으면 KOPIS_API_KEY 환경변수)")
     parser.add_argument("--days",   type=int, default=180, help="수집 기간(일) (기본 180)")
     parser.add_argument("--rows",   type=int, default=100, help="페이지당 건수 (기본 100, 최대 100)")
     parser.add_argument("--output", default=None, help="출력 파일 경로 (기본: pending_shows.json)")
+    parser.add_argument(
+        "--genre",
+        default="all",
+        choices=["all", "play", "musical"],
+        help="수집 장르: all=연극+뮤지컬(기본) / play=연극만 / musical=뮤지컬만",
+    )
+    parser.add_argument(
+        "--probe",
+        action="store_true",
+        help="진단 모드: 여러 shcate 코드를 실제 API로 테스트해 올바른 코드를 확인",
+    )
     args = parser.parse_args()
 
     if args.output:
         OUTPUT_FILE = Path(args.output)
 
+    # --probe: 장르코드 진단 후 종료
+    if args.probe:
+        probe(_get_api_key(args.key))
+        raise SystemExit(0)
+
+    # --genre 값에 따라 수집할 장르 코드 결정
+    GENRE_FILTER = {
+        "all":     None,                    # 기본값: GENRE_CODES 전체
+        "play":    [("연극",   "AAAA")],
+        "musical": [("뮤지컬", "GGGA")],   # BBAA → GGGA 수정
+    }
+
     main(
         api_key=_get_api_key(args.key),
         days=args.days,
         rows=args.rows,
+        genre_codes=GENRE_FILTER[args.genre],
     )

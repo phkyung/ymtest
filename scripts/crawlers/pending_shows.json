@@ -1,1 +1,5680 @@
-[]
+[
+  {
+    "title": "손준호 & 김소현 콘서트: 우리, 모니?",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "이화여자대학교 삼성홀",
+    "address": "서울특별시 서대문구 이화여대길 52 (대현동)",
+    "startDate": "2026-05-16",
+    "endDate": "2026-05-17",
+    "runtime": 120,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF288172_202603270132582390.jpg"
+    ],
+    "ticketUrl": "http://www.ticketlink.co.kr/product/62166",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF288172_260327_133258.jpg",
+    "cast": [
+      {
+        "actorName": "김소현",
+        "roleName": ""
+      },
+      {
+        "actorName": "손준호",
+        "roleName": ""
+      }
+    ],
+    "tags": [],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF288172",
+    "collectedAt": "2026-03-28T16:40:01.148566",
+    "status": "pending"
+  },
+  {
+    "title": "서리풀 악동문화공연, 쿠키맨 (4월)",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "서초문화예술회관",
+    "address": "서울특별시 서초구 강남대로 201 (양재동) 서초구민회관",
+    "startDate": "2026-04-06",
+    "endDate": "2026-04-06",
+    "runtime": 50,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF288080_202603260126179190.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57696",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF288080_260326_132617.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF288080",
+    "collectedAt": "2026-03-28T16:40:02.136314",
+    "status": "pending"
+  },
+  {
+    "title": "무지개 물고기 [서울 노원]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "노원구민의전당",
+    "address": "서울특별시 노원구 동일로 1229 (중계동)",
+    "startDate": "2026-05-23",
+    "endDate": "2026-05-23",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF288062_202603261248081830.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1621362",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF288062_260326_125235.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF288062",
+    "collectedAt": "2026-03-28T16:40:03.092276",
+    "status": "pending"
+  },
+  {
+    "title": "더 멜로디",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "더 씨어터",
+    "address": "서울특별시 종로구 대학로3길 10 (효제동) 고운빌딩",
+    "startDate": "2026-05-01",
+    "endDate": "2026-05-31",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287958_202603251106483090.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1621787",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287958_260325_110648.jpg",
+    "cast": [
+      {
+        "actorName": "김재희",
+        "roleName": ""
+      },
+      {
+        "actorName": "서혜린",
+        "roleName": ""
+      },
+      {
+        "actorName": "허보은",
+        "roleName": ""
+      },
+      {
+        "actorName": "박강호",
+        "roleName": ""
+      },
+      {
+        "actorName": "정한성",
+        "roleName": ""
+      },
+      {
+        "actorName": "천이도",
+        "roleName": ""
+      },
+      {
+        "actorName": "박수 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287958",
+    "collectedAt": "2026-03-28T16:40:04.090041",
+    "status": "pending"
+  },
+  {
+    "title": "오지게 재밌는 가시나들 [서울 중구]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "국립극장",
+    "address": "서울특별시 중구 장충단로 59 (장충동2가)",
+    "startDate": "2026-05-15",
+    "endDate": "2026-06-28",
+    "runtime": 80,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287941_202603251031232060.jpg"
+    ],
+    "ticketUrl": "https://www.ntok.go.kr/ntok/pm/prfmng/performanceDetail.do?perfId=267030&mi=21008",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287941_260325_103123.gif",
+    "cast": [
+      {
+        "actorName": "구옥분",
+        "roleName": ""
+      },
+      {
+        "actorName": "김아영",
+        "roleName": ""
+      },
+      {
+        "actorName": "차청화",
+        "roleName": ""
+      },
+      {
+        "actorName": "박채원",
+        "roleName": ""
+      },
+      {
+        "actorName": "김나희",
+        "roleName": ""
+      },
+      {
+        "actorName": "김미려",
+        "roleName": ""
+      },
+      {
+        "actorName": "허순미 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287941",
+    "collectedAt": "2026-03-28T16:40:05.032452",
+    "status": "pending"
+  },
+  {
+    "title": "브라더스 까라마조프 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "NOL 씨어터 대학로",
+    "address": "서울특별시 종로구 동숭길 100",
+    "startDate": "2026-05-12",
+    "endDate": "2026-09-06",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287874_202603241044351980.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26004473",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287874_260324_104435.gif",
+    "cast": [
+      {
+        "actorName": "도창선",
+        "roleName": ""
+      },
+      {
+        "actorName": "김주호",
+        "roleName": ""
+      },
+      {
+        "actorName": "심재현",
+        "roleName": ""
+      },
+      {
+        "actorName": "조풍래",
+        "roleName": ""
+      },
+      {
+        "actorName": "이형훈",
+        "roleName": ""
+      },
+      {
+        "actorName": "백인태",
+        "roleName": ""
+      },
+      {
+        "actorName": "김재범 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287874",
+    "collectedAt": "2026-03-28T16:40:05.992611",
+    "status": "pending"
+  },
+  {
+    "title": "이터니티 콘서트 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "스케치홀",
+    "address": "서울특별시 종로구 동숭길 145 (동숭동)",
+    "startDate": "2026-04-06",
+    "endDate": "2026-04-13",
+    "runtime": 130,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287865_202603241025165820.png"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57719",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287865_260324_102516.jpg",
+    "cast": [
+      {
+        "actorName": "현석준",
+        "roleName": ""
+      },
+      {
+        "actorName": "김우성",
+        "roleName": ""
+      },
+      {
+        "actorName": "박유덕",
+        "roleName": ""
+      },
+      {
+        "actorName": "변희상",
+        "roleName": ""
+      },
+      {
+        "actorName": "이동수",
+        "roleName": ""
+      },
+      {
+        "actorName": "박상준",
+        "roleName": ""
+      },
+      {
+        "actorName": "조민호 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287865",
+    "collectedAt": "2026-03-28T16:40:06.928678",
+    "status": "pending"
+  },
+  {
+    "title": "서울예술단, 나빌레라 [서울 서초]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "예술의전당 [서울]",
+    "address": "서울특별시 서초구 남부순환로 2406 (서초동)",
+    "startDate": "2026-05-02",
+    "endDate": "2026-05-17",
+    "runtime": 140,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287859_202603241013019180.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57769",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287859_260324_101301.gif",
+    "cast": [
+      {
+        "actorName": "최인형",
+        "roleName": ""
+      },
+      {
+        "actorName": "이재환",
+        "roleName": ""
+      },
+      {
+        "actorName": "이재윤",
+        "roleName": ""
+      },
+      {
+        "actorName": "김연",
+        "roleName": ""
+      },
+      {
+        "actorName": "김용한",
+        "roleName": ""
+      },
+      {
+        "actorName": "이혜수",
+        "roleName": ""
+      },
+      {
+        "actorName": "송문선 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287859",
+    "collectedAt": "2026-03-28T16:40:07.887888",
+    "status": "pending"
+  },
+  {
+    "title": "사과가 쿵! [서울 양천]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "한국방송회관 코바코홀",
+    "address": "서울특별시 양천구 목동동로 233 (목동) 한국방송회관",
+    "startDate": "2026-06-03",
+    "endDate": "2026-06-28",
+    "runtime": 55,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287845_202603230536021390.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57662",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287845_260323_173602.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287845",
+    "collectedAt": "2026-03-28T16:40:09.014965",
+    "status": "pending"
+  },
+  {
+    "title": "인어공주 [서울 도봉]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "도봉구민회관",
+    "address": "서울특별시 도봉구 도봉로 552 (창동)",
+    "startDate": "2026-05-02",
+    "endDate": "2026-05-02",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287839_202603230523558860.png"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1617889",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287839_260323_172355.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287839",
+    "collectedAt": "2026-03-28T16:40:09.928766",
+    "status": "pending"
+  },
+  {
+    "title": "이상한 나라의 숨바꼭질 [서울 노원]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "노원어린이극장",
+    "address": "서울특별시 노원구 노해로 502 (상계동)",
+    "startDate": "2026-05-05",
+    "endDate": "2026-05-10",
+    "runtime": 70,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287766_202603230251260060.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287766_202603230253300360.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1615812",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287766_260323_145126.gif",
+    "cast": [
+      {
+        "actorName": "유정민",
+        "roleName": ""
+      },
+      {
+        "actorName": "설재영",
+        "roleName": ""
+      },
+      {
+        "actorName": "장대성",
+        "roleName": ""
+      },
+      {
+        "actorName": "김봉영",
+        "roleName": ""
+      },
+      {
+        "actorName": "김하준",
+        "roleName": ""
+      },
+      {
+        "actorName": "김두리",
+        "roleName": ""
+      },
+      {
+        "actorName": "전태원 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287766",
+    "collectedAt": "2026-03-28T16:40:10.866549",
+    "status": "pending"
+  },
+  {
+    "title": "최고다 호기심딱지 시즌4, 피사총사: 우리 몸은 우리가 지킨다! [서울]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "마포아트센터",
+    "address": "서울특별시 마포구 대흥로20길 28 (대흥동)",
+    "startDate": "2026-06-06",
+    "endDate": "2026-06-07",
+    "runtime": 75,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287755_202603230230588850.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1619175",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287755_260323_143058.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287755",
+    "collectedAt": "2026-03-28T16:40:11.791719",
+    "status": "pending"
+  },
+  {
+    "title": "사과가 쿵! [서울 강동]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "강동구민회관",
+    "address": "서울특별시 강동구 상암로 168 (천호동) 강동구민회관",
+    "startDate": "2026-05-30",
+    "endDate": "2026-05-30",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287737_202603230156430580.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1619033",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287737_260323_135643.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287737",
+    "collectedAt": "2026-03-28T16:40:12.730253",
+    "status": "pending"
+  },
+  {
+    "title": "어린이 캣츠 [서울 노원]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "노원구민의전당",
+    "address": "서울특별시 노원구 동일로 1229 (중계동)",
+    "startDate": "2026-05-02",
+    "endDate": "2026-05-02",
+    "runtime": 50,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287734_202603230151069630.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1617574",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287734_260323_135106.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287734",
+    "collectedAt": "2026-03-28T16:40:13.210175",
+    "status": "pending"
+  },
+  {
+    "title": "이게 정말 나일까? [서울]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "성수아트홀",
+    "address": "서울특별시 성동구 뚝섬로1길 43 (성수동1가)",
+    "startDate": "2026-05-15",
+    "endDate": "2026-05-31",
+    "runtime": 70,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287680_202603231122177420.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1617186",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287680_260323_112217.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287680",
+    "collectedAt": "2026-03-28T16:40:14.159237",
+    "status": "pending"
+  },
+  {
+    "title": "미드나잇: 액터뮤지션 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "유니플렉스",
+    "address": "서울특별시 종로구 대학로12길 64 (동숭동)",
+    "startDate": "2026-04-08",
+    "endDate": "2026-08-09",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287675_202603231111404180.jpg"
+    ],
+    "ticketUrl": "http://www.ticketlink.co.kr/product/62288",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287675_260323_111140.gif",
+    "cast": [
+      {
+        "actorName": "홍륜희",
+        "roleName": ""
+      },
+      {
+        "actorName": "박유덕",
+        "roleName": ""
+      },
+      {
+        "actorName": "서동진",
+        "roleName": ""
+      },
+      {
+        "actorName": "남민우",
+        "roleName": ""
+      },
+      {
+        "actorName": "조환지",
+        "roleName": ""
+      },
+      {
+        "actorName": "박선영",
+        "roleName": ""
+      },
+      {
+        "actorName": "선한국 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287675",
+    "collectedAt": "2026-03-28T16:40:15.094940",
+    "status": "pending"
+  },
+  {
+    "title": "정글북 [서울 영등포]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "영등포아트홀",
+    "address": "서울특별시 영등포구 국회대로 596 (당산동3가)",
+    "startDate": "2026-05-09",
+    "endDate": "2026-05-09",
+    "runtime": 50,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287668_202603231054513350.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1614619",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287668_260323_105451.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287668",
+    "collectedAt": "2026-03-28T16:40:16.040179",
+    "status": "pending"
+  },
+  {
+    "title": "Love & Music 갈라콘서트",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "DGT 아트센터",
+    "address": "서울특별시 마포구 독막로 308 (염리동)",
+    "startDate": "2026-04-18",
+    "endDate": "2026-04-18",
+    "runtime": 135,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287573_202603201125117313.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287573_202603201125117142.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287573_202603201125116971.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287573_202603201125116830.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26004093",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287573_260320_112511.gif",
+    "cast": [
+      {
+        "actorName": "배상길",
+        "roleName": ""
+      },
+      {
+        "actorName": "차수연",
+        "roleName": ""
+      },
+      {
+        "actorName": "이재안",
+        "roleName": ""
+      },
+      {
+        "actorName": "신동훈",
+        "roleName": ""
+      },
+      {
+        "actorName": "양혜정",
+        "roleName": ""
+      },
+      {
+        "actorName": "최현욱",
+        "roleName": ""
+      },
+      {
+        "actorName": "정송희 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287573",
+    "collectedAt": "2026-03-28T16:40:16.973275",
+    "status": "pending"
+  },
+  {
+    "title": "중구민을 위한 월요극장 11, 홍련",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "충무아트센터",
+    "address": "서울특별시 중구 퇴계로 387 (흥인동)",
+    "startDate": "2026-04-06",
+    "endDate": "2026-04-06",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287500_202603190103456960.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26003633",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287500_260319_130345.gif",
+    "cast": [
+      {
+        "actorName": "홍나현",
+        "roleName": ""
+      },
+      {
+        "actorName": "이지연",
+        "roleName": ""
+      },
+      {
+        "actorName": "이종영",
+        "roleName": ""
+      },
+      {
+        "actorName": "백종민",
+        "roleName": ""
+      },
+      {
+        "actorName": "정백선",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287500",
+    "collectedAt": "2026-03-28T16:40:17.936320",
+    "status": "pending"
+  },
+  {
+    "title": "한글용사 아이야 새로운 이야기: 달라도 친구야! [서울 서초]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "한전아트센터",
+    "address": "서울특별시 서초구 효령로72길 60 (서초동)",
+    "startDate": "2026-06-12",
+    "endDate": "2026-06-14",
+    "runtime": 65,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287486_202603191126384630.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1616944",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287486_260319_112638.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287486",
+    "collectedAt": "2026-03-28T16:40:18.877660",
+    "status": "pending"
+  },
+  {
+    "title": "마크 (Mark)",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "CTS아트홀",
+    "address": "서울특별시 동작구 노량진로 100 (노량진동)",
+    "startDate": "2026-04-16",
+    "endDate": "2026-04-26",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287408_202603180207157341.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287408_202603180207157190.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26003642",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287408_260318_140715.gif",
+    "cast": [
+      {
+        "actorName": "오하윤",
+        "roleName": ""
+      },
+      {
+        "actorName": "전유빈",
+        "roleName": ""
+      },
+      {
+        "actorName": "임하람",
+        "roleName": ""
+      },
+      {
+        "actorName": "안지후",
+        "roleName": ""
+      },
+      {
+        "actorName": "서승원",
+        "roleName": ""
+      },
+      {
+        "actorName": "구동욱",
+        "roleName": ""
+      },
+      {
+        "actorName": "김은애 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287408",
+    "collectedAt": "2026-03-28T16:40:19.848012",
+    "status": "pending"
+  },
+  {
+    "title": "누가 내 머리에 똥 쌌어? [서울 강동]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "강동구민회관",
+    "address": "서울특별시 강동구 상암로 168 (천호동) 강동구민회관",
+    "startDate": "2026-04-18",
+    "endDate": "2026-04-18",
+    "runtime": 55,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287389_202603180125114950.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1614586",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287389_260318_132511.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287389",
+    "collectedAt": "2026-03-28T16:40:20.357381",
+    "status": "pending"
+  },
+  {
+    "title": "신데렐라 [서울 강동]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "강동구민회관",
+    "address": "서울특별시 강동구 상암로 168 (천호동) 강동구민회관",
+    "startDate": "2026-05-16",
+    "endDate": "2026-05-16",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287369_202603181248279010.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1615322",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287369_260318_124827.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287369",
+    "collectedAt": "2026-03-28T16:40:20.868584",
+    "status": "pending"
+  },
+  {
+    "title": "The Face [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "후암스테이지",
+    "address": "서울특별시 종로구 대학로11길 23 (명륜4가)",
+    "startDate": "2026-04-18",
+    "endDate": "2026-04-26",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287319_202603181028107374.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287319_202603181028107323.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287319_202603181028107272.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287319_202603181028107231.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287319_202603181028107180.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26003440",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287319_260318_102810.gif",
+    "cast": [
+      {
+        "actorName": "이성호",
+        "roleName": ""
+      },
+      {
+        "actorName": "배채윤",
+        "roleName": ""
+      },
+      {
+        "actorName": "공이안",
+        "roleName": ""
+      },
+      {
+        "actorName": "김태희",
+        "roleName": ""
+      },
+      {
+        "actorName": "김가은",
+        "roleName": ""
+      },
+      {
+        "actorName": "김현서",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287319",
+    "collectedAt": "2026-03-28T16:40:21.847570",
+    "status": "pending"
+  },
+  {
+    "title": "프린세스 공주뮤지컬쇼 [서울 양천]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "양천문화회관",
+    "address": "서울특별시 양천구 목동서로 367 (신정동)",
+    "startDate": "2026-04-26",
+    "endDate": "2026-04-26",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287313_202603181020041920.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1616229",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287313_260318_101534.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287313",
+    "collectedAt": "2026-03-28T16:40:22.794333",
+    "status": "pending"
+  },
+  {
+    "title": "집사TV, 대저택 문의 비밀: part.1 [서울 용산]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "용산아트홀",
+    "address": "서울특별시 용산구 녹사평대로 150(이태원동 34-87)",
+    "startDate": "2026-05-30",
+    "endDate": "2026-05-31",
+    "runtime": 70,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287304_202603171226095730.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287304_202603171227509780.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1614518",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287304_260317_122609.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287304",
+    "collectedAt": "2026-03-28T16:40:23.732460",
+    "status": "pending"
+  },
+  {
+    "title": "구름빵 [서울 광진]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "상상나라극장",
+    "address": "서울특별시 광진구 능동로 216 (능동)",
+    "startDate": "2026-04-04",
+    "endDate": "2026-04-19",
+    "runtime": 50,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287268_202603171023523560.png"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1610023",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287268_260317_102352.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287268",
+    "collectedAt": "2026-03-28T16:40:24.690971",
+    "status": "pending"
+  },
+  {
+    "title": "인어공주 [서울 구로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "오류아트홀",
+    "address": "서울특별시 구로구 경인로20가길 38 (오류동)",
+    "startDate": "2026-05-09",
+    "endDate": "2026-05-09",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287197_202603160256265990.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1612744",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287197_260316_145626.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287197",
+    "collectedAt": "2026-03-28T16:40:25.652672",
+    "status": "pending"
+  },
+  {
+    "title": "누가 내 머리에 똥 쌌어? [서울 강동]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "강동구민회관",
+    "address": "서울특별시 강동구 상암로 168 (천호동) 강동구민회관",
+    "startDate": "2026-05-30",
+    "endDate": "2026-05-30",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287191_202603160247540551.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287191_202603160247540320.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1612679",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287191_260316_144754.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287191",
+    "collectedAt": "2026-03-28T16:40:26.167123",
+    "status": "pending"
+  },
+  {
+    "title": "인어공주 [서울 노원]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "노원구민의전당",
+    "address": "서울특별시 노원구 동일로 1229 (중계동)",
+    "startDate": "2026-05-30",
+    "endDate": "2026-05-30",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287184_202603160235275400.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1612659",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287184_260316_143527.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287184",
+    "collectedAt": "2026-03-28T16:40:26.648088",
+    "status": "pending"
+  },
+  {
+    "title": "베베핀, 두근두근 새친구 [서울 광진]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "나루아트센터",
+    "address": "서울특별시 광진구 능동로 76 (자양동)",
+    "startDate": "2026-05-03",
+    "endDate": "2026-05-05",
+    "runtime": 70,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287155_202603160119172020.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1613735",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287155_260316_131917.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287155",
+    "collectedAt": "2026-03-28T16:40:27.624029",
+    "status": "pending"
+  },
+  {
+    "title": "서리풀악동문화공연: 괜찮아, 안데르센 (3월)",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "반포심산아트홀",
+    "address": "서울특별시 서초구 사평대로 55 (반포동)",
+    "startDate": "2026-03-30",
+    "endDate": "2026-03-30",
+    "runtime": 50,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287136_202603161225254710.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57601",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287136_260316_122525.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287136",
+    "collectedAt": "2026-03-28T16:40:28.581669",
+    "status": "pending"
+  },
+  {
+    "title": "인어공주 [서울 구로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "구로창의아트홀",
+    "address": "서울특별시 구로구 경인로 416 (고척동)",
+    "startDate": "2026-05-23",
+    "endDate": "2026-05-23",
+    "runtime": 50,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287120_202603161111165210.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1612948",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287120_260316_111116.jpg",
+    "cast": [],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287120",
+    "collectedAt": "2026-03-28T16:40:29.561976",
+    "status": "pending"
+  },
+  {
+    "title": "블링블링 캐치! 티니핑 심포니 [서울]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "롯데콘서트홀",
+    "address": "서울특별시 송파구 올림픽로 300 (신천동) 롯데월드몰 8층 롯데문화재단",
+    "startDate": "2026-05-05",
+    "endDate": "2026-05-05",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287064_202603130327311510.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26003465",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287064_260313_152731.gif",
+    "cast": [
+      {
+        "actorName": "김성진",
+        "roleName": ""
+      },
+      {
+        "actorName": "채세린",
+        "roleName": ""
+      },
+      {
+        "actorName": "최지우",
+        "roleName": ""
+      },
+      {
+        "actorName": "안정현",
+        "roleName": ""
+      },
+      {
+        "actorName": "이유주",
+        "roleName": ""
+      },
+      {
+        "actorName": "김수아",
+        "roleName": ""
+      },
+      {
+        "actorName": "정다운 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287064",
+    "collectedAt": "2026-03-28T16:40:30.538829",
+    "status": "pending"
+  },
+  {
+    "title": "우리의 보통날들 리딩 쇼케이스",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "파랑새극장",
+    "address": "서울특별시 종로구 대학로 116 (동숭동)",
+    "startDate": "2026-03-31",
+    "endDate": "2026-03-31",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287033_202603130221188830.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26003335",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287033_260313_142118.gif",
+    "cast": [
+      {
+        "actorName": "임정모",
+        "roleName": ""
+      },
+      {
+        "actorName": "김리안",
+        "roleName": ""
+      },
+      {
+        "actorName": "김영우",
+        "roleName": ""
+      },
+      {
+        "actorName": "박국선",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287033",
+    "collectedAt": "2026-03-28T16:40:31.497641",
+    "status": "pending"
+  },
+  {
+    "title": "아기돼지 삼형제 [서울 강북]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "꿈의숲아트센터",
+    "address": "서울특별시 강북구 월계로 173 (번동)",
+    "startDate": "2026-05-16",
+    "endDate": "2026-05-16",
+    "runtime": 55,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287017_202603130151201191.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287017_202603130151201100.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1609278",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287017_260313_135120.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287017",
+    "collectedAt": "2026-03-28T16:40:32.444637",
+    "status": "pending"
+  },
+  {
+    "title": "카라마조프: 시리즈, 이반 편 & 그루첸카 편 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "업스테이지",
+    "address": "서울특별시 종로구 동숭길 41 (동숭동)",
+    "startDate": "2026-04-23",
+    "endDate": "2026-04-26",
+    "runtime": 70,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286975_202603131137081233.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286975_202603131137081162.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286975_202603131137081091.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286975_202603131137080920.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26003490",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286975_260313_113708.gif",
+    "cast": [
+      {
+        "actorName": "김희재",
+        "roleName": ""
+      },
+      {
+        "actorName": "김여림",
+        "roleName": ""
+      },
+      {
+        "actorName": "한재원",
+        "roleName": ""
+      },
+      {
+        "actorName": "양예진",
+        "roleName": ""
+      },
+      {
+        "actorName": "김채윤",
+        "roleName": ""
+      },
+      {
+        "actorName": "이은비",
+        "roleName": ""
+      },
+      {
+        "actorName": "한도경 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286975",
+    "collectedAt": "2026-03-28T16:40:33.393547",
+    "status": "pending"
+  },
+  {
+    "title": "무지개 물고기 [서울 구로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "구로구민회관",
+    "address": "서울특별시 구로구 가마산로25길 21 (구로동)",
+    "startDate": "2026-05-30",
+    "endDate": "2026-05-30",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286913_202603121025219821.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286913_202603121025219610.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1611870",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286913_260312_102521.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286913",
+    "collectedAt": "2026-03-28T16:40:34.377654",
+    "status": "pending"
+  },
+  {
+    "title": "신데렐라 [서울 노원]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "노원구민의전당",
+    "address": "서울특별시 노원구 동일로 1229 (중계동)",
+    "startDate": "2026-05-09",
+    "endDate": "2026-05-09",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286880_202603110337259831.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286880_202603110337259630.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1610718",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286880_260311_153725.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286880",
+    "collectedAt": "2026-03-28T16:40:34.856442",
+    "status": "pending"
+  },
+  {
+    "title": "알라딘과 요술램프 [서울 도봉]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "도봉구민회관",
+    "address": "서울특별시 도봉구 도봉로 552 (창동)",
+    "startDate": "2026-04-22",
+    "endDate": "2026-04-22",
+    "runtime": 45,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286879_202603110332594411.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286879_202603110332594300.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26003028",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286879_260311_153259.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286879",
+    "collectedAt": "2026-03-28T16:40:35.506527",
+    "status": "pending"
+  },
+  {
+    "title": "라푼젤 [서울 노원]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "노원구민의전당",
+    "address": "서울특별시 노원구 동일로 1229 (중계동)",
+    "startDate": "2026-04-04",
+    "endDate": "2026-04-04",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286828_202603110101211311.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286828_202603110101211190.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1610700",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286828_260311_130121.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286828",
+    "collectedAt": "2026-03-28T16:40:35.994894",
+    "status": "pending"
+  },
+  {
+    "title": "오렌지 스카이 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "달밤엔씨어터",
+    "address": "서울특별시 종로구 대학로14길 18-2 (혜화동)",
+    "startDate": "2026-04-02",
+    "endDate": "2026-04-26",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286721_202603101007514371.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286721_202603101007514300.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/397304",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286721_260310_100751.gif",
+    "cast": [
+      {
+        "actorName": "이재형",
+        "roleName": ""
+      },
+      {
+        "actorName": "문성욱",
+        "roleName": ""
+      },
+      {
+        "actorName": "허정호",
+        "roleName": ""
+      },
+      {
+        "actorName": "서은교",
+        "roleName": ""
+      },
+      {
+        "actorName": "강한나",
+        "roleName": ""
+      },
+      {
+        "actorName": "박송연",
+        "roleName": ""
+      },
+      {
+        "actorName": "박슬아 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286721",
+    "collectedAt": "2026-03-28T16:40:36.929722",
+    "status": "pending"
+  },
+  {
+    "title": "소가 된 게으름뱅이",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "경복궁아트홀",
+    "address": "서울특별시 종로구 자하문로 82 (효자동)",
+    "startDate": "2026-04-01",
+    "endDate": "2026-05-31",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286704_202603090533142820.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57403",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286704_260309_173314.jpg",
+    "cast": [
+      {
+        "actorName": "서정화",
+        "roleName": ""
+      },
+      {
+        "actorName": "전인걸",
+        "roleName": ""
+      },
+      {
+        "actorName": "최주희",
+        "roleName": ""
+      },
+      {
+        "actorName": "정영서",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286704",
+    "collectedAt": "2026-03-28T16:40:37.858032",
+    "status": "pending"
+  },
+  {
+    "title": "서편제 [서울]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "광림아트센터",
+    "address": "서울특별시 강남구 논현로163길 33 (신사동)",
+    "startDate": "2026-04-30",
+    "endDate": "2026-05-10",
+    "runtime": 150,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286493_202603060453083532.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286493_202603060453083361.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286493_202603060453083290.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57384",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286493_260306_165308.gif",
+    "cast": [
+      {
+        "actorName": "이자람",
+        "roleName": ""
+      },
+      {
+        "actorName": "차지연",
+        "roleName": ""
+      },
+      {
+        "actorName": "이봄소리",
+        "roleName": ""
+      },
+      {
+        "actorName": "박시은",
+        "roleName": ""
+      },
+      {
+        "actorName": "정은혜",
+        "roleName": ""
+      },
+      {
+        "actorName": "김경수",
+        "roleName": ""
+      },
+      {
+        "actorName": "유현석 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286493",
+    "collectedAt": "2026-03-28T16:40:38.822178",
+    "status": "pending"
+  },
+  {
+    "title": "더 펜",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "SH아트홀",
+    "address": "서울특별시 종로구 동숭길 25 (동숭동)",
+    "startDate": "2026-04-09",
+    "endDate": "2026-04-19",
+    "runtime": 110,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286437_202603061111200821.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286437_202603061111200570.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286437_202603061115354220.jpg"
+    ],
+    "ticketUrl": "http://www.ticketlink.co.kr/product/61930",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286437_260306_111120.jpg",
+    "cast": [
+      {
+        "actorName": "문진아",
+        "roleName": ""
+      },
+      {
+        "actorName": "김랑연",
+        "roleName": ""
+      },
+      {
+        "actorName": "임예진",
+        "roleName": ""
+      },
+      {
+        "actorName": "장보람",
+        "roleName": ""
+      },
+      {
+        "actorName": "최수현",
+        "roleName": ""
+      },
+      {
+        "actorName": "정단비",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286437",
+    "collectedAt": "2026-03-28T16:40:39.744181",
+    "status": "pending"
+  },
+  {
+    "title": "뽀로로와 신비한 여행 [서울 (앵콜) ]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "용산아트홀",
+    "address": "서울특별시 용산구 녹사평대로 150(이태원동 34-87)",
+    "startDate": "2026-05-02",
+    "endDate": "2026-05-03",
+    "runtime": 70,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286432_202603061055383761.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286432_202603061055383340.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26003146",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286432_260306_105538.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286432",
+    "collectedAt": "2026-03-28T16:40:40.247318",
+    "status": "pending"
+  },
+  {
+    "title": "꼬마버스 타요: 소원을 들어주는 요술 지팡이 대소동 [서울 강동]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "강동아트센터",
+    "address": "서울특별시 강동구 동남로 870 (상일동)",
+    "startDate": "2026-04-18",
+    "endDate": "2026-04-19",
+    "runtime": 70,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286383_202603050121427580.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1607332",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286383_260305_132142.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286383",
+    "collectedAt": "2026-03-28T16:40:41.190976",
+    "status": "pending"
+  },
+  {
+    "title": "에그박사: 해적 보물섬의 비밀 [서울 (앵콜) ]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "올림픽공원",
+    "address": "서울특별시 송파구 올림픽로 424 올림픽공원 (방이동)",
+    "startDate": "2026-05-23",
+    "endDate": "2026-06-07",
+    "runtime": 80,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286202_202603041015132100.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1605368",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286202_260304_101513.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286202",
+    "collectedAt": "2026-03-28T16:40:42.132409",
+    "status": "pending"
+  },
+  {
+    "title": "꼬마박사 장영실 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "종로아이들극장",
+    "address": "서울특별시 종로구 성균관로 91 - 0 국민생활관",
+    "startDate": "2026-05-30",
+    "endDate": "2026-05-31",
+    "runtime": 70,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286199_202603041006281160.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1603244",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286199_260304_100628.jpg",
+    "cast": [
+      {
+        "actorName": "박영현",
+        "roleName": ""
+      },
+      {
+        "actorName": "김영신",
+        "roleName": ""
+      },
+      {
+        "actorName": "신혜주",
+        "roleName": ""
+      },
+      {
+        "actorName": "임형규",
+        "roleName": ""
+      },
+      {
+        "actorName": "윤서하",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286199",
+    "collectedAt": "2026-03-28T16:40:43.086662",
+    "status": "pending"
+  },
+  {
+    "title": "틀려도 괜찮아 [서울 마포]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "마포아트센터",
+    "address": "서울특별시 마포구 대흥로20길 28 (대흥동)",
+    "startDate": "2026-05-16",
+    "endDate": "2026-05-17",
+    "runtime": 65,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286153_202603030332023640.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1603151",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286153_260303_153202.gif",
+    "cast": [
+      {
+        "actorName": "윤한솔",
+        "roleName": ""
+      },
+      {
+        "actorName": "편솔원",
+        "roleName": ""
+      },
+      {
+        "actorName": "노지수",
+        "roleName": ""
+      },
+      {
+        "actorName": "정시윤",
+        "roleName": ""
+      },
+      {
+        "actorName": "한솔",
+        "roleName": ""
+      },
+      {
+        "actorName": "조민형",
+        "roleName": ""
+      },
+      {
+        "actorName": "박예원 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286153",
+    "collectedAt": "2026-03-28T16:40:43.573060",
+    "status": "pending"
+  },
+  {
+    "title": "신데렐라 [서울 양천]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "양천문화회관",
+    "address": "서울특별시 양천구 목동서로 367 (신정동)",
+    "startDate": "2026-05-17",
+    "endDate": "2026-05-17",
+    "runtime": 55,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286104_202603030153574480.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1599596",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286104_260303_135357.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286104",
+    "collectedAt": "2026-03-28T16:40:44.064422",
+    "status": "pending"
+  },
+  {
+    "title": "걸프렌드",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "백암아트홀",
+    "address": "서울특별시 강남구 테헤란로113길 7 (삼성동)",
+    "startDate": "2026-03-31",
+    "endDate": "2026-06-07",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286071_202603031240187280.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57264",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286071_260303_124018.gif",
+    "cast": [
+      {
+        "actorName": "김재한",
+        "roleName": ""
+      },
+      {
+        "actorName": "주연호",
+        "roleName": ""
+      },
+      {
+        "actorName": "옥진욱",
+        "roleName": ""
+      },
+      {
+        "actorName": "김태호",
+        "roleName": ""
+      },
+      {
+        "actorName": "홍은기",
+        "roleName": ""
+      },
+      {
+        "actorName": "김성철",
+        "roleName": ""
+      },
+      {
+        "actorName": "안다니엘 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286071",
+    "collectedAt": "2026-03-28T16:40:45.026581",
+    "status": "pending"
+  },
+  {
+    "title": "우리 아빠가 최고야 [서울 관악]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "관악아트홀",
+    "address": "서울특별시 관악구 신림로3길 35 (신림동)",
+    "startDate": "2026-05-09",
+    "endDate": "2026-05-10",
+    "runtime": 55,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286048_202603031059288570.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57346",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286048_260303_105928.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286048",
+    "collectedAt": "2026-03-28T16:40:45.978765",
+    "status": "pending"
+  },
+  {
+    "title": "잠자는 숲속의 공주 [서울 양천]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "한국방송회관 코바코홀",
+    "address": "서울특별시 양천구 목동동로 233 (목동) 한국방송회관",
+    "startDate": "2026-05-01",
+    "endDate": "2026-05-31",
+    "runtime": 55,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285992_202602270222299021.gif",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285992_202602270222298630.gif"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57255",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285992_260227_142229.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285992",
+    "collectedAt": "2026-03-28T16:40:46.466302",
+    "status": "pending"
+  },
+  {
+    "title": "뮤지컬 배우 이승현 콘서트: SHank you for the music",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "구름아래소극장",
+    "address": "서울특별시 마포구 와우산로29가길 15 (서교동)",
+    "startDate": "2026-04-04",
+    "endDate": "2026-04-05",
+    "runtime": 120,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285985_202602270204358920.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26002782",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285985_260227_140435.gif",
+    "cast": [
+      {
+        "actorName": "이승현 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285985",
+    "collectedAt": "2026-03-28T16:40:47.418617",
+    "status": "pending"
+  },
+  {
+    "title": "스크루테이프의 편지 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "명륜아트홀",
+    "address": "서울특별시 종로구 성균관로 48-2 (명륜1가)",
+    "startDate": "2026-04-17",
+    "endDate": "2026-08-29",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285983_202602270158258900.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57259",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285983_260227_135825.gif",
+    "cast": [
+      {
+        "actorName": "봉경복",
+        "roleName": ""
+      },
+      {
+        "actorName": "김성호",
+        "roleName": ""
+      },
+      {
+        "actorName": "김가슬",
+        "roleName": ""
+      },
+      {
+        "actorName": "김호수",
+        "roleName": ""
+      },
+      {
+        "actorName": "서하임",
+        "roleName": ""
+      },
+      {
+        "actorName": "김태영",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285983",
+    "collectedAt": "2026-03-28T16:40:48.396225",
+    "status": "pending"
+  },
+  {
+    "title": "푸른 사자 와니니 [서울 마포]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "마포아트센터",
+    "address": "서울특별시 마포구 대흥로20길 28 (대흥동)",
+    "startDate": "2026-05-01",
+    "endDate": "2026-05-24",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285919_202603030336079170.png",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285919_202603030336080561.png"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1604232",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285919_260226_151015.gif",
+    "cast": [
+      {
+        "actorName": "김유리",
+        "roleName": ""
+      },
+      {
+        "actorName": "윤선희",
+        "roleName": ""
+      },
+      {
+        "actorName": "구옥본",
+        "roleName": ""
+      },
+      {
+        "actorName": "김수정",
+        "roleName": ""
+      },
+      {
+        "actorName": "김정민",
+        "roleName": ""
+      },
+      {
+        "actorName": "박찬양",
+        "roleName": ""
+      },
+      {
+        "actorName": "최현진 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285919",
+    "collectedAt": "2026-03-28T16:40:48.893270",
+    "status": "pending"
+  },
+  {
+    "title": "어서 오세요, 휴남동 서점입니다 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "루미나아트홀",
+    "address": "서울특별시 종로구 대학로8가길 52 (동숭동)",
+    "startDate": "2026-04-01",
+    "endDate": "2026-04-30",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285860_202602261146151680.jpg"
+    ],
+    "ticketUrl": "https://www.nanumticket.or.kr/pe/detail.html?p_marking=&p_new=&start2=0&page_no2=1&p_idx=13575",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285860_260226_114615.gif",
+    "cast": [
+      {
+        "actorName": "서지아",
+        "roleName": ""
+      },
+      {
+        "actorName": "김재은",
+        "roleName": ""
+      },
+      {
+        "actorName": "김여진",
+        "roleName": ""
+      },
+      {
+        "actorName": "표혜미",
+        "roleName": ""
+      },
+      {
+        "actorName": "염승윤",
+        "roleName": ""
+      },
+      {
+        "actorName": "류하륜",
+        "roleName": ""
+      },
+      {
+        "actorName": "김도휘 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285860",
+    "collectedAt": "2026-03-28T16:40:49.842381",
+    "status": "pending"
+  },
+  {
+    "title": "가정의 달 특별공연, 번개맨 시즌2: 번개맨! VS 번개맨? [서울]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "티켓링크 1975 씨어터",
+    "address": "서울특별시 광진구 광나루로 441 (능동)",
+    "startDate": "2026-05-01",
+    "endDate": "2026-05-03",
+    "runtime": 65,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285844_202602261113047950.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1602019",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285844_260226_111304.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285844",
+    "collectedAt": "2026-03-28T16:40:50.794885",
+    "status": "pending"
+  },
+  {
+    "title": "누가 내 머리에 똥 쌌어? [서울 강북]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "꿈의숲아트센터",
+    "address": "서울특별시 강북구 월계로 173 (번동)",
+    "startDate": "2026-04-18",
+    "endDate": "2026-04-18",
+    "runtime": 55,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285635_202603040431071600.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1599391",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285635_260223_164821.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285635",
+    "collectedAt": "2026-03-28T16:40:51.261591",
+    "status": "pending"
+  },
+  {
+    "title": "흥부와 놀부 [서울 도봉]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "도봉구민회관",
+    "address": "서울특별시 도봉구 도봉로 552 (창동)",
+    "startDate": "2026-04-18",
+    "endDate": "2026-04-18",
+    "runtime": 55,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285631_202602230429245080.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1590088",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285631_260223_162924.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285631",
+    "collectedAt": "2026-03-28T16:40:51.748154",
+    "status": "pending"
+  },
+  {
+    "title": "헬로카봇 스페셜 시즌9: 전설의 용사를 찾아서",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "올림픽공원",
+    "address": "서울특별시 송파구 올림픽로 424 올림픽공원 (방이동)",
+    "startDate": "2026-05-03",
+    "endDate": "2026-05-05",
+    "runtime": 70,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285602_202602230313327550.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1600216",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285602_260223_151332.gif",
+    "cast": [
+      {
+        "actorName": "김보민",
+        "roleName": ""
+      },
+      {
+        "actorName": "이한아",
+        "roleName": ""
+      },
+      {
+        "actorName": "이경미",
+        "roleName": ""
+      },
+      {
+        "actorName": "우서라",
+        "roleName": ""
+      },
+      {
+        "actorName": "이아영",
+        "roleName": ""
+      },
+      {
+        "actorName": "봉경복",
+        "roleName": ""
+      },
+      {
+        "actorName": "김률아 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285602",
+    "collectedAt": "2026-03-28T16:40:52.231383",
+    "status": "pending"
+  },
+  {
+    "title": "전설 여우신 [서울 도봉]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "도봉구민회관",
+    "address": "서울특별시 도봉구 도봉로 552 (창동)",
+    "startDate": "2026-05-09",
+    "endDate": "2026-05-09",
+    "runtime": 60,
+    "synopsis": "[공연소개]\n\n본 공연은 우리 구전 설화의 깊은 울림을 서정적인 선율과 판타지로 풀어낸 무대,우정과 사랑, 권선징악의 가치를 신명 나게 그려낸 한국형 판타지 뮤지컬입니다.",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285551_202602230126156891.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285551_202602230126156830.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26001403",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285551_260223_132615.gif",
+    "cast": [
+      {
+        "actorName": "이원영",
+        "roleName": ""
+      },
+      {
+        "actorName": "최성규",
+        "roleName": ""
+      },
+      {
+        "actorName": "유한솔",
+        "roleName": ""
+      },
+      {
+        "actorName": "박광용",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285551",
+    "collectedAt": "2026-03-28T16:40:52.722742",
+    "status": "pending"
+  },
+  {
+    "title": "오즈의 마법사 [서울 양천]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "양천문화회관",
+    "address": "서울특별시 양천구 목동서로 367 (신정동)",
+    "startDate": "2026-04-11",
+    "endDate": "2026-04-12",
+    "runtime": 55,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285488_202602231027509570.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1596945",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285488_260223_102750.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285488",
+    "collectedAt": "2026-03-28T16:40:53.208966",
+    "status": "pending"
+  },
+  {
+    "title": "헤이그 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "유니플렉스",
+    "address": "서울특별시 종로구 대학로12길 64 (동숭동)",
+    "startDate": "2026-04-01",
+    "endDate": "2026-06-21",
+    "runtime": 120,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285419_202602201030506490.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1603291",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285419_260220_103050.gif",
+    "cast": [
+      {
+        "actorName": "송일국",
+        "roleName": ""
+      },
+      {
+        "actorName": "오만석",
+        "roleName": ""
+      },
+      {
+        "actorName": "원종환",
+        "roleName": ""
+      },
+      {
+        "actorName": "유승현",
+        "roleName": ""
+      },
+      {
+        "actorName": "이시강",
+        "roleName": ""
+      },
+      {
+        "actorName": "임준혁",
+        "roleName": ""
+      },
+      {
+        "actorName": "이호석 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285419",
+    "collectedAt": "2026-03-28T16:40:53.690296",
+    "status": "pending"
+  },
+  {
+    "title": "겨울이야기 [서울 관악]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "관악아트홀",
+    "address": "서울특별시 관악구 신림로3길 35 (신림동)",
+    "startDate": "2026-06-13",
+    "endDate": "2026-06-13",
+    "runtime": 55,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285416_202602201026153190.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1586811",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285416_260220_102615.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285416",
+    "collectedAt": "2026-03-28T16:40:54.181205",
+    "status": "pending"
+  },
+  {
+    "title": "피터팬 [서울 양천]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "양천문화회관",
+    "address": "서울특별시 양천구 목동서로 367 (신정동)",
+    "startDate": "2026-04-04",
+    "endDate": "2026-04-05",
+    "runtime": 55,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285275_202602191109311930.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1593642",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285275_260219_110931.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285275",
+    "collectedAt": "2026-03-28T16:40:54.663312",
+    "status": "pending"
+  },
+  {
+    "title": "몽유도원 [서울 송파]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "샤롯데씨어터",
+    "address": "서울특별시 송파구 올림픽로 240 (잠실동)",
+    "startDate": "2026-04-11",
+    "endDate": "2026-05-10",
+    "runtime": 170,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285149_202602191128042990.jpg"
+    ],
+    "ticketUrl": "http://www.ticketlink.co.kr/product/61334",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285149_260213_112119.jpg",
+    "cast": [
+      {
+        "actorName": "민우혁",
+        "roleName": ""
+      },
+      {
+        "actorName": "김주택",
+        "roleName": ""
+      },
+      {
+        "actorName": "하윤주",
+        "roleName": ""
+      },
+      {
+        "actorName": "방지숙",
+        "roleName": ""
+      },
+      {
+        "actorName": "이충주",
+        "roleName": ""
+      },
+      {
+        "actorName": "김성식",
+        "roleName": ""
+      },
+      {
+        "actorName": "서영주 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285149",
+    "collectedAt": "2026-03-28T16:40:55.638573",
+    "status": "pending"
+  },
+  {
+    "title": "나의 비밀친구 해치 [서울]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "KT&G 상상마당 대치아트홀",
+    "address": "서울특별시 강남구 영동대로 416 (대치동)",
+    "startDate": "2026-04-04",
+    "endDate": "2026-05-24",
+    "runtime": 70,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285135_202603200120105260.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1618227",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285135_260213_103908.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285135",
+    "collectedAt": "2026-03-28T16:40:56.609000",
+    "status": "pending"
+  },
+  {
+    "title": "피노키오 [서울 도봉]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "도봉구민회관",
+    "address": "서울특별시 도봉구 도봉로 552 (창동)",
+    "startDate": "2026-05-10",
+    "endDate": "2026-05-10",
+    "runtime": 50,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285066_202602120114576590.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1594790",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285066_260212_131457.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285066",
+    "collectedAt": "2026-03-28T16:40:57.089381",
+    "status": "pending"
+  },
+  {
+    "title": "피터팬 [서울 도봉]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "도봉구민회관",
+    "address": "서울특별시 도봉구 도봉로 552 (창동)",
+    "startDate": "2026-04-26",
+    "endDate": "2026-04-26",
+    "runtime": 50,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285034_202602121122274380.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1594194",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285034_260212_112227.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285034",
+    "collectedAt": "2026-03-28T16:40:57.571572",
+    "status": "pending"
+  },
+  {
+    "title": "태권, 날아올라 [서울 용산]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "국립중앙박물관 극장 용",
+    "address": "서울특별시 용산구 서빙고로 137 (용산동6가)",
+    "startDate": "2026-04-04",
+    "endDate": "2026-05-31",
+    "runtime": 80,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284775_202602090232593122.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284775_202602090232593041.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284775_202602090232592500.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1592525",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284775_260209_143259.gif",
+    "cast": [
+      {
+        "actorName": "임동섭",
+        "roleName": ""
+      },
+      {
+        "actorName": "탁종훈",
+        "roleName": ""
+      },
+      {
+        "actorName": "김종년",
+        "roleName": ""
+      },
+      {
+        "actorName": "최홍혁",
+        "roleName": ""
+      },
+      {
+        "actorName": "안준혁",
+        "roleName": ""
+      },
+      {
+        "actorName": "엄지민",
+        "roleName": ""
+      },
+      {
+        "actorName": "김은설 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284775",
+    "collectedAt": "2026-03-28T16:40:58.507563",
+    "status": "pending"
+  },
+  {
+    "title": "정글북 [서울 은평]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "은평문화예술회관",
+    "address": "서울특별시 은평구 녹번로 16 (녹번동)",
+    "startDate": "2026-04-04",
+    "endDate": "2026-04-04",
+    "runtime": 50,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284718_202602091255314900.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1589738",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284718_260209_125531.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284718",
+    "collectedAt": "2026-03-28T16:40:59.450496",
+    "status": "pending"
+  },
+  {
+    "title": "피노키오 [서울 구로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "구로구민회관",
+    "address": "서울특별시 구로구 가마산로25길 21 (구로동)",
+    "startDate": "2026-04-18",
+    "endDate": "2026-04-18",
+    "runtime": 50,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284701_202602091125341240.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1590053",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284701_260209_112534.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284701",
+    "collectedAt": "2026-03-28T16:40:59.944254",
+    "status": "pending"
+  },
+  {
+    "title": "미녀와 야수 [서울 강남]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "강남구민회관",
+    "address": "서울특별시 강남구 삼성로 154 (대치동)",
+    "startDate": "2026-04-18",
+    "endDate": "2026-04-18",
+    "runtime": 50,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284694_202602091111013640.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1590848",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284694_260209_111101.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284694",
+    "collectedAt": "2026-03-28T16:41:00.898659",
+    "status": "pending"
+  },
+  {
+    "title": "디아길레프 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "예스24아트원",
+    "address": "서울특별시 종로구 대학로12길 83 (동숭동)",
+    "startDate": "2026-03-31",
+    "endDate": "2026-06-14",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284306_202602031019467000.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/56928",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284306_260203_101946.gif",
+    "cast": [
+      {
+        "actorName": "김종구",
+        "roleName": ""
+      },
+      {
+        "actorName": "박규원",
+        "roleName": ""
+      },
+      {
+        "actorName": "조성윤",
+        "roleName": ""
+      },
+      {
+        "actorName": "안재영",
+        "roleName": ""
+      },
+      {
+        "actorName": "박상준",
+        "roleName": ""
+      },
+      {
+        "actorName": "김재한",
+        "roleName": ""
+      },
+      {
+        "actorName": "김수호 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284306",
+    "collectedAt": "2026-03-28T16:41:02.030662",
+    "status": "pending"
+  },
+  {
+    "title": "백설공주와 일곱난장이 [서울 용산]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "용산아트홀",
+    "address": "서울특별시 용산구 녹사평대로 150(이태원동 34-87)",
+    "startDate": "2026-05-30",
+    "endDate": "2026-05-31",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284221_202602021136156220.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1586944",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284221_260202_113615.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284221",
+    "collectedAt": "2026-03-28T16:41:02.509444",
+    "status": "pending"
+  },
+  {
+    "title": "어린이 캣",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "양천문화회관",
+    "address": "서울특별시 양천구 목동서로 367 (신정동)",
+    "startDate": "2026-05-17",
+    "endDate": "2026-05-17",
+    "runtime": 55,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284188_202602021015490532.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284188_202602021015490461.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284188_202602021015490090.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26000452",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284188_260202_101549.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284188",
+    "collectedAt": "2026-03-28T16:41:03.003133",
+    "status": "pending"
+  },
+  {
+    "title": "빌리 엘리어트",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "블루스퀘어",
+    "address": "서울특별시 용산구 이태원로 294 (한남동)",
+    "startDate": "2026-04-12",
+    "endDate": "2026-07-26",
+    "runtime": 175,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284081_202601291150556181.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284081_202601291150556090.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26001001",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284081_260129_115349.gif",
+    "cast": [
+      {
+        "actorName": "김승주",
+        "roleName": ""
+      },
+      {
+        "actorName": "박지후",
+        "roleName": ""
+      },
+      {
+        "actorName": "김우진",
+        "roleName": ""
+      },
+      {
+        "actorName": "조윤우",
+        "roleName": ""
+      },
+      {
+        "actorName": "최정원",
+        "roleName": ""
+      },
+      {
+        "actorName": "전수미",
+        "roleName": ""
+      },
+      {
+        "actorName": "조정근 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284081",
+    "collectedAt": "2026-03-28T16:41:03.917555",
+    "status": "pending"
+  },
+  {
+    "title": "로보카폴리: 브룸스타운의 에너지를 지켜라! [서울 광진]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "나루아트센터",
+    "address": "서울특별시 광진구 능동로 76 (자양동)",
+    "startDate": "2026-05-09",
+    "endDate": "2026-05-10",
+    "runtime": 65,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF283944_202601270141321220.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1583174",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF283944_260127_134132.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF283944",
+    "collectedAt": "2026-03-28T16:41:04.407346",
+    "status": "pending"
+  },
+  {
+    "title": "스윙 데이즈_암호명 A",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "충무아트센터",
+    "address": "서울특별시 중구 퇴계로 387 (흥인동)",
+    "startDate": "2026-04-16",
+    "endDate": "2026-07-05",
+    "runtime": 165,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF283935_202601270112055690.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1257886",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF283935_260127_131205.gif",
+    "cast": [
+      {
+        "actorName": "유준상",
+        "roleName": ""
+      },
+      {
+        "actorName": "박은태",
+        "roleName": ""
+      },
+      {
+        "actorName": "신성록",
+        "roleName": ""
+      },
+      {
+        "actorName": "김려원",
+        "roleName": ""
+      },
+      {
+        "actorName": "나하나",
+        "roleName": ""
+      },
+      {
+        "actorName": "김수연",
+        "roleName": ""
+      },
+      {
+        "actorName": "고훈정 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF283935",
+    "collectedAt": "2026-03-28T16:41:04.887074",
+    "status": "pending"
+  },
+  {
+    "title": "브레드이발소: 브레드와 윌크의 세계여행 [서울 용산]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "용산아트홀",
+    "address": "서울특별시 용산구 녹사평대로 150(이태원동 34-87)",
+    "startDate": "2026-04-04",
+    "endDate": "2026-04-05",
+    "runtime": 65,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF283805_202601261044483550.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1583614",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF283805_260126_104448.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF283805",
+    "collectedAt": "2026-03-28T16:41:05.363802",
+    "status": "pending"
+  },
+  {
+    "title": "어린이 캣 [서울 관악]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "관악아트홀",
+    "address": "서울특별시 관악구 신림로3길 35 (신림동)",
+    "startDate": "2026-06-13",
+    "endDate": "2026-06-13",
+    "runtime": 55,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF283436_202601190128024851.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF283436_202601190128024790.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1577937",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF283436_260119_132802.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF283436",
+    "collectedAt": "2026-03-28T16:41:05.865756",
+    "status": "pending"
+  },
+  {
+    "title": "로보카폴리: 브룸스타운의 에너지를 지켜라! [서울 양천]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "양천문화회관",
+    "address": "서울특별시 양천구 목동서로 367 (신정동)",
+    "startDate": "2026-04-18",
+    "endDate": "2026-04-19",
+    "runtime": 65,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF283127_202601141034112220.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1575057",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF283127_260114_103411.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF283127",
+    "collectedAt": "2026-03-28T16:41:06.364199",
+    "status": "pending"
+  },
+  {
+    "title": "슈퍼윙스: 초능력 곤충 대소동 [서울 성동]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "성수아트홀",
+    "address": "서울특별시 성동구 뚝섬로1길 43 (성수동1가)",
+    "startDate": "2026-04-18",
+    "endDate": "2026-05-05",
+    "runtime": 70,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF282921_202601121110360650.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1608721",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF282921_260112_111036.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF282921",
+    "collectedAt": "2026-03-28T16:41:06.844382",
+    "status": "pending"
+  },
+  {
+    "title": "서울시뮤지컬단, 더 트라이브",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "세종문화회관",
+    "address": "서울특별시 종로구 세종대로 175 (세종로)",
+    "startDate": "2026-06-09",
+    "endDate": "2026-06-27",
+    "runtime": 105,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF282128_202602190551314040.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/56550",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF282128_251224_125318.png",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF282128",
+    "collectedAt": "2026-03-28T16:41:07.825555",
+    "status": "pending"
+  },
+  {
+    "title": "마인블록월드: 우리가 만드는 세상 [서울 성동]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "소월아트홀",
+    "address": "서울특별시 성동구 왕십리로 281",
+    "startDate": "2026-05-30",
+    "endDate": "2026-06-14",
+    "runtime": 70,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF282106_202512241128445961.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF282106_202512241128445850.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1564151",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF282106_251224_112844.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF282106",
+    "collectedAt": "2026-03-28T16:41:08.782777",
+    "status": "pending"
+  },
+  {
+    "title": "Dear. 시즌 Ⅲ [서울 송파]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "디너씨어터",
+    "address": "서울특별시 송파구 백제고분로48길 7 (방이동)",
+    "startDate": "2026-03-28",
+    "endDate": "2026-05-24",
+    "runtime": 75,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287281_202603171050136834.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287281_202603171050136753.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287281_202603171050136672.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287281_202603171050136591.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF287281_202603171050136500.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1429108",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF287281_260317_105013.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF287281",
+    "collectedAt": "2026-03-28T16:41:09.745965",
+    "status": "pending"
+  },
+  {
+    "title": "님과함께: 디스코왕",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "낭만극장",
+    "address": "서울특별시 종로구 삼일대로 428 (낙원동)",
+    "startDate": "2026-02-27",
+    "endDate": "2026-03-29",
+    "runtime": 70,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286963_202603131105404531.png",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286963_202603131105404480.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/6/bizes/1597730",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286963_260313_110540.png",
+    "cast": [
+      {
+        "actorName": "조아라",
+        "roleName": ""
+      },
+      {
+        "actorName": "서현",
+        "roleName": ""
+      },
+      {
+        "actorName": "노혜영",
+        "roleName": ""
+      },
+      {
+        "actorName": "정아름",
+        "roleName": ""
+      },
+      {
+        "actorName": "김서한",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286963",
+    "collectedAt": "2026-03-28T16:41:10.664552",
+    "status": "pending"
+  },
+  {
+    "title": "김종욱 찾기 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "틴틴홀",
+    "address": "서울특별시 종로구 대학로10길 24 (동숭동)",
+    "startDate": "2026-03-07",
+    "endDate": "2026-04-30",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286497_202603060539308060.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57443",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286497_260306_173930.gif",
+    "cast": [
+      {
+        "actorName": "남도윤",
+        "roleName": ""
+      },
+      {
+        "actorName": "김도현",
+        "roleName": ""
+      },
+      {
+        "actorName": "염승윤",
+        "roleName": ""
+      },
+      {
+        "actorName": "김도휘",
+        "roleName": ""
+      },
+      {
+        "actorName": "이정원",
+        "roleName": ""
+      },
+      {
+        "actorName": "구나영",
+        "roleName": ""
+      },
+      {
+        "actorName": "강수지 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286497",
+    "collectedAt": "2026-03-28T16:41:11.641483",
+    "status": "pending"
+  },
+  {
+    "title": "피노키오의 모험 [서울 금천]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "레미어린이극장 [금천]",
+    "address": "서울특별시 금천구 두산로 71 (독산동)",
+    "startDate": "2026-03-05",
+    "endDate": "2026-04-05",
+    "runtime": 55,
+    "synopsis": "[공연소개]\n\n피노키오는 아들을 가지기를 바라는 가난한 목수 제페트 할아버지에 의해\n나무인형으로 태어난다. 하지만, 세상 물정을 잘 모르는 피노키오는 여우와\n고양이의 꼬임에 빠져 서커스단과 장난감나라로 모험여행을 떠난다.\n\n한편, 모험을 떠난 피노키오를 찾아 나선 제페트 할아버지는 바다에 빠져\n고래 배속에 갇혀 버리게 된다. 그러나 장난감 나라에서 망아지로 변해버린\n피노키오는 천사의 도움으로 그 곳에서 탈출하여 고래 뱃속으로 뛰어들어\n할아버지를 구하게 된다. 이에 감동한 천사는 피노키오를 완전한 사람으로\n만들어준다.",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286074_202603031249597680.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/264373",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286074_260303_124959.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286074",
+    "collectedAt": "2026-03-28T16:41:12.625173",
+    "status": "pending"
+  },
+  {
+    "title": "오! 캐롤",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "꿈의숲아트센터",
+    "address": "서울특별시 강북구 월계로 173 (번동)",
+    "startDate": "2026-03-21",
+    "endDate": "2026-03-29",
+    "runtime": 120,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286065_202603031216233950.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26002399",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286065_260303_121623.gif",
+    "cast": [
+      {
+        "actorName": "김하은",
+        "roleName": ""
+      },
+      {
+        "actorName": "장하민",
+        "roleName": ""
+      },
+      {
+        "actorName": "박민경",
+        "roleName": ""
+      },
+      {
+        "actorName": "강현진",
+        "roleName": ""
+      },
+      {
+        "actorName": "박재찬",
+        "roleName": ""
+      },
+      {
+        "actorName": "윤여권",
+        "roleName": ""
+      },
+      {
+        "actorName": "양소영 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286065",
+    "collectedAt": "2026-03-28T16:41:13.090286",
+    "status": "pending"
+  },
+  {
+    "title": "테레비 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "대학로 무하아트센터",
+    "address": "서울특별시 종로구 이화장길 72 (동숭동)",
+    "startDate": "2026-03-25",
+    "endDate": "2026-03-29",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF286017_202602270339307700.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26002809",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF286017_260227_153930.gif",
+    "cast": [
+      {
+        "actorName": "이세령",
+        "roleName": ""
+      },
+      {
+        "actorName": "김영환",
+        "roleName": ""
+      },
+      {
+        "actorName": "유우헌",
+        "roleName": ""
+      },
+      {
+        "actorName": "구다빈",
+        "roleName": ""
+      },
+      {
+        "actorName": "장지민",
+        "roleName": ""
+      },
+      {
+        "actorName": "권정은",
+        "roleName": ""
+      },
+      {
+        "actorName": "최현희 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF286017",
+    "collectedAt": "2026-03-28T16:41:14.069096",
+    "status": "pending"
+  },
+  {
+    "title": "조커 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "극장 온",
+    "address": "서울특별시 종로구 대학로12길 69 (동숭동)",
+    "startDate": "2026-03-12",
+    "endDate": "2026-03-29",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285654_202602241026550700.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26002392",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285654_260224_102655.gif",
+    "cast": [
+      {
+        "actorName": "이한밀",
+        "roleName": ""
+      },
+      {
+        "actorName": "백인태",
+        "roleName": ""
+      },
+      {
+        "actorName": "신의정",
+        "roleName": ""
+      },
+      {
+        "actorName": "이효은",
+        "roleName": ""
+      },
+      {
+        "actorName": "김주호",
+        "roleName": ""
+      },
+      {
+        "actorName": "조영근",
+        "roleName": ""
+      },
+      {
+        "actorName": "조성민 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285654",
+    "collectedAt": "2026-03-28T16:41:15.010049",
+    "status": "pending"
+  },
+  {
+    "title": "더 라스트맨 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "링크더스페이스",
+    "address": "서울특별시 종로구 대학로8가길 105 (동숭동)",
+    "startDate": "2026-03-24",
+    "endDate": "2026-06-07",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285434_202602201106073150.png"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57196",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285434_260220_110607.jpg",
+    "cast": [
+      {
+        "actorName": "김지온",
+        "roleName": ""
+      },
+      {
+        "actorName": "홍승안",
+        "roleName": ""
+      },
+      {
+        "actorName": "김이후",
+        "roleName": ""
+      },
+      {
+        "actorName": "김찬종",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285434",
+    "collectedAt": "2026-03-28T16:41:15.941395",
+    "status": "pending"
+  },
+  {
+    "title": "아기오리의 꿈 [서울 광진]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "상상나라극장",
+    "address": "서울특별시 광진구 능동로 216 (능동)",
+    "startDate": "2026-03-07",
+    "endDate": "2026-03-29",
+    "runtime": 50,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285422_202602201037017000.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1596269",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285422_260220_103701.jpg",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285422",
+    "collectedAt": "2026-03-28T16:41:16.396152",
+    "status": "pending"
+  },
+  {
+    "title": "여명의 눈동자 [서울 동작]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "Converse Stage Arena 여명",
+    "address": "서울특별시 동작구 현충로 213 (동작동)",
+    "startDate": "2026-02-24",
+    "endDate": "2026-04-26",
+    "runtime": 165,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285347_202602190229269381.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285347_202602190229269170.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1597827",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285347_260219_142926.gif",
+    "cast": [
+      {
+        "actorName": "조태일",
+        "roleName": ""
+      },
+      {
+        "actorName": "김준용",
+        "roleName": ""
+      },
+      {
+        "actorName": "고철순",
+        "roleName": ""
+      },
+      {
+        "actorName": "조남희",
+        "roleName": ""
+      },
+      {
+        "actorName": "노우진",
+        "roleName": ""
+      },
+      {
+        "actorName": "홍서준",
+        "roleName": ""
+      },
+      {
+        "actorName": "유보영 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285347",
+    "collectedAt": "2026-03-28T16:41:17.350034",
+    "status": "pending"
+  },
+  {
+    "title": "펑크 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "대학로 자유극장",
+    "address": "서울특별시 종로구 대학로12길 31 (동숭동)",
+    "startDate": "2026-03-10",
+    "endDate": "2026-05-31",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285278_202602191116495300.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57161",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285278_260219_111649.jpg",
+    "cast": [
+      {
+        "actorName": "양지원",
+        "roleName": ""
+      },
+      {
+        "actorName": "문시온",
+        "roleName": ""
+      },
+      {
+        "actorName": "김준식",
+        "roleName": ""
+      },
+      {
+        "actorName": "황민수",
+        "roleName": ""
+      },
+      {
+        "actorName": "김서환",
+        "roleName": ""
+      },
+      {
+        "actorName": "조훈",
+        "roleName": ""
+      },
+      {
+        "actorName": "박종찬 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285278",
+    "collectedAt": "2026-03-28T16:41:18.303634",
+    "status": "pending"
+  },
+  {
+    "title": "슈퍼거북 슈퍼토끼",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "더 서울라이티움",
+    "address": "서울특별시 성동구 서울숲2길 32-14 (성수동1가)",
+    "startDate": "2026-03-21",
+    "endDate": "2026-06-28",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF285121_202602120332492150.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1597601",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF285121_260212_153249.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF285121",
+    "collectedAt": "2026-03-28T16:41:19.280118",
+    "status": "pending"
+  },
+  {
+    "title": "비스티 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "링크아트센터",
+    "address": "서울특별시 종로구 대학로14길 29(혜화동)",
+    "startDate": "2026-03-11",
+    "endDate": "2026-06-07",
+    "runtime": 130,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284888_202602111029550420.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57082",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284888_260211_102955.jpg",
+    "cast": [
+      {
+        "actorName": "김종구",
+        "roleName": ""
+      },
+      {
+        "actorName": "정동화",
+        "roleName": ""
+      },
+      {
+        "actorName": "박규원",
+        "roleName": ""
+      },
+      {
+        "actorName": "최호승",
+        "roleName": ""
+      },
+      {
+        "actorName": "정민",
+        "roleName": ""
+      },
+      {
+        "actorName": "조풍래",
+        "roleName": ""
+      },
+      {
+        "actorName": "온주완 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284888",
+    "collectedAt": "2026-03-28T16:41:20.275379",
+    "status": "pending"
+  },
+  {
+    "title": "설민석의 한국사 대모험: 안중근 [서울]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "나루아트센터",
+    "address": "서울특별시 광진구 능동로 76 (자양동)",
+    "startDate": "2026-03-28",
+    "endDate": "2026-04-12",
+    "runtime": 80,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284819_202602101026193580.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26001634",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284819_260210_102619.gif",
+    "cast": [
+      {
+        "actorName": "설민석 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284819",
+    "collectedAt": "2026-03-28T16:41:20.756934",
+    "status": "pending"
+  },
+  {
+    "title": "인화 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "홍익대 대학로 아트센터",
+    "address": "서울특별시 종로구 대학로 57 (연건동)",
+    "startDate": "2026-03-13",
+    "endDate": "2026-06-07",
+    "runtime": 85,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284784_202602090255442260.png"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1604146",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284784_260209_145544.png",
+    "cast": [
+      {
+        "actorName": "소정화",
+        "roleName": ""
+      },
+      {
+        "actorName": "신의정",
+        "roleName": ""
+      },
+      {
+        "actorName": "임찬민",
+        "roleName": ""
+      },
+      {
+        "actorName": "홍지희",
+        "roleName": ""
+      },
+      {
+        "actorName": "송영미",
+        "roleName": ""
+      },
+      {
+        "actorName": "전혜주",
+        "roleName": ""
+      },
+      {
+        "actorName": "조영화 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284784",
+    "collectedAt": "2026-03-28T16:41:21.703549",
+    "status": "pending"
+  },
+  {
+    "title": "너를 위한 글자 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "링크아트센터드림",
+    "address": "서울특별시 종로구 동숭길 123 (동숭동)",
+    "startDate": "2026-03-04",
+    "endDate": "2026-05-31",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284771_202602090221321660.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1592782",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284771_260209_142635.jpg",
+    "cast": [
+      {
+        "actorName": "윤승우",
+        "roleName": ""
+      },
+      {
+        "actorName": "이진우",
+        "roleName": ""
+      },
+      {
+        "actorName": "강병훈",
+        "roleName": ""
+      },
+      {
+        "actorName": "김용진",
+        "roleName": ""
+      },
+      {
+        "actorName": "박세연",
+        "roleName": ""
+      },
+      {
+        "actorName": "성민재",
+        "roleName": ""
+      },
+      {
+        "actorName": "조영화 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284771",
+    "collectedAt": "2026-03-28T16:41:22.667127",
+    "status": "pending"
+  },
+  {
+    "title": "더 테일 에이프릴 풀스 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "예스24 스테이지",
+    "address": "서울특별시 종로구 대학로12길 21 (동숭동)",
+    "startDate": "2026-03-24",
+    "endDate": "2026-06-07",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284644_202602110407182040.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57061",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284644_260211_160906.jpg",
+    "cast": [
+      {
+        "actorName": "현석준",
+        "roleName": ""
+      },
+      {
+        "actorName": "홍승안",
+        "roleName": ""
+      },
+      {
+        "actorName": "홍성원",
+        "roleName": ""
+      },
+      {
+        "actorName": "박정원",
+        "roleName": ""
+      },
+      {
+        "actorName": "손유동",
+        "roleName": ""
+      },
+      {
+        "actorName": "변희상",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284644",
+    "collectedAt": "2026-03-28T16:41:23.751044",
+    "status": "pending"
+  },
+  {
+    "title": "창작산실, 적토",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "SH아트홀",
+    "address": "서울특별시 종로구 동숭길 25 (동숭동)",
+    "startDate": "2026-03-07",
+    "endDate": "2026-03-29",
+    "runtime": 95,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284597_202603040224363890.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26001578",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284597_260206_110951.gif",
+    "cast": [
+      {
+        "actorName": "신은총",
+        "roleName": ""
+      },
+      {
+        "actorName": "조민호",
+        "roleName": ""
+      },
+      {
+        "actorName": "최수형",
+        "roleName": ""
+      },
+      {
+        "actorName": "박민성",
+        "roleName": ""
+      },
+      {
+        "actorName": "오찬우",
+        "roleName": ""
+      },
+      {
+        "actorName": "정민희",
+        "roleName": ""
+      },
+      {
+        "actorName": "서광섭 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284597",
+    "collectedAt": "2026-03-28T16:41:24.234265",
+    "status": "pending"
+  },
+  {
+    "title": "장수탕 선녀님 [서울 광진]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "서울어린이대공원",
+    "address": "서울특별시 광진구 능동로 216 (능동)",
+    "startDate": "2026-03-14",
+    "endDate": "2026-05-10",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284594_202602061104075221.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284594_202602061104075040.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1596478",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284594_260206_110407.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284594",
+    "collectedAt": "2026-03-28T16:41:25.194287",
+    "status": "pending"
+  },
+  {
+    "title": "팬레터 [대학로 (앵콜) ]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "홍익대 대학로 아트센터",
+    "address": "서울특별시 종로구 대학로 57 (연건동)",
+    "startDate": "2026-03-17",
+    "endDate": "2026-06-07",
+    "runtime": 160,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284496_202602051111366541.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/57017",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284496_260316_111443.gif",
+    "cast": [
+      {
+        "actorName": "강필석",
+        "roleName": ""
+      },
+      {
+        "actorName": "김재범",
+        "roleName": ""
+      },
+      {
+        "actorName": "김경수",
+        "roleName": ""
+      },
+      {
+        "actorName": "이규형",
+        "roleName": ""
+      },
+      {
+        "actorName": "문태유",
+        "roleName": ""
+      },
+      {
+        "actorName": "문성일",
+        "roleName": ""
+      },
+      {
+        "actorName": "윤소호 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284496",
+    "collectedAt": "2026-03-28T16:41:25.676133",
+    "status": "pending"
+  },
+  {
+    "title": "전설의 리틀 농구단 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "플러스씨어터",
+    "address": "서울특별시 종로구 대학로12길 73 (동숭동)",
+    "startDate": "2026-03-10",
+    "endDate": "2026-05-25",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF284414_202602041107402270.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/56986",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF284414_260204_110740.gif",
+    "cast": [
+      {
+        "actorName": "김대현",
+        "roleName": ""
+      },
+      {
+        "actorName": "박재윤",
+        "roleName": ""
+      },
+      {
+        "actorName": "안재영",
+        "roleName": ""
+      },
+      {
+        "actorName": "송유택",
+        "roleName": ""
+      },
+      {
+        "actorName": "김현진",
+        "roleName": ""
+      },
+      {
+        "actorName": "조성태",
+        "roleName": ""
+      },
+      {
+        "actorName": "임진섭 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF284414",
+    "collectedAt": "2026-03-28T16:41:26.819932",
+    "status": "pending"
+  },
+  {
+    "title": "ROGER [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "NOL 서경스퀘어",
+    "address": "서울특별시 종로구 동숭길 148 (혜화동)",
+    "startDate": "2026-03-05",
+    "endDate": "2026-05-31",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF283930_202601271259297610.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/56901",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF283930_260127_125929.gif",
+    "cast": [
+      {
+        "actorName": "주민진",
+        "roleName": ""
+      },
+      {
+        "actorName": "고상호",
+        "roleName": ""
+      },
+      {
+        "actorName": "기세중",
+        "roleName": ""
+      },
+      {
+        "actorName": "정휘",
+        "roleName": ""
+      },
+      {
+        "actorName": "이한솔",
+        "roleName": ""
+      },
+      {
+        "actorName": "박주혁",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF283930",
+    "collectedAt": "2026-03-28T16:41:27.806342",
+    "status": "pending"
+  },
+  {
+    "title": "님만헤민 게스트하우스",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "선돌극장",
+    "address": "서울특별시 종로구 혜화로5길 5 (명륜1가)",
+    "startDate": "2026-01-08",
+    "endDate": "2026-04-05",
+    "runtime": 105,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF283835_202601261248300450.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/56427",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF283835_260126_124830.jpg",
+    "cast": [
+      {
+        "actorName": "이재섭",
+        "roleName": ""
+      },
+      {
+        "actorName": "김자미",
+        "roleName": ""
+      },
+      {
+        "actorName": "차은진",
+        "roleName": ""
+      },
+      {
+        "actorName": "윤상훈",
+        "roleName": ""
+      },
+      {
+        "actorName": "유용준",
+        "roleName": ""
+      },
+      {
+        "actorName": "이정현",
+        "roleName": ""
+      },
+      {
+        "actorName": "손난희 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF283835",
+    "collectedAt": "2026-03-28T16:41:28.783990",
+    "status": "pending"
+  },
+  {
+    "title": "로미오와 줄리엣 [서울 서초]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "한전아트센터",
+    "address": "서울특별시 서초구 효령로72길 60 (서초동)",
+    "startDate": "2026-03-24",
+    "endDate": "2026-05-31",
+    "runtime": 150,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF283739_202602200357437420.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/56850",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF283739_260123_112359.gif",
+    "cast": [
+      {
+        "actorName": "유회승",
+        "roleName": ""
+      },
+      {
+        "actorName": "김희재",
+        "roleName": ""
+      },
+      {
+        "actorName": "최찬희",
+        "roleName": ""
+      },
+      {
+        "actorName": "서우빈",
+        "roleName": ""
+      },
+      {
+        "actorName": "송은혜",
+        "roleName": ""
+      },
+      {
+        "actorName": "장혜린",
+        "roleName": ""
+      },
+      {
+        "actorName": "오종혁 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF283739",
+    "collectedAt": "2026-03-28T16:41:29.279141",
+    "status": "pending"
+  },
+  {
+    "title": "스톤 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "예그린씨어터",
+    "address": "서울특별시 종로구 동숭길 130-5 (동숭동)",
+    "startDate": "2026-02-10",
+    "endDate": "2026-04-26",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF283613_202601210301104721.png",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF283613_202601210301104500.png"
+    ],
+    "ticketUrl": "http://www.ticketlink.co.kr/product/61080",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF283613_260121_150110.png",
+    "cast": [
+      {
+        "actorName": "박경호",
+        "roleName": ""
+      },
+      {
+        "actorName": "이승준",
+        "roleName": ""
+      },
+      {
+        "actorName": "이세헌",
+        "roleName": ""
+      },
+      {
+        "actorName": "이태이",
+        "roleName": ""
+      },
+      {
+        "actorName": "반정모",
+        "roleName": ""
+      },
+      {
+        "actorName": "조성필",
+        "roleName": ""
+      },
+      {
+        "actorName": "이진우 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF283613",
+    "collectedAt": "2026-03-28T16:41:30.226052",
+    "status": "pending"
+  },
+  {
+    "title": "렘피카",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "코엑스아티움",
+    "address": "서울특별시 강남구 영동대로 511 (삼성동)",
+    "startDate": "2026-03-21",
+    "endDate": "2026-06-21",
+    "runtime": 150,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF283525_202601201129460610.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26000685",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF283525_260120_112946.gif",
+    "cast": [
+      {
+        "actorName": "김선영",
+        "roleName": ""
+      },
+      {
+        "actorName": "박혜나",
+        "roleName": ""
+      },
+      {
+        "actorName": "정선아",
+        "roleName": ""
+      },
+      {
+        "actorName": "차지연",
+        "roleName": ""
+      },
+      {
+        "actorName": "손승연",
+        "roleName": ""
+      },
+      {
+        "actorName": "김호영",
+        "roleName": ""
+      },
+      {
+        "actorName": "조형균 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF283525",
+    "collectedAt": "2026-03-28T16:41:31.161593",
+    "status": "pending"
+  },
+  {
+    "title": "안나 카레니나",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "세종문화회관",
+    "address": "서울특별시 종로구 세종대로 175 (세종로)",
+    "startDate": "2026-02-20",
+    "endDate": "2026-03-29",
+    "runtime": 150,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF283280_202603030331352120.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/56757",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF283280_260115_144537.jpg",
+    "cast": [
+      {
+        "actorName": "옥주현",
+        "roleName": ""
+      },
+      {
+        "actorName": "김소향",
+        "roleName": ""
+      },
+      {
+        "actorName": "이지혜",
+        "roleName": ""
+      },
+      {
+        "actorName": "윤형렬",
+        "roleName": ""
+      },
+      {
+        "actorName": "문유강",
+        "roleName": ""
+      },
+      {
+        "actorName": "정승원",
+        "roleName": ""
+      },
+      {
+        "actorName": "이건명 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF283280",
+    "collectedAt": "2026-03-28T16:41:31.638882",
+    "status": "pending"
+  },
+  {
+    "title": "홍련 [서울 중구]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "충무아트센터",
+    "address": "서울특별시 중구 퇴계로 387 (흥인동)",
+    "startDate": "2026-02-28",
+    "endDate": "2026-05-17",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF283152_202601141126336360.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=26000419",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF283152_260114_112633.gif",
+    "cast": [
+      {
+        "actorName": "이지혜",
+        "roleName": ""
+      },
+      {
+        "actorName": "강혜인",
+        "roleName": ""
+      },
+      {
+        "actorName": "김이후",
+        "roleName": ""
+      },
+      {
+        "actorName": "홍나현",
+        "roleName": ""
+      },
+      {
+        "actorName": "이아름솔",
+        "roleName": ""
+      },
+      {
+        "actorName": "김경민",
+        "roleName": ""
+      },
+      {
+        "actorName": "이지연 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF283152",
+    "collectedAt": "2026-03-28T16:41:32.147279",
+    "status": "pending"
+  },
+  {
+    "title": "초록 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "링크아트센터드림",
+    "address": "서울특별시 종로구 동숭길 123 (동숭동)",
+    "startDate": "2026-01-27",
+    "endDate": "2026-03-29",
+    "runtime": 120,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF282307_202512290100017512.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF282307_202512290100017321.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF282307_202512290100017240.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1581580",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF282307_251229_130001.jpg",
+    "cast": [
+      {
+        "actorName": "박규원",
+        "roleName": ""
+      },
+      {
+        "actorName": "손유동",
+        "roleName": ""
+      },
+      {
+        "actorName": "김지철",
+        "roleName": ""
+      },
+      {
+        "actorName": "이종석",
+        "roleName": ""
+      },
+      {
+        "actorName": "김찬종",
+        "roleName": ""
+      },
+      {
+        "actorName": "김재한",
+        "roleName": ""
+      },
+      {
+        "actorName": "박란주 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF282307",
+    "collectedAt": "2026-03-28T16:41:32.632614",
+    "status": "pending"
+  },
+  {
+    "title": "A여고 사서의 영광과 비극 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "링크아트센터드림",
+    "address": "서울특별시 종로구 동숭길 123 (동숭동)",
+    "startDate": "2026-01-27",
+    "endDate": "2026-04-26",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF281820_202512180117580700.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1560282",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF281820_251218_131758.gif",
+    "cast": [
+      {
+        "actorName": "정우연",
+        "roleName": ""
+      },
+      {
+        "actorName": "이서영",
+        "roleName": ""
+      },
+      {
+        "actorName": "선유하",
+        "roleName": ""
+      },
+      {
+        "actorName": "김주연",
+        "roleName": ""
+      },
+      {
+        "actorName": "임예진",
+        "roleName": ""
+      },
+      {
+        "actorName": "전혜주",
+        "roleName": ""
+      },
+      {
+        "actorName": "김청아 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF281820",
+    "collectedAt": "2026-03-28T16:41:33.129486",
+    "status": "pending"
+  },
+  {
+    "title": "긴긴밤 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "링크아트센터드림",
+    "address": "서울특별시 종로구 동숭길 123 (동숭동)",
+    "startDate": "2026-01-21",
+    "endDate": "2026-04-05",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF281796_202603181039058530.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF281796_202603181041316490.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=25018118",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF281796_251218_111152.gif",
+    "cast": [
+      {
+        "actorName": "홍우진",
+        "roleName": ""
+      },
+      {
+        "actorName": "강정우",
+        "roleName": ""
+      },
+      {
+        "actorName": "이형훈",
+        "roleName": ""
+      },
+      {
+        "actorName": "최주은",
+        "roleName": ""
+      },
+      {
+        "actorName": "설가은",
+        "roleName": ""
+      },
+      {
+        "actorName": "최은영",
+        "roleName": ""
+      },
+      {
+        "actorName": "임하윤 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF281796",
+    "collectedAt": "2026-03-28T16:41:33.597834",
+    "status": "pending"
+  },
+  {
+    "title": "은밀하게 위대하게: THE LAST",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "NOL 씨어터 대학로",
+    "address": "서울특별시 종로구 동숭길 100",
+    "startDate": "2026-01-30",
+    "endDate": "2026-04-26",
+    "runtime": 150,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF281676_202512160116157680.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=25017949",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF281676_251216_131615.gif",
+    "cast": [
+      {
+        "actorName": "김동준",
+        "roleName": ""
+      },
+      {
+        "actorName": "김찬호",
+        "roleName": ""
+      },
+      {
+        "actorName": "백인태",
+        "roleName": ""
+      },
+      {
+        "actorName": "오종혁",
+        "roleName": ""
+      },
+      {
+        "actorName": "안다니엘",
+        "roleName": ""
+      },
+      {
+        "actorName": "서동진",
+        "roleName": ""
+      },
+      {
+        "actorName": "유태율 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF281676",
+    "collectedAt": "2026-03-28T16:41:34.069074",
+    "status": "pending"
+  },
+  {
+    "title": "투모로우 모닝 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "큐씨어터",
+    "address": "서울특별시 종로구 대학로8가길 79 (동숭동)",
+    "startDate": "2025-12-03",
+    "endDate": "2026-06-28",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF280025_202603200509535400.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/56186",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF280025_260320_170827.gif",
+    "cast": [
+      {
+        "actorName": "김형근",
+        "roleName": ""
+      },
+      {
+        "actorName": "오태후",
+        "roleName": ""
+      },
+      {
+        "actorName": "박진우",
+        "roleName": ""
+      },
+      {
+        "actorName": "이미경",
+        "roleName": ""
+      },
+      {
+        "actorName": "김소정",
+        "roleName": ""
+      },
+      {
+        "actorName": "황지수",
+        "roleName": ""
+      },
+      {
+        "actorName": "강대운 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF280025",
+    "collectedAt": "2026-03-28T16:41:35.018957",
+    "status": "pending"
+  },
+  {
+    "title": "내 친구 유관순: 불꽃처럼 일어나라!",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "경복궁아트홀",
+    "address": "서울특별시 종로구 자하문로 82 (효자동)",
+    "startDate": "2026-01-01",
+    "endDate": "2026-03-29",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF279089_202511140134090820.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/56041",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF279089_251114_133409.jpg",
+    "cast": [
+      {
+        "actorName": "서정화",
+        "roleName": ""
+      },
+      {
+        "actorName": "정춘권",
+        "roleName": ""
+      },
+      {
+        "actorName": "이관희",
+        "roleName": ""
+      },
+      {
+        "actorName": "최주희",
+        "roleName": ""
+      },
+      {
+        "actorName": "정영석",
+        "roleName": ""
+      },
+      {
+        "actorName": "정영서",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF279089",
+    "collectedAt": "2026-03-28T16:41:35.507322",
+    "status": "pending"
+  },
+  {
+    "title": "킹키부츠",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "샤롯데씨어터",
+    "address": "서울특별시 송파구 올림픽로 240 (잠실동)",
+    "startDate": "2025-12-17",
+    "endDate": "2026-03-29",
+    "runtime": 155,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF276569_202510170349493271.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF276569_202510170349493220.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/56942",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF276569_251017_154949.gif",
+    "cast": [
+      {
+        "actorName": "김호영",
+        "roleName": ""
+      },
+      {
+        "actorName": "이재환",
+        "roleName": ""
+      },
+      {
+        "actorName": "신재범",
+        "roleName": ""
+      },
+      {
+        "actorName": "강홍석",
+        "roleName": ""
+      },
+      {
+        "actorName": "백형훈",
+        "roleName": ""
+      },
+      {
+        "actorName": "서경수",
+        "roleName": ""
+      },
+      {
+        "actorName": "한재아 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF276569",
+    "collectedAt": "2026-03-28T16:41:35.986177",
+    "status": "pending"
+  },
+  {
+    "title": "헝키쇼 (HUNKY SHOW)",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "스타스테이지",
+    "address": "서울특별시 종로구 대학로12길 15(동숭동)",
+    "startDate": "2025-04-25",
+    "endDate": "2026-04-30",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF276055_202601290127171820.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/53416",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF276055_251014_105639.jpg",
+    "cast": [
+      {
+        "actorName": "정철호",
+        "roleName": ""
+      },
+      {
+        "actorName": "한훈",
+        "roleName": ""
+      },
+      {
+        "actorName": "박휘범",
+        "roleName": ""
+      },
+      {
+        "actorName": "강태우",
+        "roleName": ""
+      },
+      {
+        "actorName": "김영돈",
+        "roleName": ""
+      },
+      {
+        "actorName": "김상엽",
+        "roleName": ""
+      },
+      {
+        "actorName": "임성목 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF276055",
+    "collectedAt": "2026-03-28T16:41:36.923627",
+    "status": "pending"
+  },
+  {
+    "title": "빨래: 31차 프로덕션",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "유니플렉스",
+    "address": "서울특별시 종로구 대학로12길 64 (동숭동)",
+    "startDate": "2025-10-03",
+    "endDate": "2026-04-30",
+    "runtime": 165,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF273451_202509051250191940.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/127914",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF273451_250905_125019.gif",
+    "cast": [
+      {
+        "actorName": "기영수",
+        "roleName": ""
+      },
+      {
+        "actorName": "오주언",
+        "roleName": ""
+      },
+      {
+        "actorName": "민하늘",
+        "roleName": ""
+      },
+      {
+        "actorName": "류석호",
+        "roleName": ""
+      },
+      {
+        "actorName": "정형석",
+        "roleName": ""
+      },
+      {
+        "actorName": "류찬열",
+        "roleName": ""
+      },
+      {
+        "actorName": "서나영 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF273451",
+    "collectedAt": "2026-03-28T16:41:37.403851",
+    "status": "pending"
+  },
+  {
+    "title": "데스노트 [서울]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "디큐브링크아트센터",
+    "address": "서울특별시 구로구 경인로 662 (신도림동, 디큐브시티)",
+    "startDate": "2025-10-14",
+    "endDate": "2026-05-10",
+    "runtime": 160,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF273019_202603030204542890.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1488887",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF273019_250901_104904.gif",
+    "cast": [
+      {
+        "actorName": "조규현",
+        "roleName": ""
+      },
+      {
+        "actorName": "고은성",
+        "roleName": ""
+      },
+      {
+        "actorName": "김민석",
+        "roleName": ""
+      },
+      {
+        "actorName": "임규형",
+        "roleName": ""
+      },
+      {
+        "actorName": "김준수",
+        "roleName": ""
+      },
+      {
+        "actorName": "김성철",
+        "roleName": ""
+      },
+      {
+        "actorName": "이정환 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF273019",
+    "collectedAt": "2026-03-28T16:41:38.377403",
+    "status": "pending"
+  },
+  {
+    "title": "스폿라이트 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "스폿라이트",
+    "address": "서울특별시 종로구 대명1길 7 (명륜4가)",
+    "startDate": "2025-08-28",
+    "endDate": "2026-04-30",
+    "runtime": 110,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF273014_202509011037063290.jpg"
+    ],
+    "ticketUrl": "https://ticket.yes24.com/Perf/55092",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF273014_250901_103706.gif",
+    "cast": [],
+    "tags": [
+      "대학로",
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF273014",
+    "collectedAt": "2026-03-28T16:41:39.320611",
+    "status": "pending"
+  },
+  {
+    "title": "더 맨 얼라이브: 초이스",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "더 서울라이티움",
+    "address": "서울특별시 성동구 서울숲2길 32-14 (성수동1가)",
+    "startDate": "2025-01-15",
+    "endDate": "2026-05-31",
+    "runtime": 75,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF272938_202603181052313800.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF272938_202603181052314071.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1099197",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF272938_260106_112253.jpg",
+    "cast": [
+      {
+        "actorName": "김종민",
+        "roleName": ""
+      },
+      {
+        "actorName": "조은상",
+        "roleName": ""
+      },
+      {
+        "actorName": "남충화",
+        "roleName": ""
+      },
+      {
+        "actorName": "오진욱",
+        "roleName": ""
+      },
+      {
+        "actorName": "김종훈",
+        "roleName": ""
+      },
+      {
+        "actorName": "김민규",
+        "roleName": ""
+      },
+      {
+        "actorName": "한민성 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF272938",
+    "collectedAt": "2026-03-28T16:41:39.809253",
+    "status": "pending"
+  },
+  {
+    "title": "슬립노모어 서울",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "매키탄 호텔",
+    "address": "서울특별시 중구 퇴계로 212 (필동2가)",
+    "startDate": "2025-07-24",
+    "endDate": "2026-03-29",
+    "runtime": 180,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF267104_202602041011236990.jpg"
+    ],
+    "ticketUrl": "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=25008376",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF267104_260204_101123.gif",
+    "cast": [
+      {
+        "actorName": "가브리엘 난키벨",
+        "roleName": ""
+      },
+      {
+        "actorName": "김도현",
+        "roleName": ""
+      },
+      {
+        "actorName": "김수정",
+        "roleName": ""
+      },
+      {
+        "actorName": "김영은",
+        "roleName": ""
+      },
+      {
+        "actorName": "김태양",
+        "roleName": ""
+      },
+      {
+        "actorName": "노바 발켄호프",
+        "roleName": ""
+      },
+      {
+        "actorName": "니콜라스 브루더 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF267104",
+    "collectedAt": "2026-03-28T16:41:40.765742",
+    "status": "pending"
+  },
+  {
+    "title": "알사탕",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "더 서울라이티움",
+    "address": "서울특별시 성동구 서울숲2길 32-14 (성수동1가)",
+    "startDate": "2025-03-29",
+    "endDate": "2026-04-05",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF260200_250304_0410530.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/655439",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF260200_250304_161053.gif",
+    "cast": [],
+    "tags": [
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF260200",
+    "collectedAt": "2026-03-28T16:41:41.271012",
+    "status": "pending"
+  },
+  {
+    "title": "반짝 반짝 라푼젤 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "달밤엔씨어터",
+    "address": "서울특별시 종로구 대학로14길 18-2 (혜화동)",
+    "startDate": "2025-03-01",
+    "endDate": "2026-03-29",
+    "runtime": 50,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF259907_250227_1058180.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/88014",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF259907_250227_110032.jpg",
+    "cast": [],
+    "tags": [
+      "대학로",
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF259907",
+    "collectedAt": "2026-03-28T16:41:41.770436",
+    "status": "pending"
+  },
+  {
+    "title": "써니텐 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "JTN 아트홀",
+    "address": "서울특별시 종로구 이화장길 26 (이화동)",
+    "startDate": "2025-01-01",
+    "endDate": "2026-03-31",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF259779_202507070118146400.jpg"
+    ],
+    "ticketUrl": "http://ticket.yes24.com/Perf/52880",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF259779_260223_160526.gif",
+    "cast": [
+      {
+        "actorName": "정승환",
+        "roleName": ""
+      },
+      {
+        "actorName": "이채원",
+        "roleName": ""
+      },
+      {
+        "actorName": "권도윤",
+        "roleName": ""
+      },
+      {
+        "actorName": "지인규",
+        "roleName": ""
+      },
+      {
+        "actorName": "이신주",
+        "roleName": ""
+      },
+      {
+        "actorName": "정의혁",
+        "roleName": ""
+      },
+      {
+        "actorName": "천지",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF259779",
+    "collectedAt": "2026-03-28T16:41:42.748318",
+    "status": "pending"
+  },
+  {
+    "title": "어서 오세요, 휴남동 서점입니다 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "루미나아트홀",
+    "address": "서울특별시 종로구 대학로8가길 52 (동숭동)",
+    "startDate": "2025-03-01",
+    "endDate": "2026-04-04",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF257978_202512260247186630.jpg"
+    ],
+    "ticketUrl": "http://ticket.yes24.com/Perf/52476",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF257978_251226_144659.gif",
+    "cast": [
+      {
+        "actorName": "서지아",
+        "roleName": ""
+      },
+      {
+        "actorName": "김재은",
+        "roleName": ""
+      },
+      {
+        "actorName": "김여진",
+        "roleName": ""
+      },
+      {
+        "actorName": "표혜미",
+        "roleName": ""
+      },
+      {
+        "actorName": "염승윤",
+        "roleName": ""
+      },
+      {
+        "actorName": "류하륜",
+        "roleName": ""
+      },
+      {
+        "actorName": "김상민 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF257978",
+    "collectedAt": "2026-03-28T16:41:43.243531",
+    "status": "pending"
+  },
+  {
+    "title": "터치 파이브 (TOUCH FIVE)",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "TOUCH FIVE 전용관",
+    "address": "서울특별시 마포구 와우산로 76-1 (서교동)",
+    "startDate": "2024-11-08",
+    "endDate": "2026-05-31",
+    "runtime": 70,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF251017_202512171129022300.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1323770",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF251017_250113_123329.gif",
+    "cast": [
+      {
+        "actorName": "이국영",
+        "roleName": ""
+      },
+      {
+        "actorName": "김준석",
+        "roleName": ""
+      },
+      {
+        "actorName": "정윤호",
+        "roleName": ""
+      },
+      {
+        "actorName": "김성길",
+        "roleName": ""
+      },
+      {
+        "actorName": "김사홍 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF251017",
+    "collectedAt": "2026-03-28T16:41:44.212574",
+    "status": "pending"
+  },
+  {
+    "title": "반짝반짝 신데렐라",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "달밤엔씨어터",
+    "address": "서울특별시 종로구 대학로14길 18-2 (혜화동)",
+    "startDate": "2024-10-01",
+    "endDate": "2026-03-29",
+    "runtime": 50,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF249186_250224_0250031.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1225947",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF249186_240919_112541.jpg",
+    "cast": [
+      {
+        "actorName": "김주은",
+        "roleName": ""
+      },
+      {
+        "actorName": "이시영",
+        "roleName": ""
+      },
+      {
+        "actorName": "허정호",
+        "roleName": ""
+      },
+      {
+        "actorName": "김서우",
+        "roleName": ""
+      },
+      {
+        "actorName": "박송연",
+        "roleName": ""
+      },
+      {
+        "actorName": "박슬아",
+        "roleName": ""
+      },
+      {
+        "actorName": "오지훈 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF249186",
+    "collectedAt": "2026-03-28T16:41:44.693996",
+    "status": "pending"
+  },
+  {
+    "title": "점프 JUMP",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "명보아트홀",
+    "address": "서울특별시 중구 마른내로 47 (초동)",
+    "startDate": "2024-10-01",
+    "endDate": "2026-05-31",
+    "runtime": 80,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF247938_250131_0133201.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/1227916",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF247938_240829_104022.gif",
+    "cast": [],
+    "tags": [
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF247938",
+    "collectedAt": "2026-03-28T16:41:45.830520",
+    "status": "pending"
+  },
+  {
+    "title": "런던 레코드",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "엠스테이지",
+    "address": "서울특별시 종로구 인사동길 34-1 (관훈동)",
+    "startDate": "2024-08-15",
+    "endDate": "2026-03-29",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF246573_240808_1001270.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/984039",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF246573_241205_111748.jpeg",
+    "cast": [],
+    "tags": [
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF246573",
+    "collectedAt": "2026-03-28T16:41:46.836267",
+    "status": "pending"
+  },
+  {
+    "title": "아기돼지삼형제: 늑대숲 또옹돼지 원정대 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "라온씨어터",
+    "address": "서울특별시 종로구 대학로10길 12 (동숭동) 3층",
+    "startDate": "2024-07-14",
+    "endDate": "2026-03-29",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF244959_202601160503020380.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF244959_202601160503020621.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF244959_202601160503020692.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF244959_202601160503020773.jpg"
+    ],
+    "ticketUrl": "http://ticket.yes24.com/Perf/50300",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF244959_260116_170208.gif",
+    "cast": [],
+    "tags": [
+      "대학로",
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF244959",
+    "collectedAt": "2026-03-28T16:41:47.756020",
+    "status": "pending"
+  },
+  {
+    "title": "페인터즈 [서대문전용관]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "NH아트홀",
+    "address": "서울특별시 중구 통일로 120 (충정로1가)",
+    "startDate": "2024-06-05",
+    "endDate": "2026-03-29",
+    "runtime": 75,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF242666_250418_0203021.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/942356",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF242666_240805_155829.jpg",
+    "cast": [],
+    "tags": [
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF242666",
+    "collectedAt": "2026-03-28T16:41:48.731483",
+    "status": "pending"
+  },
+  {
+    "title": "페인터즈 [경향아트힐]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "경향아트힐",
+    "address": "서울특별시 중구 정동길 3 (정동)",
+    "startDate": "2024-03-25",
+    "endDate": "2026-06-30",
+    "runtime": 75,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF237479_250403_0105141.jpg"
+    ],
+    "ticketUrl": "http://ticket.yes24.com/Perf/49034",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF237479_240315_133619.jpg",
+    "cast": [],
+    "tags": [
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF237479",
+    "collectedAt": "2026-03-28T16:41:49.710332",
+    "status": "pending"
+  },
+  {
+    "title": "썸데이 [대학로]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "대학로 무하아트센터",
+    "address": "서울특별시 종로구 이화장길 72 (동숭동)",
+    "startDate": "2024-03-16",
+    "endDate": "2026-04-30",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF236674_202602110314389900.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/963985",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF236674_250602_133202.gif",
+    "cast": [
+      {
+        "actorName": "조연진",
+        "roleName": ""
+      },
+      {
+        "actorName": "서영",
+        "roleName": ""
+      },
+      {
+        "actorName": "박다영",
+        "roleName": ""
+      },
+      {
+        "actorName": "윤슬",
+        "roleName": ""
+      },
+      {
+        "actorName": "표혜미",
+        "roleName": ""
+      },
+      {
+        "actorName": "이효주",
+        "roleName": ""
+      },
+      {
+        "actorName": "임재혁 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF236674",
+    "collectedAt": "2026-03-28T16:41:50.251740",
+    "status": "pending"
+  },
+  {
+    "title": "난타 [홍대]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "홍대난타극장",
+    "address": "서울특별시 마포구 양화로16길 29 (서교동)",
+    "startDate": "2024-04-01",
+    "endDate": "2026-06-28",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF236349_202508050234058770.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/141831",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF236349_251016_133538.gif",
+    "cast": [],
+    "tags": [
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF236349",
+    "collectedAt": "2026-03-28T16:41:51.230206",
+    "status": "pending"
+  },
+  {
+    "title": "피노키오야 노올자~!",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "서연아트홀",
+    "address": "서울특별시 종로구 창경궁로 258 - 9",
+    "startDate": "2024-03-23",
+    "endDate": "2026-04-26",
+    "runtime": 60,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF235879_240221_1057211.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF235879_240221_1057210.jpg"
+    ],
+    "ticketUrl": "http://ticket.yes24.com/Perf/48899",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF235879_240221_105721.gif",
+    "cast": [
+      {
+        "actorName": "민정섭",
+        "roleName": ""
+      },
+      {
+        "actorName": "장예슬",
+        "roleName": ""
+      },
+      {
+        "actorName": "이지연",
+        "roleName": ""
+      },
+      {
+        "actorName": "박소현",
+        "roleName": ""
+      },
+      {
+        "actorName": "이보윤",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF235879",
+    "collectedAt": "2026-03-28T16:41:52.165654",
+    "status": "pending"
+  },
+  {
+    "title": "난타 [명동]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "명동난타극장",
+    "address": "서울특별시 중구 명동길 26 (명동2가)",
+    "startDate": "2021-12-02",
+    "endDate": "2026-06-30",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF235543_250407_1055111.jpg"
+    ],
+    "ticketUrl": "https://booking.naver.com/booking/12/bizes/139693",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF235543_251014_140238.gif",
+    "cast": [],
+    "tags": [
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF235543",
+    "collectedAt": "2026-03-28T16:41:53.169923",
+    "status": "pending"
+  },
+  {
+    "title": "인사이드 미",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "JTN 아트홀",
+    "address": "서울특별시 종로구 이화장길 26 (이화동)",
+    "startDate": "2024-01-03",
+    "endDate": "2026-03-29",
+    "runtime": 110,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF233263_240102_1250042.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF233263_240102_1250041.jpg",
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF233263_240102_1250040.jpg"
+    ],
+    "ticketUrl": "http://ticket.yes24.com/Perf/48206",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF233263_240102_124103.jpg",
+    "cast": [
+      {
+        "actorName": "윤채린",
+        "roleName": ""
+      },
+      {
+        "actorName": "김유림",
+        "roleName": ""
+      },
+      {
+        "actorName": "이재형",
+        "roleName": ""
+      },
+      {
+        "actorName": "서우연",
+        "roleName": ""
+      },
+      {
+        "actorName": "차윤오",
+        "roleName": ""
+      },
+      {
+        "actorName": "박세웅",
+        "roleName": ""
+      },
+      {
+        "actorName": "표근률 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF233263",
+    "collectedAt": "2026-03-28T16:41:53.674044",
+    "status": "pending"
+  },
+  {
+    "title": "천로역정",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "명륜아트홀",
+    "address": "서울특별시 종로구 성균관로 48-2 (명륜1가)",
+    "startDate": "2023-12-09",
+    "endDate": "2026-08-29",
+    "runtime": 100,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF229985_240819_0322151.jpg"
+    ],
+    "ticketUrl": "http://ticket.yes24.com/Perf/47835",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF229985_240819_152304.jpg",
+    "cast": [
+      {
+        "actorName": "임미영",
+        "roleName": ""
+      },
+      {
+        "actorName": "이나영",
+        "roleName": ""
+      },
+      {
+        "actorName": "서태경",
+        "roleName": ""
+      },
+      {
+        "actorName": "김지혜",
+        "roleName": ""
+      },
+      {
+        "actorName": "김성호",
+        "roleName": ""
+      },
+      {
+        "actorName": "박상하",
+        "roleName": ""
+      },
+      {
+        "actorName": "박민규 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF229985",
+    "collectedAt": "2026-03-28T16:41:54.182908",
+    "status": "pending"
+  },
+  {
+    "title": "프리즌 [H씨어터]",
+    "subtitle": "",
+    "genre": "뮤지컬",
+    "venue": "에이치씨어터",
+    "address": "서울특별시 종로구 이화장길 54 (이화동)",
+    "startDate": "2021-05-01",
+    "endDate": "2026-04-30",
+    "runtime": 90,
+    "synopsis": "",
+    "synopsisImages": [
+      "http://www.kopis.or.kr/upload/pfmIntroImage/PF_PF173894_241113_1033461.jpg"
+    ],
+    "ticketUrl": "http://ticket.yes24.com/Pages/Perf/Detail/Detail.aspx?IdPerf=38930",
+    "imageUrl": "http://www.kopis.or.kr/upload/pfmPoster/PF_PF173894_240522_105343.gif",
+    "cast": [
+      {
+        "actorName": "하준석",
+        "roleName": ""
+      },
+      {
+        "actorName": "최승환",
+        "roleName": ""
+      },
+      {
+        "actorName": "추정민",
+        "roleName": ""
+      },
+      {
+        "actorName": "심규혁",
+        "roleName": ""
+      },
+      {
+        "actorName": "김동훈",
+        "roleName": ""
+      },
+      {
+        "actorName": "이강오",
+        "roleName": ""
+      },
+      {
+        "actorName": "박태준 등",
+        "roleName": ""
+      }
+    ],
+    "tags": [
+      "대학로",
+      "오픈런",
+      "창작뮤지컬"
+    ],
+    "source": "KOPIS",
+    "sourceUrl": "http://www.kopis.or.kr/por/db/pblprfr/pblprfrView.do?pc=02&mt20id=PF173894",
+    "collectedAt": "2026-03-28T16:41:55.199226",
+    "status": "pending"
+  }
+]
