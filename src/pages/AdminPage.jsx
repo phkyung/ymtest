@@ -340,7 +340,7 @@ function PendingCard({ show, selected, onSelect, onApprove, onReject, onUpdate }
 
 
 // ── 등록 완료 공연 카드 ───────────────────────
-function ShowCard({ show, onUpdate, onDelete }) {
+function ShowCard({ show, onUpdate, onDelete, onRevert }) {
   const [editing, setEditing] = useState(false)
   const [draft,   setDraft]   = useState({ ...show })
 
@@ -420,7 +420,7 @@ function ShowCard({ show, onUpdate, onDelete }) {
         </div>
       </div>
 
-      <div className="border-t border-stone-100 grid grid-cols-2 divide-x divide-stone-100">
+      <div className="border-t border-stone-100 grid grid-cols-3 divide-x divide-stone-100">
         <button
           onClick={() => setEditing(true)}
           className="flex items-center justify-center gap-1.5 py-3.5 text-sm font-semibold
@@ -428,6 +428,14 @@ function ShowCard({ show, onUpdate, onDelete }) {
         >
           <span>✏️</span>
           <span>수정</span>
+        </button>
+        <button
+          onClick={() => onRevert(show.id)}
+          className="flex items-center justify-center gap-1.5 py-3.5 text-sm font-semibold
+                     text-amber-600 hover:bg-amber-50 transition-colors"
+        >
+          <span>↩️</span>
+          <span>반려</span>
         </button>
         <button
           onClick={() => onDelete(show.id)}
@@ -619,6 +627,28 @@ export default function AdminPage() {
     } catch (err) {
       console.error('shows 수정 오류:', err)
       alert('수정 중 오류가 발생했습니다.')
+    }
+  }
+
+  // ── shows → pending 반려 ─────────────────────
+  async function handleRevertShow(id) {
+    if (!window.confirm('이 공연을 대기열로 되돌릴까요?')) return
+    const show = showsList.find(s => s.id === id)
+    if (!show) return
+    try {
+      const { approvedAt, ...showData } = show
+      const batch = writeBatch(db)
+      batch.set(doc(db, 'pending', id), {
+        ...showData,
+        id,
+        status:      'pending',
+        collectedAt: serverTimestamp(),
+      })
+      batch.delete(doc(db, 'shows', id))
+      await batch.commit()
+    } catch (err) {
+      console.error('반려 오류:', err)
+      alert('반려 중 오류가 발생했습니다.')
     }
   }
 
@@ -1004,6 +1034,7 @@ export default function AdminPage() {
                     show={show}
                     onUpdate={handleUpdateShow}
                     onDelete={handleDeleteShow}
+                    onRevert={handleRevertShow}
                   />
                 ))}
               </div>
