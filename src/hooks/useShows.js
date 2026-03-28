@@ -6,7 +6,7 @@
 // ─────────────────────────────────────────────
 
 import { useState, useEffect } from 'react'
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore'
+import { collection, onSnapshot, orderBy, query, where, getDocs } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
 import sampleShows from '../data/sampleShows.json'
 
@@ -28,7 +28,8 @@ export function useShows() {
     const unsub = onSnapshot(
       q,
       snap => {
-        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        // d.id(문서 ID)를 마지막에 두어 data.id 필드보다 항상 우선
+        const data = snap.docs.map(d => ({ ...d.data(), id: d.id }))
         // Firestore에 데이터 없으면 더미 폴백
         setShows(data.length > 0 ? data : sampleShows)
         setLoading(false)
@@ -67,18 +68,33 @@ export function useShow(showId) {
       return
     }
 
-    // Firestore에서 문서 1개 조회
-    getDoc(doc(db, 'shows', showId)).then(snap => {
+    console.debug('[useShow] 조회 시작 — URL showId:', showId)
+
+    getDoc(doc(db, 'shows', showId)).then(async snap => {
       if (snap.exists()) {
-        setShow({ id: snap.id, ...snap.data() })
+        // 1차: 문서 ID로 바로 찾은 경우
+        console.debug('[useShow] 문서 ID로 찾음 — doc.id:', snap.id)
+        setShow({ ...snap.data(), id: snap.id })
       } else {
-        // Firestore에 없으면 더미에서 탐색
-        const found = sampleShows.find(s => s.id === showId)
-        setShow(found ?? null)
+        // 2차: 문서 ID로 못 찾은 경우 → id 필드 값으로 쿼리
+        console.debug('[useShow] 문서 ID로 못 찾음. id 필드 쿼리 시도 — id:', showId)
+        const q      = query(collection(db, 'shows'), where('id', '==', showId))
+        const result = await getDocs(q)
+
+        if (!result.empty) {
+          const d = result.docs[0]
+          console.debug('[useShow] id 필드로 찾음 — 실제 doc.id:', d.id, '/ data.id:', d.data().id)
+          setShow({ ...d.data(), id: d.id })
+        } else {
+          // 3차: 더미 데이터에서 탐색
+          console.debug('[useShow] Firestore에서 찾지 못함. 더미 탐색')
+          const found = sampleShows.find(s => s.id === showId)
+          setShow(found ?? null)
+        }
       }
       setLoading(false)
     }).catch(err => {
-      console.error(err)
+      console.error('[useShow] 조회 오류:', err)
       setLoading(false)
     })
   }, [showId])

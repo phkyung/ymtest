@@ -30,6 +30,7 @@ function isPlayingToday(startDate, endDate) {
 export default function ShowCard({ show }) {
   const playing = isPlayingToday(show.startDate, show.endDate)
 
+  // show.id = Firestore 문서 ID (useShows에서 d.id 우선으로 보장)
   return (
     <Link
       to={`/shows/${show.id}`}
