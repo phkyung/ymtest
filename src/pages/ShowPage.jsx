@@ -19,6 +19,94 @@ function formatDateRange(start, end) {
   return `${fmt(s)} ~ ${fmt(e)}`
 }
 
+// ── 출연진 섹션: 역할별 그룹핑 + 배우 선택 → 키워드 투표 ──
+function CastSection({ cast, showId, actorIdMap }) {
+  // cast 아이템에 resolvedId 미리 계산
+  const enriched = cast.map(m => ({
+    ...m,
+    resolvedId: actorIdMap[m.actorName] || m.actorId || null,
+  }))
+
+  // 역할별 그룹핑 (역할명 없으면 "출연")
+  const groups = []
+  const groupMap = {}
+  enriched.forEach(m => {
+    const role = m.roleName?.trim() || '출연'
+    if (!groupMap[role]) {
+      groupMap[role] = []
+      groups.push(role)
+    }
+    groupMap[role].push(m)
+  })
+
+  // 선택된 배우: { actorName, resolvedId, roleName }
+  const [selected, setSelected] = useState(enriched[0] ?? null)
+
+  return (
+    <section>
+      <h2 className="font-display text-xl text-stone-800 mb-4">출연진</h2>
+
+      <div className="bg-white border border-stone-100 rounded-xl p-5 space-y-5">
+        {/* 역할 그룹별 배우 버튼 */}
+        {groups.map(role => (
+          <div key={role}>
+            <p className="text-sm font-semibold text-[#6B5E52] border-b border-[#E8E4DF] pb-1 mb-3">
+              {role}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {groupMap[role].map((m, idx) => {
+                const isSelected = selected?.actorName === m.actorName && selected?.roleName === m.roleName
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setSelected(m)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                      isSelected
+                        ? 'bg-[#8FAF94] text-white'
+                        : 'border border-[#C8D8CA] text-[#4A6B4F] hover:bg-[#8FAF94] hover:text-white'
+                    }`}
+                  >
+                    {m.actorName}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+
+        {/* 선택된 배우 + 키워드 투표 */}
+        {selected && (
+          <>
+            <div className="border-t border-stone-100 pt-4">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="font-display text-base text-stone-800 font-semibold">
+                  {selected.actorName}
+                </span>
+                {selected.roleName?.trim() && (
+                  <span className="text-sm text-stone-400">{selected.roleName} 역</span>
+                )}
+                {selected.resolvedId && (
+                  <Link
+                    to={`/actors/${selected.resolvedId}`}
+                    className="ml-auto text-xs bg-[#8FAF94] hover:bg-[#7A9E7F] text-white px-2 py-1 rounded-lg shrink-0 transition-colors"
+                  >
+                    배우 페이지 →
+                  </Link>
+                )}
+              </div>
+              <KeywordVote
+                showId={showId}
+                actorId={selected.resolvedId}
+                roleName={selected.roleName}
+              />
+            </div>
+          </>
+        )}
+      </div>
+    </section>
+  )
+}
+
 export default function ShowPage() {
   const { showId } = useParams()
   const { show, loading } = useShow(showId)
@@ -156,64 +244,11 @@ export default function ShowPage() {
 
       {/* 출연진 + 키워드 투표 */}
       {show.cast?.length > 0 && (
-        <section>
-          <h2 className="font-display text-xl text-stone-800 mb-4">출연진</h2>
-
-          <div className="space-y-8">
-            {show.cast.map((castMember, idx) => {
-              const resolvedId = actorIdMap[castMember.actorName] || castMember.actorId
-              return (
-              <div key={idx} className="bg-white border border-stone-100 rounded-xl p-5 space-y-4">
-
-                {/* 배우 정보 행 */}
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    {resolvedId ? (
-                      <Link
-                        to={`/actors/${resolvedId}`}
-                        className="font-display text-lg text-stone-800 hover:text-[#4A6B4F] transition-colors"
-                      >
-                        {castMember.actorName}
-                      </Link>
-                    ) : (
-                      <span className="font-display text-lg text-stone-800">
-                        {castMember.actorName}
-                      </span>
-                    )}
-                    <p className="text-stone-400 text-sm mt-0.5">
-                      {castMember.roleName} 역
-                      {castMember.isDouble && (
-                        <span className="ml-2 text-xs bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">
-                          더블캐스팅
-                        </span>
-                      )}
-                    </p>
-                  </div>
-
-                  {resolvedId && (
-                    <Link
-                      to={`/actors/${resolvedId}`}
-                      className="text-xs bg-[#8FAF94] hover:bg-[#7A9E7F] text-white border border-[#8FAF94] px-2 py-1 rounded-lg shrink-0 transition-colors"
-                    >
-                      배우 페이지 →
-                    </Link>
-                  )}
-                </div>
-
-                {/* 구분선 */}
-                <div className="border-t border-stone-100" />
-
-                {/* 키워드 투표 */}
-                <KeywordVote
-                  showId={show.id}
-                  actorId={resolvedId}
-                  roleName={castMember.roleName}
-                />
-              </div>
-              )
-            })}
-          </div>
-        </section>
+        <CastSection
+          cast={show.cast}
+          showId={show.id}
+          actorIdMap={actorIdMap}
+        />
       )}
 
       {/* 댓글 */}

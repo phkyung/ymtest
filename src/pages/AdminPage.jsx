@@ -20,6 +20,8 @@ const ADMIN_PW = import.meta.env.VITE_ADMIN_PASSWORD ?? 'theater2025'
 
 // 대기 중 탭 한 페이지에 표시할 행 수
 const PENDING_PAGE_SIZE = 50
+// 등록 완료 탭 한 페이지에 표시할 카드 수
+const SHOWS_PAGE_SIZE = 20
 
 // 장르 선택지
 const GENRES = ['뮤지컬', '연극', '오페라', '콘서트', '무용', '기타']
@@ -1361,6 +1363,12 @@ export default function AdminPage() {
   const [selected,    setSelected]    = useState(new Set())
   const [dataLoading, setDataLoading] = useState(false)
 
+  // ── 등록 완료 탭 필터/검색/페이지 상태 ──────────
+  const [showsSearch,      setShowsSearch]      = useState('')
+  const [showsFilterGenre, setShowsFilterGenre] = useState('all')
+  const [showsSortBy,      setShowsSortBy]      = useState('collectedAt_desc')
+  const [showsPage,        setShowsPage]        = useState(0)
+
   // ── 대기 중 탭 필터 상태 ──────────────────────
   // 기간 필터: all / short(7일↓) / medium(8~30일) / long(31일↑)
   const [filterDuration, setFilterDuration] = useState('all')
@@ -1484,6 +1492,42 @@ export default function AdminPage() {
   const paginatedPendingList = filteredPendingList.slice(
     pendingPage * PENDING_PAGE_SIZE,
     (pendingPage + 1) * PENDING_PAGE_SIZE,
+  )
+
+  // ── 등록 완료 탭 필터 + 정렬 + 페이지네이션 ────
+  const filteredShowsList = showsList
+    .filter(show => {
+      if (showsSearch.trim()) {
+        if (!show.title?.includes(showsSearch.trim())) return false
+      }
+      if (showsFilterGenre !== 'all') {
+        const genre = show.genre ?? ''
+        const isOther = !['뮤지컬', '연극', '오페라'].includes(genre)
+        if (showsFilterGenre === '기타' ? !isOther : genre !== showsFilterGenre) return false
+      }
+      return true
+    })
+    .sort((a, b) => {
+      if (showsSortBy === 'startDate_asc') {
+        return (a.startDate ?? '').localeCompare(b.startDate ?? '')
+      }
+      if (showsSortBy === 'duration_asc') {
+        const da = getDurationDays(a) ?? 9999
+        const db = getDurationDays(b) ?? 9999
+        return da - db
+      }
+      // 기본: 등록일 내림차순
+      const ta = a.approvedAt?.seconds ?? a.collectedAt?.seconds ?? 0
+      const tb = b.approvedAt?.seconds ?? b.collectedAt?.seconds ?? 0
+      return tb - ta
+    })
+
+  useEffect(() => { setShowsPage(0) }, [showsSearch, showsFilterGenre, showsSortBy])
+
+  const totalShowsPages    = Math.max(1, Math.ceil(filteredShowsList.length / SHOWS_PAGE_SIZE))
+  const paginatedShowsList = filteredShowsList.slice(
+    showsPage * SHOWS_PAGE_SIZE,
+    (showsPage + 1) * SHOWS_PAGE_SIZE,
   )
 
   // ── 체크박스 ─────────────────────────────────
@@ -2322,17 +2366,128 @@ export default function AdminPage() {
                 <p className="text-sm">대기 중 탭에서 공연을 승인하면 여기에 표시됩니다</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {showsList.map(show => (
-                  <ShowCard
-                    key={show.id}
-                    show={show}
-                    onUpdate={handleUpdateShow}
-                    onDelete={handleDeleteShow}
-                    onRevert={handleRevertShow}
+              <>
+                {/* ── 검색 + 필터 바 ── */}
+                <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 space-y-3">
+                  {/* 검색 */}
+                  <input
+                    type="text"
+                    value={showsSearch}
+                    onChange={e => setShowsSearch(e.target.value)}
+                    placeholder="공연명 검색…"
+                    className="w-full px-3 py-2 text-sm border border-stone-200 rounded-lg
+                               focus:outline-none focus:border-stone-400"
                   />
-                ))}
-              </div>
+
+                  {/* 장르 필터 */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold text-stone-500 w-10 shrink-0">장르</span>
+                    {[
+                      { value: 'all',   label: '전체' },
+                      { value: '뮤지컬', label: '뮤지컬' },
+                      { value: '연극',   label: '연극' },
+                      { value: '오페라', label: '오페라' },
+                      { value: '기타',   label: '기타' },
+                    ].map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setShowsFilterGenre(opt.value)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          showsFilterGenre === opt.value
+                            ? 'bg-stone-900 text-white'
+                            : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 정렬 */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold text-stone-500 w-10 shrink-0">정렬</span>
+                    {[
+                      { value: 'collectedAt_desc', label: '등록일 순' },
+                      { value: 'startDate_asc',    label: '시작일 순' },
+                      { value: 'duration_asc',     label: '기간 짧은 순' },
+                    ].map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setShowsSortBy(opt.value)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          showsSortBy === opt.value
+                            ? 'bg-stone-900 text-white'
+                            : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 결과 건수 */}
+                  <p className="text-xs text-stone-400 pt-0.5">
+                    전체 <span className="font-semibold text-stone-600">{showsList.length}개</span>
+                    {filteredShowsList.length !== showsList.length && (
+                      <> · 필터 결과 <span className="font-semibold text-stone-600">{filteredShowsList.length}개</span></>
+                    )}
+                  </p>
+                </div>
+
+                {/* ── 카드 목록 ── */}
+                {filteredShowsList.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-stone-100 shadow-sm
+                                  text-center py-12 text-stone-400">
+                    <div className="text-4xl mb-3">🔍</div>
+                    <p className="font-medium text-stone-600 mb-2">검색 결과가 없습니다</p>
+                    <button
+                      onClick={() => { setShowsSearch(''); setShowsFilterGenre('all') }}
+                      className="text-sm text-amber-600 underline hover:text-amber-500"
+                    >
+                      필터 초기화
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {paginatedShowsList.map(show => (
+                        <ShowCard
+                          key={show.id}
+                          show={show}
+                          onUpdate={handleUpdateShow}
+                          onDelete={handleDeleteShow}
+                          onRevert={handleRevertShow}
+                        />
+                      ))}
+                    </div>
+
+                    {/* ── 페이지네이션 ── */}
+                    {totalShowsPages > 1 && (
+                      <div className="flex items-center justify-center gap-3 py-2">
+                        <button
+                          onClick={() => setShowsPage(p => Math.max(0, p - 1))}
+                          disabled={showsPage === 0}
+                          className="px-4 py-2 rounded-lg text-sm font-semibold border border-stone-200
+                                     text-stone-600 hover:bg-stone-50 disabled:opacity-40 transition-colors"
+                        >
+                          이전
+                        </button>
+                        <span className="text-sm text-stone-500">
+                          {showsPage + 1} / {totalShowsPages}
+                        </span>
+                        <button
+                          onClick={() => setShowsPage(p => Math.min(totalShowsPages - 1, p + 1))}
+                          disabled={showsPage === totalShowsPages - 1}
+                          className="px-4 py-2 rounded-lg text-sm font-semibold border border-stone-200
+                                     text-stone-600 hover:bg-stone-50 disabled:opacity-40 transition-colors"
+                        >
+                          다음
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
             )}
           </div>
         )}

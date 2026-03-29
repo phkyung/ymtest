@@ -6,9 +6,9 @@
 //   필드: count(숫자), voterIds(배열), showId, actorId, keyword
 // ─────────────────────────────────────────────
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
-  collection, doc, getDoc, setDoc,
+  doc, getDoc, setDoc,
   updateDoc, arrayUnion, increment, onSnapshot,
 } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
@@ -24,10 +24,31 @@ const PRESET_KEYWORDS = [
 // 로컬(더미) 투표 상태 관리 — Firebase 미연결 시 사용
 const localVotes = {}
 
+// ── 토스트 컴포넌트 ──────────────────────────
+function Toast({ message, visible }) {
+  return (
+    <div
+      className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50
+                  bg-[#2C1810] text-white rounded-lg px-4 py-2 text-sm
+                  transition-all duration-300 pointer-events-none
+                  ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+    >
+      {message}
+    </div>
+  )
+}
+
 export default function KeywordVote({ showId, actorId, roleName }) {
   const { user, signIn } = useAuth()
   const [votes, setVotes]         = useState({}) // { keyword: { count, voted } }
   const [loading, setLoading]     = useState(false)
+  const [toast, setToast]         = useState({ visible: false, message: '' })
+
+  // ── 토스트 표시 ──────────────────────────────
+  const showToast = useCallback((message) => {
+    setToast({ visible: true, message })
+    setTimeout(() => setToast({ visible: false, message }), 2000)
+  }, [])
 
   // ── 투표 데이터 로드 ──────────────────────────
   useEffect(() => {
@@ -68,7 +89,11 @@ export default function KeywordVote({ showId, actorId, roleName }) {
 
   // ── 투표 처리 ──────────────────────────────────
   async function handleVote(keyword) {
-    if (!user || loading) return
+    if (!user) {
+      showToast('투표하려면 로그인이 필요해요 😊')
+      return
+    }
+    if (loading) return
     setLoading(true)
 
     const key    = `${showId}_${actorId}_${keyword}`
@@ -132,44 +157,43 @@ export default function KeywordVote({ showId, actorId, roleName }) {
         </span>
       </h3>
 
+      <div className="flex flex-wrap gap-2">
+        {sorted.map(kw => {
+          const count = votes[kw]?.count ?? 0
+          const voted = votes[kw]?.voted ?? false
+
+          return (
+            <button
+              key={kw}
+              onClick={() => handleVote(kw)}
+              disabled={voted || loading}
+              className={`keyword-badge ${voted ? 'keyword-badge-voted' : 'keyword-badge-unvoted'}`}
+            >
+              <span>{kw}</span>
+              {count > 0 && (
+                <span className={`text-xs font-medium ${voted ? 'text-amber-100' : 'text-stone-400'}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
       {!user ? (
-        <p className="text-sm text-stone-400 py-2">
-          투표하려면{' '}
+        <p className="text-xs text-stone-400 mt-3">
+          로그인하면 공감 키워드를 투표할 수 있어요 ·{' '}
           <button onClick={signIn} className="text-[#4A6B4F] underline hover:text-[#7A9E7F]">
             구글 로그인
           </button>
-          이 필요합니다.
         </p>
       ) : (
-        <>
-          <div className="flex flex-wrap gap-2">
-            {sorted.map(kw => {
-              const count = votes[kw]?.count ?? 0
-              const voted = votes[kw]?.voted ?? false
-
-              return (
-                <button
-                  key={kw}
-                  onClick={() => handleVote(kw)}
-                  disabled={voted || loading}
-                  className={`keyword-badge ${voted ? 'keyword-badge-voted' : 'keyword-badge-unvoted'}`}
-                >
-                  <span>{kw}</span>
-                  {count > 0 && (
-                    <span className={`text-xs font-medium ${voted ? 'text-amber-100' : 'text-stone-400'}`}>
-                      {count}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-
-          <p className="text-xs text-stone-400 mt-3">
-            * 키워드는 한 번 누르면 취소되지 않습니다
-          </p>
-        </>
+        <p className="text-xs text-stone-400 mt-3">
+          * 키워드는 한 번 누르면 취소되지 않습니다
+        </p>
       )}
+
+      <Toast message={toast.message} visible={toast.visible} />
     </div>
   )
 }
