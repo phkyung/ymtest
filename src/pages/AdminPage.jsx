@@ -8,10 +8,17 @@
 // ─────────────────────────────────────────────
 
 import { useState, useEffect, useRef } from 'react'
+import {
+  DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
+} from '@dnd-kit/core'
+import {
+  SortableContext, useSortable, arrayMove, horizontalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { db, isFirebaseConfigured } from '../firebase'
 import { toHttps } from '../utils/imageUrl'
 import {
-  doc, setDoc, deleteDoc, collection,
+  doc, setDoc, deleteDoc, addDoc, collection,
   onSnapshot, writeBatch, serverTimestamp,
   query, orderBy, getDocs, updateDoc,
 } from 'firebase/firestore'
@@ -49,6 +56,15 @@ const EMPTY_FORM = {
   ticketUrl: '', tags: '', source: '수동입력',
 }
 
+
+// 동명이인 구분 라벨: 같은 이름이 여러 명이면 bio 앞부분 또는 #1/#2 반환
+function getDuplicateLabel(actor, allResults) {
+  const same = allResults.filter(a => a.name === actor.name)
+  if (same.length <= 1) return null
+  if (actor.bio?.trim()) return actor.bio.trim().slice(0, 20)
+  const idx = same.findIndex(a => a.id === actor.id)
+  return `#${idx + 1}`
+}
 
 // ── 출연진 편집 섹션 (수정 폼용) ─────────────────
 // cast: [{ actorId, actorName, roleName, isDouble, imageUrl }]
@@ -121,11 +137,22 @@ function CastEditSection({ cast, onChange }) {
     setActorResults([])
   }
 
-  // ── actors 컬렉션에 없는 경우 이름으로 새 배우 직접 추가 ──
-  function addNewActor() {
+  // ── actors 컬렉션에 없는 경우 새 배우 Firestore에 생성 후 추가 ──
+  async function addNewActor() {
     const name = actorQuery.trim()
     if (!name) return
-    onChange([...cast, { actorId: '', actorName: name, roleName: '', isDouble: false, imageUrl: null }])
+
+    let actorId = ''
+    if (isFirebaseConfigured && db) {
+      try {
+        const ref = await addDoc(collection(db, 'actors'), { name, createdAt: new Date() })
+        actorId = ref.id
+      } catch (err) {
+        console.error('배우 생성 오류:', err)
+      }
+    }
+
+    onChange([...cast, { actorId, actorName: name, roleName: '', isDouble: false, imageUrl: null }])
     setActorQuery('')
     setActorResults([])
   }
@@ -217,6 +244,7 @@ function CastEditSection({ cast, onChange }) {
             const wikiImg = wikiImages[actor.id]
             const imgSrc  = actor.imageUrl ||
               (wikiImg && wikiImg !== 'loading' && wikiImg !== 'none' ? wikiImg : null)
+            const dupLabel = getDuplicateLabel(actor, actorResults)
             return (
               <button
                 key={actor.id}
@@ -239,8 +267,15 @@ function CastEditSection({ cast, onChange }) {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-stone-800">{actor.name}</p>
-                  {actor.bio && (
+                  <p className="text-sm font-semibold text-stone-800">
+                    {actor.name}
+                    {dupLabel && (
+                      <span className="ml-1.5 text-xs font-normal text-[#8FAF94] bg-[#EEF5EF] px-1.5 py-0.5 rounded">
+                        {dupLabel}
+                      </span>
+                    )}
+                  </p>
+                  {actor.bio && !dupLabel && (
                     <p className="text-xs text-stone-400 truncate">{actor.bio}</p>
                   )}
                 </div>
@@ -915,7 +950,63 @@ function ShowCard({ show, onUpdate, onDelete, onRevert }) {
 // ── 출연진 입력 섹션 ──────────────────────────
 // cast: [{ actorId, actorName, actorImage, role }]
 // onChange: (newCast) => void
+// ── 드래그 가능한 출연진 태그 ─────────────────────
+function SortableCastItem({ c, onRemove }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: c.actorId })
+  const style = { transform: CSS.Transform.toString(transform), transition }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-1.5 border rounded-full pl-1 pr-2 py-1 text-xs select-none
+                  ${isDragging ? 'bg-[#F5F3F0] border-[#C8D8CA] shadow-md opacity-90 z-10' : 'bg-amber-50 border-amber-200'}`}
+    >
+      {/* 드래그 핸들 */}
+      <span
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-[#C8D8CA] hover:text-stone-400 px-0.5 text-base leading-none"
+        title="드래그하여 순서 변경"
+      >
+        ⠿
+      </span>
+      {/* 썸네일 */}
+      {c.actorImage ? (
+        <img src={c.actorImage} alt={c.actorName} className="w-6 h-6 rounded-full object-cover shrink-0" />
+      ) : (
+        <div className="w-6 h-6 rounded-full bg-amber-200 shrink-0 flex items-center justify-center font-bold text-amber-700">
+          {c.actorName?.[0]}
+        </div>
+      )}
+      <span className="font-medium text-stone-800">{c.actorName}</span>
+      {c.role && <span className="text-stone-400">({c.role})</span>}
+      <button
+        type="button"
+        onClick={() => onRemove(c.actorId)}
+        className="ml-0.5 text-stone-400 hover:text-red-500 transition-colors font-bold leading-none"
+      >
+        ×
+      </button>
+    </div>
+  )
+}
+
 function ActorCastSection({ cast, onChange }) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor,   { activationConstraint: { delay: 200, tolerance: 5 } }),
+  )
+
+  function handleDragEnd(event) {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIdx = cast.findIndex(c => c.actorId === active.id)
+      const newIdx = cast.findIndex(c => c.actorId === over.id)
+      onChange(arrayMove(cast, oldIdx, newIdx))
+    }
+  }
+
   // 검색어
   const [query,      setQuery]      = useState('')
   // actors 컬렉션 검색 결과
@@ -1011,37 +1102,17 @@ function ActorCastSection({ cast, onChange }) {
     <div className="space-y-3">
       <label className={LABEL}>출연진</label>
 
-      {/* 이미 추가된 배우 태그 목록 */}
+      {/* 이미 추가된 배우 태그 목록 (드래그로 순서 변경 가능) */}
       {cast.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {cast.map(c => (
-            <div key={c.actorId}
-                 className="flex items-center gap-1.5 bg-amber-50 border border-amber-200
-                            rounded-full pl-1 pr-2 py-1 text-xs">
-              {/* 썸네일 */}
-              {c.actorImage ? (
-                <img src={c.actorImage} alt={c.actorName}
-                     className="w-6 h-6 rounded-full object-cover shrink-0" />
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-amber-200 shrink-0
-                                flex items-center justify-center font-bold text-amber-700">
-                  {c.actorName?.[0]}
-                </div>
-              )}
-              <span className="font-medium text-stone-800">{c.actorName}</span>
-              {c.role && <span className="text-stone-400">({c.role})</span>}
-              {/* X 삭제 버튼 */}
-              <button
-                type="button"
-                onClick={() => removeCast(c.actorId)}
-                className="ml-0.5 text-stone-400 hover:text-red-500 transition-colors
-                           font-bold leading-none"
-              >
-                ×
-              </button>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={cast.map(c => c.actorId)} strategy={horizontalListSortingStrategy}>
+            <div className="flex flex-wrap gap-2">
+              {cast.map(c => (
+                <SortableCastItem key={c.actorId} c={c} onRemove={removeCast} />
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* 배우 이름 검색 입력창 */}
@@ -1090,9 +1161,19 @@ function ActorCastSection({ cast, onChange }) {
 
                 {/* 배우 정보 + 역할 입력 + 확인 버튼 */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-stone-800">{actor.name}</p>
-                  {/* 주요 출연작 대신 bio 요약 표시 */}
-                  {actor.bio && (
+                  <p className="text-sm font-semibold text-stone-800">
+                    {actor.name}
+                    {(() => {
+                      const dupLabel = getDuplicateLabel(actor, results)
+                      return dupLabel ? (
+                        <span className="ml-1.5 text-xs font-normal text-[#8FAF94] bg-[#EEF5EF] px-1.5 py-0.5 rounded">
+                          {dupLabel}
+                        </span>
+                      ) : null
+                    })()}
+                  </p>
+                  {/* bio는 dupLabel 없을 때만 표시 (dupLabel이 bio 기반이면 중복) */}
+                  {actor.bio && !getDuplicateLabel(actor, results) && (
                     <p className="text-xs text-stone-400 line-clamp-1">{actor.bio}</p>
                   )}
                   {/* 위키백과 사진 출처 표시 */}
