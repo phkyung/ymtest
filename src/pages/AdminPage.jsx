@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { db, isFirebaseConfigured } from '../firebase'
+import { toHttps } from '../utils/imageUrl'
 import {
   doc, setDoc, deleteDoc, collection,
   onSnapshot, writeBatch, serverTimestamp,
@@ -519,7 +520,7 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
           {posterUrl && (
             <div className="w-16 h-20 rounded-lg overflow-hidden bg-stone-100 shrink-0 border border-stone-200">
               <img
-                src={posterUrl}
+                src={toHttps(posterUrl)}
                 alt="포스터 미리보기"
                 className="w-full h-full object-cover"
                 onError={e => { e.target.style.display = 'none' }}

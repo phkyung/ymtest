@@ -5,6 +5,7 @@
 import { useParams, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useShow } from '../hooks/useShows'
+import { toHttps } from '../utils/imageUrl'
 import KeywordVote from '../components/KeywordVote'
 import CommentSection from '../components/CommentSection'
 import { db, isFirebaseConfigured } from '../firebase'
@@ -67,64 +68,80 @@ export default function ShowPage() {
       </Link>
 
       {/* 공연 헤더 */}
-      <section className="bg-gradient-to-br from-stone-800 to-stone-900 rounded-2xl p-6 sm:p-8 text-white">
-        {/* 장르 뱃지 */}
-        <span className="inline-block text-xs bg-white/10 border border-white/20 px-2 py-1 rounded-full mb-3">
-          {show.genre}
-        </span>
-
-        <h1 className="font-display text-3xl sm:text-4xl leading-tight">
-          {show.title}
-        </h1>
-        {show.subtitle && (
-          <p className="text-stone-400 italic mt-1 text-sm">{show.subtitle}</p>
+      <section className="relative rounded-2xl overflow-hidden text-white bg-[#7A5C48]">
+        {/* 포스터 배경 이미지 */}
+        {show.posterUrl && (
+          <img
+            src={toHttps(show.posterUrl)}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
         )}
 
-        <div className="mt-5 grid sm:grid-cols-2 gap-3 text-sm text-stone-300">
-          <div className="flex items-start gap-2">
-            <span>📍</span>
-            <div>
-              <p className="text-white font-medium">{show.venue}</p>
-              {show.address && <p className="text-stone-400 text-xs mt-0.5">{show.address}</p>}
+        {/* 어두운 오버레이 */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/30" />
+
+        {/* 콘텐츠 */}
+        <div className="relative z-10 p-6 sm:p-8">
+          {/* 장르 뱃지 */}
+          <span className="inline-block text-xs bg-white/10 border border-white/20 px-2 py-1 rounded-full mb-3">
+            {show.genre}
+          </span>
+
+          <h1 className="font-display text-3xl sm:text-4xl leading-tight">
+            {show.title}
+          </h1>
+          {show.subtitle && (
+            <p className="text-white/60 italic mt-1 text-sm">{show.subtitle}</p>
+          )}
+
+          <div className="mt-5 grid sm:grid-cols-2 gap-3 text-sm text-white/80">
+            <div className="flex items-start gap-2">
+              <span>📍</span>
+              <div>
+                <p className="text-white font-medium">{show.venue}</p>
+                {show.address && <p className="text-white/50 text-xs mt-0.5">{show.address}</p>}
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <span>🗓</span>
+              <div>
+                <p className="text-white">{formatDateRange(show.startDate, show.endDate)}</p>
+                {show.runtime && (
+                  <p className="text-white/50 text-xs mt-0.5">
+                    상연 시간 {show.runtime}분
+                    {show.intermission > 0 && ` (인터미션 포함)`}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex items-start gap-2">
-            <span>🗓</span>
-            <div>
-              <p className="text-white">{formatDateRange(show.startDate, show.endDate)}</p>
-              {show.runtime && (
-                <p className="text-stone-400 text-xs mt-0.5">
-                  상연 시간 {show.runtime}분
-                  {show.intermission > 0 && ` (인터미션 포함)`}
-                </p>
-              )}
+
+          {/* 태그 */}
+          {show.tags?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-5">
+              {show.tags.map(t => (
+                <span key={t} className="text-xs bg-white/15 px-2 py-0.5 rounded-full text-white">
+                  #{t}
+                </span>
+              ))}
             </div>
-          </div>
+          )}
+
+          {/* 티켓 링크 */}
+          {show.ticketUrl && (
+            <a
+              href={show.ticketUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-5 inline-block px-4 py-2 bg-[#8FAF94] hover:bg-[#7A9E7F]
+                         text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              티켓 예매 →
+            </a>
+          )}
         </div>
-
-        {/* 태그 */}
-        {show.tags?.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-5">
-            {show.tags.map(t => (
-              <span key={t} className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-stone-300">
-                #{t}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* 티켓 링크 */}
-        {show.ticketUrl && (
-          <a
-            href={show.ticketUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-5 inline-block px-4 py-2 bg-amber-500 hover:bg-amber-400
-                       text-stone-900 text-sm font-medium rounded-lg transition-colors"
-          >
-            티켓 예매 →
-          </a>
-        )}
       </section>
 
       {/* 시놉시스 */}
@@ -154,7 +171,7 @@ export default function ShowPage() {
                     {resolvedId ? (
                       <Link
                         to={`/actors/${resolvedId}`}
-                        className="font-display text-lg text-stone-800 hover:text-amber-700 transition-colors"
+                        className="font-display text-lg text-stone-800 hover:text-[#4A6B4F] transition-colors"
                       >
                         {castMember.actorName}
                       </Link>
@@ -176,7 +193,7 @@ export default function ShowPage() {
                   {resolvedId && (
                     <Link
                       to={`/actors/${resolvedId}`}
-                      className="text-xs text-amber-600 hover:text-amber-700 border border-amber-200 px-2 py-1 rounded-lg shrink-0"
+                      className="text-xs bg-[#8FAF94] hover:bg-[#7A9E7F] text-white border border-[#8FAF94] px-2 py-1 rounded-lg shrink-0 transition-colors"
                     >
                       배우 페이지 →
                     </Link>

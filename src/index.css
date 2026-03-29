@@ -5,7 +5,8 @@
 /* ─── 전역 폰트 적용 ─────────────────────────── */
 @layer base {
   body {
-    @apply font-body bg-stone-50 text-stone-800 antialiased;
+    @apply font-body bg-[#FAF8F5] text-stone-800 antialiased;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   }
 
   h1, h2, h3, h4 {
@@ -44,6 +45,6 @@
   }
 
   .keyword-badge-unvoted {
-    @apply bg-white border-stone-200 text-stone-600 hover:border-amber-400 hover:text-amber-700;
+    @apply bg-white border-[#C8D8CA] text-[#4A6B4F] hover:bg-[#8FAF94] hover:text-white hover:border-[#8FAF94];
   }
 }

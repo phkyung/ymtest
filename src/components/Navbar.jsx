@@ -17,16 +17,16 @@ export default function Navbar() {
   ]
 
   return (
-    <header className="sticky top-0 z-50 bg-stone-900 text-stone-100 shadow-lg">
+    <header className="sticky top-0 z-50 bg-[#FAF8F5] text-[#2C1810] shadow-lg border-b border-[#E8E4DF]">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
         {/* 로고 */}
         <Link
           to="/"
-          className="font-display text-lg tracking-wide hover:text-amber-400 transition-colors"
+          className="font-display text-lg tracking-wide hover:text-[#7A9E7F] transition-colors"
         >
-          막이 오르면
+          플레이픽
           <span className="ml-2 text-xs font-body text-stone-400 hidden sm:inline">
-            서울 공연 아카이브
+            공연을 기록하고, 함께 기억하는 곳
           </span>
         </Link>
 
@@ -36,10 +36,10 @@ export default function Navbar() {
             <Link
               key={to}
               to={to}
-              className={`hover:text-amber-400 transition-colors ${
+              className={`hover:text-[#7A9E7F] transition-colors ${
                 location.pathname === to
-                  ? 'text-amber-400 font-medium'
-                  : 'text-stone-300'
+                  ? 'text-[#7A9E7F] font-medium'
+                  : 'text-[#6B5E52]'
               }`}
             >
               {label}
@@ -54,8 +54,8 @@ export default function Navbar() {
               </span>
               <button
                 onClick={signOut}
-                className="text-xs px-3 py-1 rounded border border-stone-600
-                           text-stone-300 hover:text-amber-400 hover:border-amber-400
+                className="text-xs px-3 py-1 rounded border border-[#7A9E7F]
+                           text-[#6B5E52] hover:text-[#7A9E7F] hover:border-[#7A9E7F]
                            transition-colors"
               >
                 로그아웃
@@ -64,8 +64,8 @@ export default function Navbar() {
           ) : (
             <button
               onClick={signIn}
-              className="text-xs px-3 py-1 rounded bg-amber-500 text-stone-900
-                         font-medium hover:bg-amber-400 transition-colors"
+              className="text-xs px-3 py-1 rounded bg-[#7A9E7F] text-white
+                         font-medium hover:bg-[#6B8F70] transition-colors"
             >
               구글로 로그인
             </button>
@@ -84,7 +84,7 @@ export default function Navbar() {
 
       {/* 모바일 드롭다운 */}
       {open && (
-        <div className="sm:hidden bg-stone-800 border-t border-stone-700 px-4 py-3 flex flex-col gap-3">
+        <div className="sm:hidden bg-[#FAF8F5] border-t border-[#E8E4DF] px-4 py-3 flex flex-col gap-3">
           {links.map(({ to, label }) => (
             <Link
               key={to}
@@ -92,8 +92,8 @@ export default function Navbar() {
               onClick={() => setOpen(false)}
               className={`text-sm py-1 ${
                 location.pathname === to
-                  ? 'text-amber-400 font-medium'
-                  : 'text-stone-300'
+                  ? 'text-[#7A9E7F] font-medium'
+                  : 'text-[#6B5E52]'
               }`}
             >
               {label}
@@ -108,7 +108,7 @@ export default function Navbar() {
               </span>
               <button
                 onClick={() => { signOut(); setOpen(false) }}
-                className="text-sm py-1 text-stone-300 hover:text-amber-400 text-left"
+                className="text-sm py-1 text-[#6B5E52] hover:text-[#7A9E7F] text-left"
               >
                 로그아웃
               </button>
@@ -116,7 +116,7 @@ export default function Navbar() {
           ) : (
             <button
               onClick={() => { signIn(); setOpen(false) }}
-              className="text-sm py-1 text-amber-400 text-left"
+              className="text-sm py-1 text-[#7A9E7F] text-left"
             >
               구글로 로그인
             </button>

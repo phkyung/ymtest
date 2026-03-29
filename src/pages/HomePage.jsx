@@ -36,11 +36,11 @@ export default function HomePage() {
     <div>
       {/* 헤더 */}
       <section className="mb-8">
-        <h1 className="font-display text-3xl sm:text-4xl text-stone-900 leading-tight">
-          서울 공연 아카이브
+        <h1 className="font-display text-2xl font-semibold text-[#2C1810] leading-tight">
+          그날의 무대를 함께 기억하세요
         </h1>
-        <p className="text-stone-500 mt-2 text-sm sm:text-base">
-          대학로 중심 · 연극·뮤지컬 정보와 배우 키워드
+        <p className="text-sm text-[#8FAF94] mt-1">
+          연극·뮤지컬 공연 아카이브
         </p>
 
         {/* Firebase 미연결 알림 */}

@@ -135,7 +135,7 @@ export default function KeywordVote({ showId, actorId, roleName }) {
       {!user ? (
         <p className="text-sm text-stone-400 py-2">
           투표하려면{' '}
-          <button onClick={signIn} className="text-amber-600 underline hover:text-amber-500">
+          <button onClick={signIn} className="text-[#4A6B4F] underline hover:text-[#7A9E7F]">
             구글 로그인
           </button>
           이 필요합니다.
