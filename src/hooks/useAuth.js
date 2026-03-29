@@ -8,6 +8,8 @@ import { useState, useEffect } from 'react'
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
 } from 'firebase/auth'
@@ -42,6 +44,16 @@ export function useAuth() {
     }
   }
 
+  async function signInWithEmail(email, password) {
+    if (!isFirebaseConfigured || !auth) throw new Error('Firebase가 연결되지 않았습니다.')
+    await signInWithEmailAndPassword(auth, email, password)
+  }
+
+  async function signUpWithEmail(email, password) {
+    if (!isFirebaseConfigured || !auth) throw new Error('Firebase가 연결되지 않았습니다.')
+    await createUserWithEmailAndPassword(auth, email, password)
+  }
+
   async function signOut() {
     if (!isFirebaseConfigured || !auth) return
     try {
@@ -51,5 +63,5 @@ export function useAuth() {
     }
   }
 
-  return { user, loading, signIn, signOut }
+  return { user, loading, signIn, signInWithEmail, signUpWithEmail, signOut }
 }

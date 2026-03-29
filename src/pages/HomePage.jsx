@@ -20,15 +20,22 @@ export default function HomePage() {
   const { shows, loading } = useShows()
   const [filter, setFilter]     = useState('전체')   // 장르 필터
   const [todayOnly, setTodayOnly] = useState(false)  // 오늘 공연만
+  const [query, setQuery]       = useState('')        // 검색어
 
-  // 필터 적용
+  // 필터 + 검색 적용
   const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
     return shows.filter(s => {
       const genreOk = filter === '전체' || s.genre === filter
       const todayOk = !todayOnly || isPlayingToday(s.startDate, s.endDate)
-      return genreOk && todayOk
+      const searchOk = !q || (
+        s.title?.toLowerCase().includes(q) ||
+        s.venue?.toLowerCase().includes(q) ||
+        s.cast?.some(c => c.actorName?.toLowerCase().includes(q))
+      )
+      return genreOk && todayOk && searchOk
     })
-  }, [shows, filter, todayOnly])
+  }, [shows, filter, todayOnly, query])
 
   const todayCount = shows.filter(s => isPlayingToday(s.startDate, s.endDate)).length
 
@@ -54,6 +61,33 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {/* 검색바 */}
+      <div className="relative mb-4">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm pointer-events-none">
+          🔍
+        </span>
+        <input
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="공연명, 배우, 공연장 검색..."
+          className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-stone-200 bg-white
+                     text-sm text-stone-800 placeholder:text-stone-300
+                     focus:outline-none focus:border-[#8FAF94] focus:ring-1 focus:ring-[#8FAF94]
+                     transition-colors"
+        />
+        {query && (
+          <button
+            onClick={() => setQuery('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300
+                       hover:text-stone-500 transition-colors text-base leading-none"
+            aria-label="검색 초기화"
+          >
+            ✕
+          </button>
+        )}
+      </div>
 
       {/* 필터 바 */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -112,7 +146,7 @@ export default function HomePage() {
           <p className="text-4xl mb-3">🎭</p>
           <p className="font-display text-lg">해당 조건의 공연이 없습니다</p>
           <button
-            onClick={() => { setFilter('전체'); setTodayOnly(false) }}
+            onClick={() => { setFilter('전체'); setTodayOnly(false); setQuery('') }}
             className="mt-4 text-sm text-amber-600 underline"
           >
             필터 초기화

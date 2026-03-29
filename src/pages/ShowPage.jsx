@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────
-// ShowPage.jsx — 공연 상세 페이지
+// ShowPage.jsx — 공연 상세 페이지 (탭 구조)
 // ─────────────────────────────────────────────
 
 import { useParams, Link } from 'react-router-dom'
@@ -11,126 +11,371 @@ import CommentSection from '../components/CommentSection'
 import { db, isFirebaseConfigured } from '../firebase'
 import { collection, getDocs } from 'firebase/firestore'
 
-function formatDateRange(start, end) {
-  if (!start) return ''
-  const s = new Date(start)
-  const e = new Date(end)
-  const fmt = d => `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`
-  return `${fmt(s)} ~ ${fmt(e)}`
+const GENRE_EMOJI = {
+  '뮤지컬': '🎭', '연극': '🎬', '오페라': '🎼', '콘서트': '🎵', '무용': '💃',
+}
+const GENRE_COLOR = {
+  '뮤지컬': 'bg-amber-100 text-amber-800',
+  '연극':   'bg-sky-100 text-sky-800',
+  '오페라': 'bg-purple-100 text-purple-800',
 }
 
-// ── 출연진 섹션: 역할별 그룹핑 + 배우 선택 → 키워드 투표 ──
+function formatDateRange(start, end) {
+  if (!start) return ''
+  const fmt = d => `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`
+  return `${fmt(new Date(start))} ~ ${fmt(new Date(end))}`
+}
+
+function formatDateLabel(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  const days = ['일','월','화','수','목','금','토']
+  return `${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`
+}
+
+// 공연 기간 내 날짜 목록 생성 (최대 60일)
+function getShowDates(startDate, endDate) {
+  if (!startDate || !endDate) return []
+  const dates = []
+  const cur = new Date(startDate)
+  const end = new Date(endDate)
+  while (cur <= end && dates.length < 60) {
+    dates.push(cur.toISOString().slice(0, 10))
+    cur.setDate(cur.getDate() + 1)
+  }
+  return dates
+}
+
+// ── 시놉시스 (접기/펼치기) ────────────────────────
+function Synopsis({ text }) {
+  const [expanded, setExpanded] = useState(false)
+  const isLong = text.split('\n').length > 3 || text.length > 200
+
+  return (
+    <div>
+      <p className={`text-stone-600 leading-relaxed text-sm sm:text-base whitespace-pre-line
+                     ${!expanded && isLong ? 'line-clamp-3' : ''}`}>
+        {text}
+      </p>
+      {isLong && (
+        <button
+          onClick={() => setExpanded(v => !v)}
+          className="mt-2 text-xs text-[#8FAF94] hover:text-[#7A9E7F] font-medium transition-colors"
+        >
+          {expanded ? '접기 ▲' : '더 보기 ▼'}
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ── 배우 이니셜 아바타 ────────────────────────────
+function ActorAvatar({ name, imageUrl }) {
+  const [imgError, setImgError] = useState(false)
+  if (imageUrl && !imgError) {
+    return (
+      <img
+        src={toHttps(imageUrl)}
+        alt={name}
+        onError={() => setImgError(true)}
+        className="w-8 h-8 rounded-full object-cover shrink-0"
+      />
+    )
+  }
+  return (
+    <div className="w-8 h-8 rounded-full bg-[#2C1810] text-white flex items-center
+                    justify-center text-xs font-semibold shrink-0">
+      {name?.[0] ?? '?'}
+    </div>
+  )
+}
+
+// ── 출연진 탭 ─────────────────────────────────────
 function CastSection({ cast, showId, actorIdMap }) {
-  // cast 아이템에 resolvedId 미리 계산
   const enriched = cast.map(m => ({
     ...m,
     resolvedId: actorIdMap[m.actorName] || m.actorId || null,
   }))
 
-  // 역할별 그룹핑 (역할명 없으면 "출연")
+  // 역할별 그룹
   const groups = []
   const groupMap = {}
   enriched.forEach(m => {
     const role = m.roleName?.trim() || '출연'
-    if (!groupMap[role]) {
-      groupMap[role] = []
-      groups.push(role)
-    }
+    if (!groupMap[role]) { groupMap[role] = []; groups.push(role) }
     groupMap[role].push(m)
   })
 
-  // 선택된 배우: { actorName, resolvedId, roleName }
-  const [selected, setSelected] = useState(enriched[0] ?? null)
+  // 키워드 투표용 선택 배우 (투표 섹션에서만 사용)
+  const [voteTarget, setVoteTarget] = useState(enriched[0] ?? null)
+  const [voteOpen, setVoteOpen] = useState(false)
 
   return (
-    <section>
-      <h2 className="font-display text-xl text-stone-800 mb-4">출연진</h2>
+    <div className="space-y-4">
 
-      <div className="bg-white border border-stone-100 rounded-xl p-5 space-y-5">
-        {/* 역할 그룹별 배우 버튼 */}
+      {/* 역할별 배우 목록 */}
+      <div className="bg-white border border-stone-100 rounded-2xl p-5 space-y-5">
         {groups.map(role => (
           <div key={role}>
-            <p className="text-sm font-semibold text-[#6B5E52] border-b border-[#E8E4DF] pb-1 mb-3">
+            <p className="text-xs font-semibold text-[#6B5E52] uppercase tracking-wide
+                          border-b border-[#E8E4DF] pb-1.5 mb-3">
               {role}
             </p>
             <div className="flex flex-wrap gap-2">
-              {groupMap[role].map((m, idx) => {
-                const isSelected = selected?.actorName === m.actorName && selected?.roleName === m.roleName
-                return (
-                  <button
+              {groupMap[role].map((m, idx) =>
+                m.resolvedId ? (
+                  <Link
                     key={idx}
-                    onClick={() => setSelected(m)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                      isSelected
-                        ? 'bg-[#8FAF94] text-white'
-                        : 'border border-[#C8D8CA] text-[#4A6B4F] hover:bg-[#8FAF94] hover:text-white'
-                    }`}
+                    to={`/actors/${m.resolvedId}`}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full border
+                               border-[#C8D8CA] text-[#4A6B4F] text-sm font-medium
+                               hover:bg-[#8FAF94] hover:text-white hover:border-[#8FAF94]
+                               transition-colors group"
                   >
+                    <ActorAvatar name={m.actorName} imageUrl={m.imageUrl} />
+                    <span>{m.actorName}</span>
+                    {m.isDouble && (
+                      <span className="text-[10px] opacity-60 group-hover:opacity-80">더블</span>
+                    )}
+                  </Link>
+                ) : (
+                  <span
+                    key={idx}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full border
+                               border-stone-100 text-stone-500 text-sm"
+                  >
+                    <ActorAvatar name={m.actorName} imageUrl={m.imageUrl} />
                     {m.actorName}
-                  </button>
+                  </span>
                 )
-              })}
+              )}
             </div>
           </div>
         ))}
+      </div>
 
-        {/* 선택된 배우 + 키워드 투표 */}
-        {selected && (
-          <>
-            <div className="border-t border-stone-100 pt-4">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="font-display text-base text-stone-800 font-semibold">
-                  {selected.actorName}
-                </span>
-                {selected.roleName?.trim() && (
-                  <span className="text-sm text-stone-400">{selected.roleName} 역</span>
-                )}
-                {selected.resolvedId && (
-                  <Link
-                    to={`/actors/${selected.resolvedId}`}
-                    className="ml-auto text-xs bg-[#8FAF94] hover:bg-[#7A9E7F] text-white px-2 py-1 rounded-lg shrink-0 transition-colors"
-                  >
-                    배우 페이지 →
-                  </Link>
-                )}
-              </div>
-              <KeywordVote
-                showId={showId}
-                actorId={selected.resolvedId}
-                roleName={selected.roleName}
-              />
+      {/* 키워드 투표 섹션 */}
+      <div className="bg-white border border-stone-100 rounded-2xl overflow-hidden">
+        <button
+          onClick={() => setVoteOpen(v => !v)}
+          className="w-full flex items-center justify-between px-5 py-4 text-left
+                     hover:bg-[#FAF8F5] transition-colors"
+        >
+          <div>
+            <p className="text-sm font-semibold text-[#2C1810]">키워드 투표</p>
+            <p className="text-xs text-stone-400 mt-0.5">배우의 연기를 한 단어로 표현해보세요</p>
+          </div>
+          <span className="text-stone-400 text-sm">{voteOpen ? '▲' : '▼'}</span>
+        </button>
+
+        {voteOpen && (
+          <div className="px-5 pb-5 border-t border-stone-100">
+            {/* 배우 선택 */}
+            <div className="flex flex-wrap gap-2 pt-4 mb-4">
+              {enriched.map((m, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setVoteTarget(m)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm
+                              font-medium transition-colors ${
+                    voteTarget?.actorName === m.actorName && voteTarget?.roleName === m.roleName
+                      ? 'bg-[#8FAF94] text-white'
+                      : 'border border-[#C8D8CA] text-[#4A6B4F] hover:bg-[#8FAF94]/10'
+                  }`}
+                >
+                  {m.actorName}
+                </button>
+              ))}
             </div>
-          </>
+
+            {voteTarget && (
+              <div>
+                <p className="text-xs text-stone-400 mb-3">
+                  <span className="font-semibold text-[#2C1810]">{voteTarget.actorName}</span>
+                  {voteTarget.roleName?.trim() && ` · ${voteTarget.roleName} 역`}
+                </p>
+                <KeywordVote
+                  showId={showId}
+                  actorId={voteTarget.resolvedId}
+                  roleName={voteTarget.roleName}
+                />
+              </div>
+            )}
+          </div>
         )}
       </div>
-    </section>
+    </div>
   )
 }
 
+// ── 날짜별 후기 탭 ────────────────────────────────
+function ReviewTab({ show, actorIdMap }) {
+  const dates = getShowDates(show.startDate, show.endDate)
+  const today = new Date().toISOString().slice(0, 10)
+  const defaultDate = dates.includes(today) ? today : (dates[0] ?? null)
+  const [selectedDate, setSelectedDate] = useState(defaultDate)
+
+  const enrichedCast = (show.cast ?? []).map(m => ({
+    ...m,
+    resolvedId: actorIdMap[m.actorName] || m.actorId || null,
+  }))
+
+  if (dates.length === 0) {
+    return (
+      <p className="text-sm text-stone-400 py-8 text-center">공연 날짜 정보가 없습니다.</p>
+    )
+  }
+
+  // 날짜 그룹: 월별로 묶기
+  const byMonth = {}
+  dates.forEach(d => {
+    const month = d.slice(0, 7)
+    if (!byMonth[month]) byMonth[month] = []
+    byMonth[month].push(d)
+  })
+
+  return (
+    <div className="space-y-6">
+
+      {/* 날짜 선택 — 월별 그룹 */}
+      <div className="space-y-3">
+        {Object.entries(byMonth).map(([month, ds]) => {
+          const [y, m] = month.split('-')
+          return (
+            <div key={month}>
+              <p className="text-xs font-semibold text-stone-400 mb-2">
+                {parseInt(y)}년 {parseInt(m)}월
+              </p>
+              <div className="flex gap-1.5 flex-wrap">
+                {ds.map(d => {
+                  const date = new Date(d)
+                  const day  = ['일','월','화','수','목','금','토'][date.getDay()]
+                  const isWeekend = date.getDay() === 0 || date.getDay() === 6
+                  const isPast    = d < today
+                  const isToday   = d === today
+                  return (
+                    <button
+                      key={d}
+                      onClick={() => setSelectedDate(d)}
+                      className={`flex flex-col items-center px-2.5 py-2 rounded-xl
+                                  text-xs font-medium transition-all min-w-[44px] ${
+                        selectedDate === d
+                          ? 'bg-[#2C1810] text-white shadow-sm'
+                          : isToday
+                            ? 'bg-[#EEF5EF] text-[#4A6B4F] border border-[#8FAF94]'
+                            : isPast
+                              ? 'bg-stone-50 text-stone-300 border border-stone-100'
+                              : 'bg-white border border-[#E8E4DF] text-stone-600 hover:border-[#8FAF94] hover:text-[#4A6B4F]'
+                      }`}
+                    >
+                      <span className={
+                        selectedDate !== d && isWeekend
+                          ? (date.getDay() === 0 ? 'text-red-400' : 'text-blue-400')
+                          : ''
+                      }>
+                        {day}
+                      </span>
+                      <span className="font-semibold mt-0.5">{date.getDate()}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {selectedDate && (
+        <div className="space-y-4">
+          {/* 날짜 헤더 */}
+          <div className="flex items-center gap-2">
+            <h3 className="font-display text-base font-semibold text-[#2C1810]">
+              {formatDateLabel(selectedDate)}
+            </h3>
+            {selectedDate === today && (
+              <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full animate-pulse">
+                오늘
+              </span>
+            )}
+          </div>
+
+          {/* 출연진 */}
+          {enrichedCast.length > 0 && (
+            <div className="bg-[#FAF8F5] rounded-xl p-4">
+              <p className="text-xs font-semibold text-stone-400 mb-3">출연진</p>
+              <div className="flex flex-wrap gap-2">
+                {enrichedCast.map((m, idx) =>
+                  m.resolvedId ? (
+                    <Link
+                      key={idx}
+                      to={`/actors/${m.resolvedId}`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#C8D8CA]
+                                 rounded-full text-xs text-[#4A6B4F] hover:bg-[#8FAF94] hover:text-white
+                                 hover:border-[#8FAF94] transition-colors"
+                    >
+                      {m.actorName}
+                      {m.roleName && <span className="opacity-60">· {m.roleName}</span>}
+                    </Link>
+                  ) : (
+                    <span
+                      key={idx}
+                      className="px-3 py-1.5 bg-white border border-stone-100 rounded-full
+                                 text-xs text-stone-500"
+                    >
+                      {m.actorName}
+                      {m.roleName && <span className="opacity-60"> · {m.roleName}</span>}
+                    </span>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 날짜별 후기 댓글 */}
+          <div className="bg-white border border-stone-100 rounded-2xl p-5">
+            <p className="text-xs text-stone-400 mb-4">
+              이 날 공연을 보셨나요? 첫 번째 후기를 남겨보세요 ✍️
+            </p>
+            <CommentSection
+              targetId={`${show.id}_${selectedDate}`}
+              targetType="show_date"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── 메인 페이지 ───────────────────────────────────
 export default function ShowPage() {
   const { showId } = useParams()
   const { show, loading } = useShow(showId)
-
-  // 배우 이름 → actorId 매핑 (actors 컬렉션에 등록된 배우만)
   const [actorIdMap, setActorIdMap] = useState({})
+  const [tab, setTab] = useState('info')
+  const [posterError, setPosterError] = useState(false)
 
   useEffect(() => {
     if (!show?.cast?.length || !isFirebaseConfigured || !db) return
     getDocs(collection(db, 'actors')).then(snap => {
       const map = {}
-      snap.docs.forEach(d => {
-        const name = d.data().name
-        if (name) map[name] = d.id
-      })
+      snap.docs.forEach(d => { if (d.data().name) map[d.data().name] = d.id })
       setActorIdMap(map)
     }).catch(err => console.error('배우 ID 조회 오류:', err))
   }, [show])
 
   if (loading) {
     return (
-      <div className="animate-pulse space-y-4">
-        <div className="h-8 bg-stone-100 rounded w-1/2" />
-        <div className="h-48 bg-stone-100 rounded-xl" />
+      <div className="animate-pulse space-y-4 max-w-3xl mx-auto">
+        <div className="h-5 bg-stone-100 rounded w-20" />
+        <div className="flex gap-5">
+          <div className="w-32 h-48 bg-stone-100 rounded-xl shrink-0" />
+          <div className="flex-1 space-y-3 pt-1">
+            <div className="h-7 bg-stone-100 rounded w-3/4" />
+            <div className="h-4 bg-stone-100 rounded w-1/2" />
+            <div className="h-4 bg-stone-100 rounded w-2/3" />
+          </div>
+        </div>
       </div>
     )
   }
@@ -140,91 +385,98 @@ export default function ShowPage() {
       <div className="text-center py-16 text-stone-400">
         <p className="text-4xl mb-3">🎭</p>
         <p className="font-display text-lg">공연을 찾을 수 없습니다</p>
-        <Link to="/" className="mt-4 inline-block text-sm text-amber-600 underline">
+        <Link to="/" className="mt-4 inline-block text-sm text-[#8FAF94] underline">
           목록으로
         </Link>
       </div>
     )
   }
 
+  const posterSrc = show.imageUrl || show.posterUrl || ''
+  const hasPoster = posterSrc && !posterError
+
   return (
-    <div className="max-w-3xl mx-auto space-y-10">
+    <div className="max-w-3xl mx-auto space-y-6">
 
       {/* 뒤로가기 */}
-      <Link to="/" className="inline-flex items-center gap-1 text-stone-400 text-sm hover:text-stone-700 transition-colors">
+      <Link
+        to="/"
+        className="inline-flex items-center gap-1 text-stone-400 text-sm hover:text-stone-600 transition-colors"
+      >
         ← 공연 목록
       </Link>
 
-      {/* 공연 헤더 */}
-      <section className="relative rounded-2xl overflow-hidden text-white bg-[#7A5C48]">
-        {/* 포스터 배경 이미지 */}
-        {show.posterUrl && (
-          <img
-            src={toHttps(show.posterUrl)}
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        )}
+      {/* ── 헤더: 포스터 + 기본 정보 ── */}
+      <section className="flex gap-5 items-start">
+        {/* 포스터 */}
+        <div className="shrink-0 w-28 sm:w-36 rounded-xl overflow-hidden border border-stone-100
+                        shadow-sm bg-[#FAF8F5] aspect-[2/3] flex items-center justify-center">
+          {hasPoster ? (
+            <img
+              src={toHttps(posterSrc)}
+              alt={show.title}
+              onError={() => setPosterError(true)}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-4xl">{GENRE_EMOJI[show.genre] ?? '🎭'}</span>
+          )}
+        </div>
 
-        {/* 어두운 오버레이 */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/30" />
-
-        {/* 콘텐츠 */}
-        <div className="relative z-10 p-6 sm:p-8">
-          {/* 장르 뱃지 */}
-          <span className="inline-block text-xs bg-white/10 border border-white/20 px-2 py-1 rounded-full mb-3">
+        {/* 기본 정보 */}
+        <div className="flex-1 min-w-0 pt-1">
+          <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium mb-2
+                            ${GENRE_COLOR[show.genre] ?? 'bg-stone-100 text-stone-600'}`}>
             {show.genre}
           </span>
 
-          <h1 className="font-display text-3xl sm:text-4xl leading-tight">
+          <h1 className="font-display text-2xl sm:text-3xl text-[#2C1810] leading-tight">
             {show.title}
           </h1>
           {show.subtitle && (
-            <p className="text-white/60 italic mt-1 text-sm">{show.subtitle}</p>
+            <p className="text-stone-400 italic text-sm mt-0.5">{show.subtitle}</p>
           )}
 
-          <div className="mt-5 grid sm:grid-cols-2 gap-3 text-sm text-white/80">
-            <div className="flex items-start gap-2">
-              <span>📍</span>
+          <div className="mt-4 space-y-1.5 text-sm">
+            <div className="flex items-start gap-2 text-stone-600">
+              <span className="shrink-0">📍</span>
               <div>
-                <p className="text-white font-medium">{show.venue}</p>
-                {show.address && <p className="text-white/50 text-xs mt-0.5">{show.address}</p>}
+                <span className="font-medium text-[#2C1810]">{show.venue}</span>
+                {show.address && (
+                  <span className="text-stone-400 text-xs ml-1.5">{show.address}</span>
+                )}
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <span>🗓</span>
+            <div className="flex items-start gap-2 text-stone-600">
+              <span className="shrink-0">🗓</span>
               <div>
-                <p className="text-white">{formatDateRange(show.startDate, show.endDate)}</p>
+                <span>{formatDateRange(show.startDate, show.endDate)}</span>
                 {show.runtime && (
-                  <p className="text-white/50 text-xs mt-0.5">
-                    상연 시간 {show.runtime}분
-                    {show.intermission > 0 && ` (인터미션 포함)`}
-                  </p>
+                  <span className="text-stone-400 text-xs ml-1.5">
+                    {show.runtime}분{show.intermission > 0 ? ' (인터미션 포함)' : ''}
+                  </span>
                 )}
               </div>
             </div>
           </div>
 
-          {/* 태그 */}
           {show.tags?.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-5">
+            <div className="flex flex-wrap gap-1.5 mt-3">
               {show.tags.map(t => (
-                <span key={t} className="text-xs bg-white/15 px-2 py-0.5 rounded-full text-white">
+                <span key={t} className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">
                   #{t}
                 </span>
               ))}
             </div>
           )}
 
-          {/* 티켓 링크 */}
           {show.ticketUrl && (
             <a
               href={show.ticketUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-5 inline-block px-4 py-2 bg-[#8FAF94] hover:bg-[#7A9E7F]
-                         text-white text-sm font-medium rounded-lg transition-colors"
+              className="mt-4 inline-block px-4 py-2 bg-[#8FAF94] hover:bg-[#7A9E7F]
+                         text-white text-sm font-medium rounded-xl transition-colors"
             >
               티켓 예매 →
             </a>
@@ -232,30 +484,94 @@ export default function ShowPage() {
         </div>
       </section>
 
-      {/* 시놉시스 */}
-      {show.synopsis && (
-        <section>
-          <h2 className="font-display text-xl text-stone-800 mb-3">작품 소개</h2>
-          <p className="text-stone-600 leading-relaxed text-sm sm:text-base">
-            {show.synopsis}
-          </p>
-        </section>
-      )}
+      {/* ── 탭 네비게이션 ── */}
+      <div className="border-b border-[#E8E4DF]">
+        <div className="flex">
+          {[
+            { key: 'info',   label: '정보' },
+            { key: 'cast',   label: `출연진${show.cast?.length ? ` ${show.cast.length}` : ''}` },
+            { key: 'review', label: '날짜별 후기' },
+          ].map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-5 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
+                tab === t.key
+                  ? 'border-[#2C1810] text-[#2C1810]'
+                  : 'border-transparent text-stone-400 hover:text-stone-600'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      {/* 출연진 + 키워드 투표 */}
-      {show.cast?.length > 0 && (
-        <CastSection
-          cast={show.cast}
-          showId={show.id}
-          actorIdMap={actorIdMap}
-        />
-      )}
+      {/* ── 탭 콘텐츠 ── */}
+      <div className="min-h-[300px]">
 
-      {/* 댓글 */}
-      <section className="bg-white border border-stone-100 rounded-xl p-5">
-        <CommentSection targetId={show.id} targetType="show" />
-      </section>
+        {/* 정보 탭 */}
+        {tab === 'info' && (
+          <div className="space-y-6">
+            {show.synopsis && (
+              <section>
+                <h2 className="font-display text-lg text-[#2C1810] mb-3">작품 소개</h2>
+                <Synopsis text={show.synopsis} />
+              </section>
+            )}
 
+            <section className="bg-[#FAF8F5] rounded-2xl p-5 space-y-3 text-sm">
+              {show.venue && (
+                <div className="flex gap-3">
+                  <span className="text-stone-400 w-16 shrink-0">공연장</span>
+                  <span className="text-[#2C1810] font-medium">{show.venue}</span>
+                </div>
+              )}
+              {(show.startDate || show.endDate) && (
+                <div className="flex gap-3">
+                  <span className="text-stone-400 w-16 shrink-0">공연 기간</span>
+                  <span className="text-stone-700">{formatDateRange(show.startDate, show.endDate)}</span>
+                </div>
+              )}
+              {show.runtime && (
+                <div className="flex gap-3">
+                  <span className="text-stone-400 w-16 shrink-0">상연 시간</span>
+                  <span className="text-stone-700">
+                    {show.runtime}분
+                    {show.intermission > 0 && ` (인터미션 ${show.intermission}분 포함)`}
+                  </span>
+                </div>
+              )}
+            </section>
+
+            <section className="bg-white border border-stone-100 rounded-2xl p-5">
+              <CommentSection targetId={show.id} targetType="show" />
+            </section>
+          </div>
+        )}
+
+        {/* 출연진 탭 */}
+        {tab === 'cast' && (
+          show.cast?.length > 0 ? (
+            <CastSection
+              cast={show.cast}
+              showId={show.id}
+              actorIdMap={actorIdMap}
+            />
+          ) : (
+            <div className="text-center py-16 text-stone-300">
+              <p className="text-3xl mb-2">👥</p>
+              <p className="text-sm text-stone-400">등록된 출연진 정보가 없습니다</p>
+            </div>
+          )
+        )}
+
+        {/* 날짜별 후기 탭 */}
+        {tab === 'review' && (
+          <ReviewTab show={show} actorIdMap={actorIdMap} />
+        )}
+
+      </div>
     </div>
   )
 }
