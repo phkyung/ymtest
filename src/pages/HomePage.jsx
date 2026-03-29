@@ -18,6 +18,11 @@ function isPlayingToday(startDate, endDate) {
 
 const GENRE_OPTIONS = ['전체', '뮤지컬', '연극', '오페라']
 
+const MOOD_TAGS = [
+  '위태로움', '비장미', '처연함', '먹먹함', '자기파괴',
+  '따뜻함', '통쾌함', '선연함', '서늘함', '섬뜩함', '아릿함',
+]
+
 export default function HomePage() {
   const { shows, loading } = useShows()
 
@@ -27,6 +32,9 @@ export default function HomePage() {
   // 장르·오늘 필터
   const [filter, setFilter]       = useState('전체')
   const [todayOnly, setTodayOnly] = useState(false)
+
+  // 분위기 태그 필터
+  const [moodTag, setMoodTag] = useState('')
 
   // AI 검색
   const [aiInput, setAiInput]       = useState('')
@@ -91,9 +99,11 @@ export default function HomePage() {
         s.keywords?.some(k => k.toLowerCase().includes(kw))
       )
 
-      return genreOk && todayOk && searchOk && aiOk
+      const moodOk = !moodTag || s.topKeywords?.includes(moodTag)
+
+      return genreOk && todayOk && searchOk && aiOk && moodOk
     })
-  }, [shows, filter, todayOnly, query, aiKeywords])
+  }, [shows, filter, todayOnly, query, aiKeywords, moodTag])
 
   const todayCount = shows.filter(s => isPlayingToday(s.startDate, s.endDate)).length
 
@@ -118,6 +128,27 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {/* ── 분위기로 찾기 ── */}
+      <div className="mb-5">
+        <p className="text-sm text-[#8FAF94] font-medium mb-2">분위기로 찾기</p>
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {MOOD_TAGS.map(tag => (
+            <button
+              key={tag}
+              onClick={() => setMoodTag(t => t === tag ? '' : tag)}
+              className={`text-xs border rounded-full px-3 py-1.5 whitespace-nowrap shrink-0
+                          transition-colors ${
+                moodTag === tag
+                  ? 'bg-[#8FAF94] border-[#8FAF94] text-white'
+                  : 'bg-white border-stone-200 text-stone-600 hover:border-[#8FAF94] hover:text-[#4A6B4F]'
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* ── AI 검색창 ── */}
       <div className="mb-4 rounded-2xl border border-[#C8D8CA] bg-[#F4FAF5] p-4 space-y-2">
@@ -228,9 +259,15 @@ export default function HomePage() {
           오늘 공연 {todayCount > 0 && `(${todayCount})`}
         </button>
 
-        <span className="text-stone-400 text-sm ml-auto">
-          총 {filtered.length}개 공연
-        </span>
+        {moodTag ? (
+          <span className="text-sm text-[#4A6B4F] font-medium ml-auto">
+            ✦ {moodTag} 공연 {filtered.length}개
+          </span>
+        ) : (
+          <span className="text-stone-400 text-sm ml-auto">
+            총 {filtered.length}개 공연
+          </span>
+        )}
       </div>
 
       {/* 로딩 스켈레톤 */}
@@ -252,7 +289,7 @@ export default function HomePage() {
           <p className="text-4xl mb-3">🎭</p>
           <p className="font-display text-lg">해당 조건의 공연이 없습니다</p>
           <button
-            onClick={() => { setFilter('전체'); setTodayOnly(false); setQuery(''); clearAi() }}
+            onClick={() => { setFilter('전체'); setTodayOnly(false); setQuery(''); clearAi(); setMoodTag('') }}
             className="mt-4 text-sm text-amber-600 underline"
           >
             필터 초기화

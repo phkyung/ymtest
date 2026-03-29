@@ -158,6 +158,18 @@ export default function ShowCard({ show }) {
           <span className="font-medium text-stone-900 text-sm group-hover:text-[#2C1810] transition-colors truncate block">
             {show.title}
           </span>
+          {show.topKeywords?.length > 0 && (
+            <div className="flex gap-1 mt-0.5 flex-wrap">
+              {show.topKeywords.slice(0, 3).map(kw => (
+                <span
+                  key={kw}
+                  className="text-xs bg-[#8FAF94]/15 text-[#2C1810] rounded-full px-2 py-0.5 leading-tight"
+                >
+                  {kw}
+                </span>
+              ))}
+            </div>
+          )}
           <span className="text-xs text-stone-500 truncate block sm:hidden">
             {show.venue} · {formatDateShort(show.startDate)}~{formatDateShort(show.endDate)}
           </span>

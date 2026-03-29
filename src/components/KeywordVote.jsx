@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  doc, onSnapshot, setDoc, updateDoc,
+  doc, getDoc, onSnapshot, setDoc, updateDoc,
   increment, arrayUnion, arrayRemove,
 } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
@@ -121,16 +121,31 @@ export default function KeywordVote({ showId, actorId }) {
     }
 
     try {
-      const docRef = doc(db, 'keywords', docId)
+      const kwRef   = doc(db, 'keywords', docId)
+      const showRef = doc(db, 'shows', showId)
+
       if (alreadyVoted) {
-        await updateDoc(docRef, {
+        await updateDoc(kwRef, {
           [`${tag}.count`]:  increment(-1),
           [`${tag}.voters`]: arrayRemove(user.uid),
         })
       } else {
-        await setDoc(docRef, {
+        await setDoc(kwRef, {
           [tag]: { count: increment(1), voters: arrayUnion(user.uid) },
         }, { merge: true })
+      }
+
+      // 최신 집계로 topKeywords 업데이트
+      const kwSnap = await getDoc(kwRef)
+      if (kwSnap.exists()) {
+        const data = kwSnap.data()
+        const topKeywords = ALL_TAGS
+          .map(t => ({ tag: t, count: data[t]?.count ?? 0 }))
+          .filter(x => x.count > 0)
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 3)
+          .map(x => x.tag)
+        await updateDoc(showRef, { topKeywords })
       }
     } catch (err) {
       console.error('투표 오류:', err)

@@ -470,6 +470,16 @@ export default function ShowPage() {
             </div>
           )}
 
+          {show.topKeywords?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {show.topKeywords.slice(0, 2).map(kw => (
+                <span key={kw} className="text-xs bg-[#8FAF94]/10 text-[#8FAF94] rounded-full px-2 py-0.5">
+                  {kw}
+                </span>
+              ))}
+            </div>
+          )}
+
           {show.ticketUrl && (
             <a
               href={show.ticketUrl}
@@ -517,6 +527,22 @@ export default function ShowPage() {
               <section>
                 <h2 className="font-display text-lg text-[#2C1810] mb-3">작품 소개</h2>
                 <Synopsis text={show.synopsis} />
+              </section>
+            )}
+
+            {show.topKeywords?.length > 0 && (
+              <section>
+                <p className="text-sm text-[#8FAF94] font-medium mb-2">이 공연의 분위기</p>
+                <div className="flex flex-wrap gap-2">
+                  {show.topKeywords.map(kw => (
+                    <span
+                      key={kw}
+                      className="bg-[#8FAF94]/15 text-[#2C1810] rounded-full px-3 py-1 text-sm"
+                    >
+                      ✦ {kw}
+                    </span>
+                  ))}
+                </div>
               </section>
             )}
 
