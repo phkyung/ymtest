@@ -36,9 +36,9 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 # ── 플레이DB URL 상수 ─────────────────────────────
-PLAYDB_SEARCH_URL = "https://www.playdb.co.kr/artist/artistlist.asp"
-PLAYDB_DETAIL_URL = "https://www.playdb.co.kr/artist/artistdetail.asp"
-PLAYDB_BASE_URL   = "https://www.playdb.co.kr"
+PLAYDB_SEARCH_URL = "http://www.playdb.co.kr/search/Search.asp"
+PLAYDB_DETAIL_URL = "http://www.playdb.co.kr/artistdb/detail.asp"
+PLAYDB_BASE_URL   = "http://www.playdb.co.kr"
 
 # 요청 간 딜레이 (서버 부하 방지, 초 단위)
 REQUEST_DELAY = 1.5
@@ -51,7 +51,8 @@ HEADERS = {
         "Chrome/120.0.0.0 Safari/537.36"
     ),
     "Accept-Language": "ko-KR,ko;q=0.9",
-    "Referer":         "https://www.playdb.co.kr/",
+    "Referer":         "http://www.playdb.co.kr/",
+    "Accept-Encoding": "identity",
 }
 
 
@@ -88,9 +89,11 @@ def search_playdb_actors(name, client):
     결과 없거나 오류 시 빈 리스트 반환.
     """
     try:
+        import urllib.parse
+        _q = urllib.parse.quote(name.encode("euc-kr"))
         r = client.get(
-            PLAYDB_SEARCH_URL,
-            params={"Page": 1, "keywd": name},
+            f"{PLAYDB_SEARCH_URL}?KindCode=&Query={_q}",
+            params=None,
             headers=HEADERS,
             timeout=15,
         )
@@ -107,77 +110,56 @@ def search_playdb_actors(name, client):
 
 
 def _parse_actor_list(soup):
-    """
-    플레이DB 배우 목록 HTML에서 배우 정보 파싱.
-
-    플레이DB 배우 목록 구조 (대략):
-      <ul class="artist_list">
-        <li>
-          <a href="/artist/artistdetail.asp?manid=12345">
-            <img src="//img.playdb.co.kr/...jpg" />
-            <p class="name">홍길동</p>
-          </a>
-        </li>
-        ...
-      </ul>
-    """
+    """플레이DB 검색 결과 파싱 - b태그 안 배우 링크만 추출"""
+    import re
     results = []
+    seen_ids = set()
 
-    # 배우 리스트 아이템 선택 (여러 셀렉터 시도)
-    items = soup.select("ul.artist_list li, .artistList li, .artist-list li")
-    if not items:
-        # 대안: 테이블 형태 목록
-        items = soup.select("table.list tr")
-
-    for item in items:
-        link = item.find("a", href=True)
+    # <b> 태그 안의 ManNo 링크 = 실제 검색결과 배우
+    for b_tag in soup.find_all("b"):
+        link = b_tag.find("a", href=True)
+        if not link:
+            # b 태그의 부모가 링크인 경우
+            parent = b_tag.parent
+            if parent and parent.name == "a":
+                link = parent
         if not link:
             continue
-
-        href = link["href"]
-        # manid 파라미터에서 배우 ID 추출
-        m = re.search(r"[Mm]anid=(\d+)", href)
+        href = link.get("href", "")
+        if "ManNo=" not in href:
+            continue
+        m = re.search(r"ManNo=(\d+)", href)
         if not m:
             continue
         actor_id = m.group(1)
-
-        # 배우 이름 파싱 (이름 태그 우선, 없으면 링크 텍스트)
-        name_tag = item.select_one(".name, .artist_name, p.name, span.name")
-        name = (name_tag.get_text(strip=True) if name_tag
-                else link.get_text(strip=True)).strip()
-        if not name:
+        if actor_id in seen_ids:
             continue
-
-        # 사진 URL 파싱 (src 또는 data-src)
-        img = item.find("img")
+        seen_ids.add(actor_id)
+        name_text = b_tag.get_text(strip=True)
+        if not name_text or len(name_text) > 20:
+            continue
+        profile_url = href if href.startswith("http") else "http://www.playdb.co.kr" + href
+        # 사진: 같은 ManNo를 가진 a 태그 중 img 포함한 것
         img_url = ""
-        if img:
-            img_url = img.get("src", "") or img.get("data-src", "")
-            # 프로토콜 없는 상대 경로 처리 (//img.playdb...)
-            if img_url.startswith("//"):
-                img_url = "https:" + img_url
-            elif img_url.startswith("/"):
-                img_url = PLAYDB_BASE_URL + img_url
-
-        # 절대 URL 구성
-        if href.startswith("//"):
-            href = "https:" + href
-        elif href.startswith("/"):
-            href = PLAYDB_BASE_URL + href
-        elif not href.startswith("http"):
-            href = PLAYDB_BASE_URL + "/" + href
-
+        for img_link in soup.find_all("a", href=re.compile(r"ManNo=" + actor_id)):
+            img = img_link.find("img")
+            if img:
+                src = img.get("src", "")
+                if src and "btn" not in src and "noimg" not in src:
+                    img_url = src
+                    if img_url.startswith("//"):
+                        img_url = "https:" + img_url
+                    elif img_url.startswith("/"):
+                        img_url = "http://www.playdb.co.kr" + img_url
+                    break
         results.append({
-            "name":        name,
-            "image_url":   img_url,
-            "profile_url": href,
-            "actor_id":    actor_id,
+            "name": name_text,
+            "image_url": img_url,
+            "profile_url": profile_url,
+            "actor_id": actor_id,
         })
-
     return results
 
-
-# ── 플레이DB 배우 상세 페이지에서 출연작 목록 수집 ──
 def fetch_actor_shows(actor_id, client):
     """
     플레이DB 배우 상세 페이지에서 출연 공연명 집합 반환.
@@ -186,7 +168,7 @@ def fetch_actor_shows(actor_id, client):
     try:
         r = client.get(
             PLAYDB_DETAIL_URL,
-            params={"manid": actor_id},
+            params={"ManNo": actor_id},
             headers=HEADERS,
             timeout=15,
         )

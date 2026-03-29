@@ -4,11 +4,12 @@
   # Which nixpkgs channel to use.
   channel = "stable-24.11"; # or "unstable"
   # Use https://search.nixos.org/packages to find packages
-  packages = [
+packages = [
     pkgs.nodejs_22
     pkgs.python3
     pkgs.python3Packages.requests
     pkgs.python3Packages.beautifulsoup4
+    pkgs.python3Packages.httpx
   ];
   # Sets environment variables in the workspace
   env = {};

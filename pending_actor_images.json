@@ -1,0 +1,16 @@
+[
+  {
+    "actorId": "박규원",
+    "actorName": "박규원",
+    "imageUrl": "http://ticketimage.interpark.com/PlayDictionary/DATA/PlayDic/PlayDicUpload/040004/11/02/0400041102_24832_02654.242.gif",
+    "profileUrl": "http://www.playdb.co.kr/artistdb/detail.asp?ManNo=24832",
+    "reason": "출연작 미매칭",
+    "candidates": [
+      {
+        "name": "박규원",
+        "imageUrl": "http://ticketimage.interpark.com/PlayDictionary/DATA/PlayDic/PlayDicUpload/040004/11/02/0400041102_24832_02654.242.gif",
+        "profileUrl": "http://www.playdb.co.kr/artistdb/detail.asp?ManNo=24832"
+      }
+    ]
+  }
+]
