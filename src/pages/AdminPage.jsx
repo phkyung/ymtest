@@ -835,114 +835,122 @@ function PendingEditPanel({ show, onSave, onClose }) {
 }
 
 
-// ── 등록 완료 공연 카드 ───────────────────────
+// ── 등록 완료 공연 — 한 줄 리스트 행 ─────────────
 function ShowCard({ show, onUpdate, onDelete, onRevert }) {
-  const [editing, setEditing] = useState(false)
-  const [draft,   setDraft]   = useState({ ...show })
+  const [editing,  setEditing]  = useState(false)
+  const [checked,  setChecked]  = useState(false)
+  const [draft,    setDraft]    = useState({ ...show })
 
   function handleChangeDraft(key, value) {
     setDraft(prev => ({ ...prev, [key]: value }))
   }
-
   async function handleSave(data) {
     await onUpdate(show.id, data)
     setEditing(false)
   }
-
   function handleCancel() {
     setDraft({ ...show })
     setEditing(false)
   }
 
   const genreColor = GENRE_COLOR[show.genre] ?? GENRE_COLOR['기타']
+  const posterSrc  = show.imageUrl || show.posterUrl || ''
+  const castCount  = show.cast?.length ?? 0
 
-  // ── 편집 모드 ──
+  // ── 편집 모드: 행 아래 펼쳐지는 폼 ──
   if (editing) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border-2 border-amber-300 p-5">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h3 className="font-display text-lg font-bold text-stone-900">{show.title}</h3>
-            <p className="text-xs text-stone-400 mt-0.5">공연 정보 수정 중</p>
+      <li className="bg-white rounded-xl border-2 border-amber-300 shadow-sm overflow-hidden">
+        <div className="flex items-center gap-3 px-3 py-2.5 border-b border-amber-100">
+          <div className="w-8 h-11 rounded-md overflow-hidden bg-stone-100 shrink-0">
+            {posterSrc
+              ? <img src={toHttps(posterSrc)} alt={show.title} className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center text-base">🎭</div>
+            }
           </div>
-          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${genreColor}`}>
-            {show.genre || '장르 미정'}
-          </span>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-stone-900 text-sm truncate">{show.title}</p>
+            <p className="text-xs text-stone-400 truncate">{show.venue}</p>
+          </div>
+          <span className="text-xs text-amber-600 font-medium">수정 중</span>
         </div>
-        <ShowEditForm
-          draft={draft}
-          onChangeDraft={handleChangeDraft}
-          onSave={handleSave}
-          onCancel={handleCancel}
-        />
-      </div>
+        <div className="p-4">
+          <ShowEditForm
+            draft={draft}
+            onChangeDraft={handleChangeDraft}
+            onSave={handleSave}
+            onCancel={handleCancel}
+          />
+        </div>
+      </li>
     )
   }
 
-  // ── 보기 모드 ──
+  // ── 보기 모드: 한 줄 ──
   return (
-    <div className="bg-white rounded-2xl shadow-sm border-2 border-stone-100 hover:border-stone-200 transition-colors">
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${genreColor}`}>
-            {show.genre || '장르 미정'}
-          </span>
-          <span className="text-xs font-semibold text-emerald-700 bg-emerald-50
-                           border border-emerald-200 px-2.5 py-1 rounded-full shrink-0">
-            공개 중
-          </span>
-        </div>
+    <li className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-stone-100
+                   hover:border-stone-200 hover:bg-stone-50 transition-colors group">
 
-        <h3 className="font-display text-xl font-bold text-stone-900 leading-tight">
-          {show.title}
-        </h3>
-        {show.subtitle && (
-          <p className="text-sm text-stone-400 mt-0.5">{show.subtitle}</p>
-        )}
+      {/* 체크박스 */}
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={e => setChecked(e.target.checked)}
+        className="w-4 h-4 rounded border-stone-300 accent-[#8FAF94] shrink-0 cursor-pointer"
+      />
 
-        <div className="mt-3 space-y-1.5 text-sm text-stone-600">
-          {show.venue && (
-            <div className="flex items-start gap-2">
-              <span className="shrink-0">📍</span>
-              <span>{show.venue}</span>
-            </div>
-          )}
-          {(show.startDate || show.endDate) && (
-            <div className="flex items-start gap-2">
-              <span className="shrink-0">📅</span>
-              <span>{show.startDate || '?'} ~ {show.endDate || '?'}</span>
-            </div>
-          )}
-        </div>
+      {/* 포스터 썸네일 */}
+      <div className="w-8 h-11 rounded-md overflow-hidden bg-stone-100 shrink-0">
+        {posterSrc
+          ? <img src={toHttps(posterSrc)} alt={show.title} className="w-full h-full object-cover"
+                 onError={e => { e.target.style.display = 'none' }} />
+          : <div className="w-full h-full flex items-center justify-center text-base">🎭</div>
+        }
       </div>
 
-      <div className="border-t border-stone-100 grid grid-cols-3 divide-x divide-stone-100">
+      {/* 장르 뱃지 */}
+      <span className={`hidden sm:inline-block text-xs px-2 py-0.5 rounded-full font-semibold shrink-0 ${genreColor}`}>
+        {show.genre || '?'}
+      </span>
+
+      {/* 제목 + 공연장 */}
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-stone-900 text-sm truncate leading-tight">{show.title}</p>
+        <p className="text-xs text-stone-400 truncate">{show.venue}</p>
+      </div>
+
+      {/* 배우 수 */}
+      {castCount > 0 && (
+        <span className="hidden sm:block text-xs text-stone-400 shrink-0">
+          배우 {castCount}명
+        </span>
+      )}
+
+      {/* 버튼 */}
+      <div className="flex items-center gap-1 shrink-0">
         <button
           onClick={() => setEditing(true)}
-          className="flex items-center justify-center gap-1.5 py-3.5 text-sm font-semibold
-                     text-stone-600 hover:bg-stone-50 rounded-bl-2xl transition-colors"
+          className="px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-100
+                     rounded-lg transition-colors"
         >
-          <span>✏️</span>
-          <span>수정</span>
+          수정
         </button>
         <button
           onClick={() => onRevert(show.id)}
-          className="flex items-center justify-center gap-1.5 py-3.5 text-sm font-semibold
-                     text-amber-600 hover:bg-amber-50 transition-colors"
+          className="px-2.5 py-1.5 text-xs font-semibold text-amber-600 hover:bg-amber-50
+                     rounded-lg transition-colors"
         >
-          <span>↩️</span>
-          <span>반려</span>
+          반려
         </button>
         <button
           onClick={() => onDelete(show.id)}
-          className="flex items-center justify-center gap-1.5 py-3.5 text-sm font-semibold
-                     text-red-600 hover:bg-red-50 rounded-br-2xl transition-colors"
+          className="px-2.5 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50
+                     rounded-lg transition-colors"
         >
-          <span>🗑️</span>
-          <span>삭제</span>
+          삭제
         </button>
       </div>
-    </div>
+    </li>
   )
 }
 
@@ -952,19 +960,21 @@ function ShowCard({ show, onUpdate, onDelete, onRevert }) {
 // onChange: (newCast) => void
 // ── 드래그 가능한 출연진 태그 ─────────────────────
 function SortableCastItem({ c, onRemove }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: c.actorId })
+  // actorId가 없는 경우 actorName을 fallback id로 사용
+  const dndId = c.actorId || `name_${c.actorName}`
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: dndId })
   const style = { transform: CSS.Transform.toString(transform), transition }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
       className={`flex items-center gap-1.5 border rounded-full pl-1 pr-2 py-1 text-xs select-none
                   ${isDragging ? 'bg-[#F5F3F0] border-[#C8D8CA] shadow-md opacity-90 z-10' : 'bg-amber-50 border-amber-200'}`}
     >
       {/* 드래그 핸들 */}
       <span
-        {...attributes}
         {...listeners}
         className="cursor-grab active:cursor-grabbing text-[#C8D8CA] hover:text-stone-400 px-0.5 text-base leading-none"
         title="드래그하여 순서 변경"
@@ -1105,7 +1115,7 @@ function ActorCastSection({ cast, onChange }) {
       {/* 이미 추가된 배우 태그 목록 (드래그로 순서 변경 가능) */}
       {cast.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={cast.map(c => c.actorId)} strategy={horizontalListSortingStrategy}>
+          <SortableContext items={cast.map(c => c.actorId || `name_${c.actorName}`)} strategy={horizontalListSortingStrategy}>
             <div className="flex flex-wrap gap-2">
               {cast.map(c => (
                 <SortableCastItem key={c.actorId} c={c} onRemove={removeCast} />
@@ -2530,7 +2540,7 @@ export default function AdminPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <ul className="space-y-1.5">
                       {paginatedShowsList.map(show => (
                         <ShowCard
                           key={show.id}
@@ -2540,7 +2550,7 @@ export default function AdminPage() {
                           onRevert={handleRevertShow}
                         />
                       ))}
-                    </div>
+                    </ul>
 
                     {/* ── 페이지네이션 ── */}
                     {totalShowsPages > 1 && (

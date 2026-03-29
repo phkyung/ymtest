@@ -84,9 +84,11 @@ export default function HomePage() {
       )
 
       const aiOk = kws.length === 0 || kws.some(kw =>
-        s.keywords?.some(k => k.toLowerCase().includes(kw)) ||
+        s.title?.toLowerCase().includes(kw) ||
         s.genre?.toLowerCase().includes(kw) ||
-        s.title?.toLowerCase().includes(kw)
+        s.synopsis?.toLowerCase().includes(kw) ||
+        s.venue?.toLowerCase().includes(kw) ||
+        s.keywords?.some(k => k.toLowerCase().includes(kw))
       )
 
       return genreOk && todayOk && searchOk && aiOk

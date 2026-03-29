@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   doc, getDoc, setDoc,
-  updateDoc, arrayUnion, increment, onSnapshot,
+  updateDoc, arrayUnion, arrayRemove, increment, onSnapshot,
 } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
 import { useAuth } from '../hooks/useAuth'
@@ -99,21 +99,27 @@ export default function KeywordVote({ showId, actorId, roleName }) {
     const key    = `${showId}_${actorId}_${keyword}`
     const alreadyVoted = votes[keyword]?.voted
 
-    if (alreadyVoted) {
-      setLoading(false)
-      return // MVP에선 취소 없음 (단방향 투표)
-    }
-
     // 더미 모드
     if (!isFirebaseConfigured || !db) {
-      localVotes[key] = {
-        count: (localVotes[key]?.count ?? 0) + 1,
-        voted: true,
+      if (alreadyVoted) {
+        localVotes[key] = {
+          count: Math.max(0, (localVotes[key]?.count ?? 1) - 1),
+          voted: false,
+        }
+        setVotes(prev => ({
+          ...prev,
+          [keyword]: { count: Math.max(0, (prev[keyword]?.count ?? 1) - 1), voted: false },
+        }))
+      } else {
+        localVotes[key] = {
+          count: (localVotes[key]?.count ?? 0) + 1,
+          voted: true,
+        }
+        setVotes(prev => ({
+          ...prev,
+          [keyword]: { count: (prev[keyword]?.count ?? 0) + 1, voted: true },
+        }))
       }
-      setVotes(prev => ({
-        ...prev,
-        [keyword]: { count: (prev[keyword]?.count ?? 0) + 1, voted: true },
-      }))
       setLoading(false)
       return
     }
@@ -123,18 +129,29 @@ export default function KeywordVote({ showId, actorId, roleName }) {
       const docRef = doc(db, 'votes', key)
       const snap   = await getDoc(docRef)
 
-      if (snap.exists()) {
-        await updateDoc(docRef, {
-          count: increment(1),
-          voterIds: arrayUnion(user.uid),
-        })
+      if (alreadyVoted) {
+        // 투표 취소
+        if (snap.exists()) {
+          await updateDoc(docRef, {
+            count: increment(-1),
+            voterIds: arrayRemove(user.uid),
+          })
+        }
       } else {
-        await setDoc(docRef, {
-          showId, actorId, keyword,
-          count: 1,
-          voterIds: [user.uid],
-          createdAt: new Date(),
-        })
+        // 투표 추가
+        if (snap.exists()) {
+          await updateDoc(docRef, {
+            count: increment(1),
+            voterIds: arrayUnion(user.uid),
+          })
+        } else {
+          await setDoc(docRef, {
+            showId, actorId, keyword,
+            count: 1,
+            voterIds: [user.uid],
+            createdAt: new Date(),
+          })
+        }
       }
     } catch (err) {
       console.error('투표 오류:', err)
@@ -171,7 +188,7 @@ export default function KeywordVote({ showId, actorId, roleName }) {
             >
               <span>{kw}</span>
               {count > 0 && (
-                <span className={`text-xs font-medium ${voted ? 'text-amber-100' : 'text-stone-400'}`}>
+                <span className={`text-xs font-medium ${voted ? 'text-white/70' : 'text-stone-400'}`}>
                   {count}
                 </span>
               )}
@@ -180,16 +197,12 @@ export default function KeywordVote({ showId, actorId, roleName }) {
         })}
       </div>
 
-      {!user ? (
+      {!user && (
         <p className="text-xs text-stone-400 mt-3">
           로그인하면 공감 키워드를 투표할 수 있어요 ·{' '}
           <button onClick={signIn} className="text-[#4A6B4F] underline hover:text-[#7A9E7F]">
             구글 로그인
           </button>
-        </p>
-      ) : (
-        <p className="text-xs text-stone-400 mt-3">
-          * 키워드는 한 번 누르면 취소되지 않습니다
         </p>
       )}
 
