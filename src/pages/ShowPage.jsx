@@ -108,7 +108,7 @@ function CastSection({ cast, showId, actorIdMap }) {
 
   // 키워드 투표용 선택 배우 (투표 섹션에서만 사용)
   const [voteTarget, setVoteTarget] = useState(enriched[0] ?? null)
-  const [voteOpen, setVoteOpen] = useState(false)
+  const [voteOpen, setVoteOpen] = useState(true)
 
   return (
     <div className="space-y-4">
