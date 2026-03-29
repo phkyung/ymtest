@@ -4,11 +4,13 @@
 
 import { useState, useEffect } from 'react'
 import {
-  collection, doc, getDoc, getDocs,
+  collection, doc, getDoc, getDocs, onSnapshot,
   query, orderBy, startAt, endAt, documentId,
 } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
+import { useAuth } from '../hooks/useAuth'
 import { KEYWORD_CATEGORIES } from './KeywordVote'
+import KeywordModal from './KeywordModal'
 
 const ALL_ACTOR_TAGS = KEYWORD_CATEGORIES.flatMap(c => c.tags)
 const ALL_PAIR_TAGS  = ['팽팽한긴장', '다정함', '정석합', '엇갈림', '대립', '동반자', '밀당', '보호본능', '애증', '구원', '공명', '합좋음', '주고받는맛', '시너지', '주도권싸움', '균형감', '침묵케미', '눈빛케미', '상처건드림', '서사합', '상호자극', '같이무너짐', '상호파괴']
@@ -23,6 +25,8 @@ function getTopTags(data, tags, n) {
 }
 
 export default function NosonArchive({ showId, cast, actorIdMap }) {
+  const { user } = useAuth()
+
   const enriched = cast.map(m => ({
     ...m,
     resolvedId: actorIdMap[m.actorName] || m.actorId || null,
@@ -32,18 +36,24 @@ export default function NosonArchive({ showId, cast, actorIdMap }) {
     enriched.filter(m => m.resolvedId).map(m => [m.resolvedId, m.actorName])
   )
 
-  const [actorKeywords, setActorKeywords] = useState({})  // { [resolvedId]: firestoreData }
-  const [pairDocs, setPairDocs]           = useState([])   // [{ docId, idA, idB, nameA, nameB, data }]
+  const [actorKeywords, setActorKeywords] = useState({})
+  const [pairDocs,      setPairDocs]      = useState([])
   const [expandedActor, setExpandedActor] = useState(null)
-  const [loading, setLoading]             = useState(true)
+  const [loading,       setLoading]       = useState(true)
 
+  // 내가 남긴 키워드: [{ actorId, tags }]
+  const [myKeywords, setMyKeywords] = useState([])
+  // 수정할 배우 (KeywordModal 열기용)
+  const [editActor,  setEditActor]  = useState(null)
+
+  // ── 집계 데이터 로드 ──────────────────────────
   useEffect(() => {
     if (!showId || !isFirebaseConfigured || !db) { setLoading(false); return }
 
     const actorsWithId = enriched.filter(m => m.resolvedId)
 
     const fetchAll = async () => {
-      // 배우별 키워드
+      // 배우별 키워드 집계
       const snaps = await Promise.all(
         actorsWithId.map(m => getDoc(doc(db, 'keywords', `${showId}_${m.resolvedId}`)))
       )
@@ -64,7 +74,7 @@ export default function NosonArchive({ showId, cast, actorIdMap }) {
         const snap = await getDocs(q)
         const pairs = snap.docs
           .map(d => {
-            const rest      = d.id.slice(showId.length + 1)
+            const rest       = d.id.slice(showId.length + 1)
             const [idA, idB] = rest.split('_')
             return {
               docId: d.id,
@@ -85,6 +95,31 @@ export default function NosonArchive({ showId, cast, actorIdMap }) {
     fetchAll().finally(() => setLoading(false))
   }, [showId])
 
+  // ── 내가 남긴 키워드 실시간 구독 ─────────────
+  useEffect(() => {
+    if (!user || !showId || !isFirebaseConfigured || !db) {
+      setMyKeywords([])
+      return
+    }
+    const prefix = `${user.uid}_${showId}_`
+    const q = query(
+      collection(db, 'userKeywords'),
+      orderBy(documentId()),
+      startAt(prefix),
+      endAt(prefix + '\uf8ff')
+    )
+    return onSnapshot(q, snap => {
+      setMyKeywords(
+        snap.docs
+          .map(d => ({
+            actorId: d.id.slice(prefix.length),
+            tags:    d.data().tags ?? [],
+          }))
+          .filter(m => m.tags.length > 0)
+      )
+    })
+  }, [user, showId])
+
   if (loading) {
     return (
       <div className="space-y-3">
@@ -100,8 +135,53 @@ export default function NosonArchive({ showId, cast, actorIdMap }) {
   return (
     <div className="space-y-8">
 
+      {/* ── 내가 남긴 키워드 (로그인 시만) ── */}
+      {user && (
+        <section>
+          <h3 className="text-sm font-semibold text-[#2C1810] mb-3">내가 남긴 키워드</h3>
+
+          {myKeywords.length === 0 ? (
+            <p className="text-sm text-stone-400 text-center py-6">아직 남긴 키워드가 없어요</p>
+          ) : (
+            <div className="space-y-2">
+              {myKeywords.map(({ actorId, tags }) => {
+                const actor = enriched.find(m => m.resolvedId === actorId)
+                if (!actor) return null
+                return (
+                  <div
+                    key={actorId}
+                    className="bg-white border border-stone-100 rounded-xl px-4 py-3
+                               flex items-center gap-3 flex-wrap"
+                  >
+                    <span className="text-sm font-medium text-[#2C1810] shrink-0">
+                      {actor.actorName}
+                    </span>
+                    <div className="flex-1 flex flex-wrap gap-1 min-w-0">
+                      {tags.map(tag => (
+                        <span key={tag}
+                          className="text-xs bg-[#8FAF94]/15 text-[#4A6B4F] rounded-full px-2 py-0.5">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setEditActor(actor)}
+                      className="text-stone-300 hover:text-[#8FAF94] transition-colors text-sm shrink-0"
+                      title="키워드 수정"
+                    >
+                      ✏️
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* ── 배우별 노선 ── */}
       <section>
+        {user && <hr className="border-[#E8E4DF] mb-6" />}
         <h3 className="text-sm font-semibold text-[#2C1810] mb-3">배우별 노선</h3>
 
         {actorsWithId.length === 0 ? (
@@ -109,8 +189,8 @@ export default function NosonArchive({ showId, cast, actorIdMap }) {
         ) : (
           <div className="space-y-2">
             {actorsWithId.map(m => {
-              const data      = actorKeywords[m.resolvedId] ?? null
-              const topTags   = getTopTags(data, ALL_ACTOR_TAGS, 3)
+              const data       = actorKeywords[m.resolvedId] ?? null
+              const topTags    = getTopTags(data, ALL_ACTOR_TAGS, 3)
               const isExpanded = expandedActor === m.resolvedId
               const sortedTags = data
                 ? ALL_ACTOR_TAGS
@@ -226,6 +306,16 @@ export default function NosonArchive({ showId, cast, actorIdMap }) {
           </div>
         )}
       </section>
+
+      {/* ── 키워드 수정 모달 ── */}
+      {editActor && (
+        <KeywordModal
+          showId={showId}
+          actor={editActor}
+          cast={enriched}
+          onClose={() => setEditActor(null)}
+        />
+      )}
     </div>
   )
 }

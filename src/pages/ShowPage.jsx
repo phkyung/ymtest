@@ -830,16 +830,34 @@ export default function ShowPage() {
             </div>
           )}
 
-          {show.ticketUrl && (
-            <a
-              href={show.ticketUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-block px-4 py-2 bg-[#8FAF94] hover:bg-[#7A9E7F]
-                         text-white text-sm font-medium rounded-xl transition-colors"
-            >
-              티켓 예매 →
-            </a>
+          {(show.ticketLinks?.length > 0 || show.ticketUrl) && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {show.ticketLinks?.length > 0
+                ? show.ticketLinks.filter(l => l.url?.trim()).map((l, i) => (
+                    <a
+                      key={i}
+                      href={l.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-[#8FAF94] hover:bg-[#7A9E7F]
+                                 text-white text-sm font-medium rounded-xl transition-colors"
+                    >
+                      {(l.site && l.site !== '직접입력' ? l.site : l.customSite || l.site || '예매처')} 예매
+                    </a>
+                  ))
+                : (
+                  <a
+                    href={show.ticketUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-[#8FAF94] hover:bg-[#7A9E7F]
+                               text-white text-sm font-medium rounded-xl transition-colors"
+                  >
+                    티켓 예매 →
+                  </a>
+                )
+              }
+            </div>
           )}
         </div>
       </section>

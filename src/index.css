@@ -4,6 +4,11 @@
 
 /* ─── 전역 폰트 적용 ─────────────────────────── */
 @layer base {
+  html, body {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   body {
     @apply font-body bg-[#FAF8F5] text-stone-800 antialiased;
     font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;

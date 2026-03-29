@@ -309,20 +309,17 @@ function CastEditSection({ cast, onChange }) {
 
 
 // ── 티켓 링크 복수 입력 섹션 ─────────────────
-// links: [{ site, url }]
+// links: [{ site, customSite?, url }]
 // onChange: (newLinks) => void
+const TICKET_SITES = ['NOL티켓(인터파크)', '예스24', '멜론티켓', '티켓링크', '네이버', '타임티켓', '하나티켓', '쇼티켓', '직접입력']
+
 function TicketLinksSection({ links, onChange }) {
-  // 개별 링크 필드 수정
   function updateLink(idx, field, value) {
     onChange(links.map((l, i) => i === idx ? { ...l, [field]: value } : l))
   }
-
-  // 새 빈 링크 추가
   function addLink() {
-    onChange([...links, { site: '', url: '' }])
+    onChange([...links, { site: '', customSite: '', url: '' }])
   }
-
-  // 링크 삭제
   function removeLink(idx) {
     onChange(links.filter((_, i) => i !== idx))
   }
@@ -336,37 +333,56 @@ function TicketLinksSection({ links, onChange }) {
           onClick={addLink}
           className="text-xs font-semibold text-amber-600 hover:text-amber-500 transition-colors"
         >
-          + 추가
+          + 예매처 추가
         </button>
       </div>
 
       {links.length === 0 && (
         <p className="text-xs text-stone-400">
-          티켓 링크가 없습니다. + 추가 버튼으로 입력하세요.
+          티켓 링크가 없습니다. + 예매처 추가 버튼으로 입력하세요.
         </p>
       )}
 
       {links.map((link, idx) => (
-        <div key={idx} className="flex gap-2 items-center">
-          {/* 사이트명 입력 */}
-          <input
-            type="text"
-            value={link.site}
-            onChange={e => updateLink(idx, 'site', e.target.value)}
-            placeholder="인터파크"
-            className="w-24 shrink-0 border border-stone-200 rounded-lg px-2 py-2 text-xs bg-white
-                       focus:outline-none focus:ring-1 focus:ring-amber-300 placeholder:text-stone-300"
-          />
+        <div key={idx} className="flex gap-2 items-center flex-wrap">
+          {/* 예매처 선택 */}
+          <select
+            value={TICKET_SITES.includes(link.site) ? link.site : (link.site ? '직접입력' : '')}
+            onChange={e => {
+              const val = e.target.value
+              updateLink(idx, 'site', val)
+              if (val !== '직접입력') updateLink(idx, 'customSite', '')
+            }}
+            className="w-28 shrink-0 border border-stone-200 rounded-lg px-2 py-2 text-xs bg-white
+                       focus:outline-none focus:ring-1 focus:ring-amber-300 text-stone-600"
+          >
+            <option value="">예매처 선택</option>
+            {TICKET_SITES.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+
+          {/* 직접입력 시 사이트명 텍스트 입력 */}
+          {link.site === '직접입력' && (
+            <input
+              type="text"
+              value={link.customSite ?? ''}
+              onChange={e => updateLink(idx, 'customSite', e.target.value)}
+              placeholder="사이트명"
+              className="w-24 shrink-0 border border-stone-200 rounded-lg px-2 py-2 text-xs bg-white
+                         focus:outline-none focus:ring-1 focus:ring-amber-300 placeholder:text-stone-300"
+            />
+          )}
+
           {/* URL 입력 */}
           <input
             type="url"
             value={link.url}
             onChange={e => updateLink(idx, 'url', e.target.value)}
             placeholder="https://..."
-            className="flex-1 border border-stone-200 rounded-lg px-2 py-2 text-xs bg-white
+            className="flex-1 min-w-[160px] border border-stone-200 rounded-lg px-2 py-2 text-xs bg-white
                        focus:outline-none focus:ring-1 focus:ring-amber-300 placeholder:text-stone-300"
           />
-          {/* X 삭제 버튼 */}
+
+          {/* 삭제 버튼 */}
           <button
             type="button"
             onClick={() => removeLink(idx)}
@@ -1512,11 +1528,12 @@ export default function AdminPage() {
   const [editingShow,    setEditingShow]     = useState(null)
 
   // 공연 추가 폼 상태
-  const [addForm,   setAddForm]   = useState({ ...EMPTY_FORM })
-  const [addStatus, setAddStatus] = useState(null)   // { type, msg }
-  const [addLoading, setAddLoading] = useState(false)
+  const [addForm,        setAddForm]        = useState({ ...EMPTY_FORM })
+  const [addStatus,      setAddStatus]      = useState(null)   // { type, msg }
+  const [addLoading,     setAddLoading]     = useState(false)
+  const [addTicketLinks, setAddTicketLinks] = useState([])
   // 공연 추가 폼 - 출연진 목록: [{ actorId, actorName, actorImage, role }]
-  const [addCast,   setAddCast]   = useState([])
+  const [addCast,        setAddCast]        = useState([])
 
   // 배우 관리 탭 상태
   const [actorsList,    setActorsList]    = useState([])
@@ -1833,18 +1850,23 @@ export default function AdminPage() {
     try {
       const id   = `pending_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
       const tags = addForm.tags.split(',').map(t => t.trim()).filter(Boolean)
+      const ticketLinks = addTicketLinks.filter(l => l.url?.trim())
+      const ticketUrl   = ticketLinks.find(l => l.url)?.url ?? addForm.ticketUrl ?? ''
       await setDoc(doc(db, 'pending', id), {
         ...addForm,
         tags,
         id,
-        runtime:     addForm.runtime ? Number(addForm.runtime) : null,
+        runtime:      addForm.runtime ? Number(addForm.runtime) : null,
+        ticketLinks,
+        ticketUrl,
         // 출연진 저장 (이미지 URL 포함)
-        cast:        addCast,
-        status:      'pending',
-        collectedAt: serverTimestamp(),
+        cast:         addCast,
+        status:       'pending',
+        collectedAt:  serverTimestamp(),
       })
       setAddStatus({ type: 'success', msg: `「${addForm.title}」이(가) 대기열에 추가됐습니다. 대기 중 탭에서 승인해주세요.` })
       setAddForm({ ...EMPTY_FORM })
+      setAddTicketLinks([])
       setAddCast([])
     } catch (err) {
       console.error('공연 추가 오류:', err)
@@ -2415,15 +2437,18 @@ export default function AdminPage() {
                   />
                 </div>
                 <div>
-                  <label className={LABEL}>티켓 URL</label>
+                  <label className={LABEL}>티켓 URL (단일)</label>
                   <input
                     value={addForm.ticketUrl}
                     onChange={e => setAddForm(f => ({ ...f, ticketUrl: e.target.value }))}
-                    placeholder="https://..."
+                    placeholder="https://... (예매처가 여러 개면 아래에서 추가)"
                     className={INPUT}
                   />
                 </div>
               </div>
+
+              {/* 티켓 링크 복수 입력 */}
+              <TicketLinksSection links={addTicketLinks} onChange={setAddTicketLinks} />
 
               {/* 시놉시스 */}
               <div>

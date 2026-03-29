@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   doc, getDoc, onSnapshot, setDoc, updateDoc,
-  increment, arrayUnion, arrayRemove,
+  increment, arrayUnion, arrayRemove, serverTimestamp,
 } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
 import { useAuth } from '../hooks/useAuth'
@@ -18,23 +18,36 @@ import { useAuth } from '../hooks/useAuth'
 export const KEYWORD_CATEGORIES = [
   {
     label: '이 캐릭터의 결',
-    tags: ['서늘함', '따뜻함', '건조함', '날것', '단단함', '연약함', '위태로움', '기품'],
+    tags: [
+      '서늘함', '따뜻함', '건조함', '날것', '단단함', '연약함', '위태로움', '기품',
+      '자신감', '오만함', '비겁함', '피폐함',
+      '순수함', '명랑함', '유쾌함', '해맑음', '생동감',
+    ],
   },
   {
     label: '이 캐릭터를 움직이는 힘',
-    tags: ['인정욕', '구원욕', '복수심', '생존욕', '통제욕', '헌신', '자기파괴', '도피'],
+    tags: [
+      '인정욕', '구원욕', '복수심', '생존욕', '통제욕', '자기파괴',
+      '사랑', '호기심', '희망', '용기',
+    ],
   },
   {
     label: '상대를 대하는 방식',
-    tags: ['직진', '회피', '헌신', '지배', '유혹', '거리두기', '소유욕', '보호본능'],
+    tags: [
+      '직진', '회피', '헌신', '지배', '유혹', '거리두기', '소유욕', '보호본능',
+      '다정함', '솔직함', '개방적',
+    ],
   },
   {
     label: '배우가 감정을 푸는 방식',
-    tags: ['절제', '누름', '지연폭발', '속울음', '스며듦', '냉소', '폭발'],
+    tags: ['절제', '냉소', '폭발', '활짝', '경쾌함', '자연스러움'],
   },
   {
     label: '보고 나서 남는 것',
-    tags: ['아릿함', '먹먹함', '처연함', '섬뜩함', '통쾌함', '허무', '선연함', '비장미'],
+    tags: [
+      '먹먹함', '처연함', '섬뜩함', '통쾌함', '허무', '비장미',
+      '따스함', '설렘', '미소', '흐뭇함',
+    ],
   },
 ]
 
@@ -127,9 +140,16 @@ export default function KeywordVote({ showId, actorId }) {
       return
     }
 
+    // 토글 후 내 선택 태그 목록 계산
+    const newMyTags = ALL_TAGS.filter(t => {
+      if (t === tag) return !alreadySelected
+      return keywords[t]?.voted ?? false
+    })
+
     try {
-      const kwRef   = doc(db, 'keywords', docId)
-      const showRef = doc(db, 'shows', showId)
+      const kwRef      = doc(db, 'keywords', docId)
+      const showRef    = doc(db, 'shows', showId)
+      const myKwRef    = doc(db, 'userKeywords', `${user.uid}_${docId}`)
 
       if (alreadySelected) {
         await updateDoc(kwRef, {
@@ -141,6 +161,15 @@ export default function KeywordVote({ showId, actorId }) {
           [tag]: { count: increment(1), voters: arrayUnion(user.uid) },
         }, { merge: true })
       }
+
+      // 내 키워드 기록 저장
+      await setDoc(myKwRef, {
+        tags:      newMyTags,
+        showId,
+        actorId,
+        userId:    user.uid,
+        updatedAt: serverTimestamp(),
+      })
 
       // 최신 집계로 topKeywords 업데이트
       const kwSnap = await getDoc(kwRef)
