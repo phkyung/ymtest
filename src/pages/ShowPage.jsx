@@ -7,7 +7,8 @@ import { useState, useEffect } from 'react'
 import { useShow } from '../hooks/useShows'
 import { useAuth } from '../hooks/useAuth'
 import { toHttps } from '../utils/imageUrl'
-import KeywordVote from '../components/KeywordVote'
+import KeywordModal from '../components/KeywordModal'
+import NosonArchive from '../components/NosonArchive'
 import CommentSection from '../components/CommentSection'
 import { db, isFirebaseConfigured } from '../firebase'
 import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
@@ -110,9 +111,7 @@ function CastSection({ cast, showId, actorIdMap }) {
     groupMap[role].push(m)
   })
 
-  // 키워드 투표용 선택 배우 (투표 섹션에서만 사용)
-  const [voteTarget, setVoteTarget] = useState(enriched[0] ?? null)
-  const [voteOpen, setVoteOpen] = useState(true)
+  const [modal, setModal] = useState({ open: false, actor: null })
 
   return (
     <div className="space-y-4">
@@ -126,88 +125,54 @@ function CastSection({ cast, showId, actorIdMap }) {
               {role}
             </p>
             <div className="flex flex-wrap gap-2">
-              {groupMap[role].map((m, idx) =>
-                m.resolvedId ? (
-                  <Link
-                    key={idx}
-                    to={`/actors/${m.resolvedId}`}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full border
-                               border-[#C8D8CA] text-[#4A6B4F] text-sm font-medium
-                               hover:bg-[#8FAF94] hover:text-white hover:border-[#8FAF94]
-                               transition-colors group"
+              {groupMap[role].map((m, idx) => (
+                <div key={idx} className="flex items-center gap-1.5">
+                  {m.resolvedId ? (
+                    <Link
+                      to={`/actors/${m.resolvedId}`}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full border
+                                 border-[#C8D8CA] text-[#4A6B4F] text-sm font-medium
+                                 hover:bg-[#8FAF94] hover:text-white hover:border-[#8FAF94]
+                                 transition-colors group"
+                    >
+                      <ActorAvatar name={m.actorName} imageUrl={m.imageUrl} />
+                      <span>{m.actorName}</span>
+                      {m.isDouble && (
+                        <span className="text-[10px] opacity-60 group-hover:opacity-80">더블</span>
+                      )}
+                    </Link>
+                  ) : (
+                    <span
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full border
+                                 border-stone-100 text-stone-500 text-sm"
+                    >
+                      <ActorAvatar name={m.actorName} imageUrl={m.imageUrl} />
+                      {m.actorName}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setModal({ open: true, actor: m })}
+                    className="text-xs border border-[#8FAF94] text-[#8FAF94]
+                               rounded-full px-2 py-0.5 hover:bg-[#8FAF94]/10 transition-colors"
                   >
-                    <ActorAvatar name={m.actorName} imageUrl={m.imageUrl} />
-                    <span>{m.actorName}</span>
-                    {m.isDouble && (
-                      <span className="text-[10px] opacity-60 group-hover:opacity-80">더블</span>
-                    )}
-                  </Link>
-                ) : (
-                  <span
-                    key={idx}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full border
-                               border-stone-100 text-stone-500 text-sm"
-                  >
-                    <ActorAvatar name={m.actorName} imageUrl={m.imageUrl} />
-                    {m.actorName}
-                  </span>
-                )
-              )}
+                    키워드 선택
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         ))}
       </div>
 
-      {/* 키워드 투표 섹션 */}
-      <div className="bg-white border border-stone-100 rounded-2xl overflow-hidden">
-        <button
-          onClick={() => setVoteOpen(v => !v)}
-          className="w-full flex items-center justify-between px-5 py-4 text-left
-                     hover:bg-[#FAF8F5] transition-colors"
-        >
-          <div>
-            <p className="text-sm font-semibold text-[#2C1810]">키워드 투표</p>
-            <p className="text-xs text-stone-400 mt-0.5">배우의 연기를 한 단어로 표현해보세요</p>
-          </div>
-          <span className="text-stone-400 text-sm">{voteOpen ? '▲' : '▼'}</span>
-        </button>
-
-        {voteOpen && (
-          <div className="px-5 pb-5 border-t border-stone-100">
-            {/* 배우 선택 */}
-            <div className="flex flex-wrap gap-2 pt-4 mb-4">
-              {enriched.map((m, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setVoteTarget(m)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm
-                              font-medium transition-colors ${
-                    voteTarget?.actorName === m.actorName && voteTarget?.roleName === m.roleName
-                      ? 'bg-[#8FAF94] text-white'
-                      : 'border border-[#C8D8CA] text-[#4A6B4F] hover:bg-[#8FAF94]/10'
-                  }`}
-                >
-                  {m.actorName}
-                </button>
-              ))}
-            </div>
-
-            {voteTarget && (
-              <div>
-                <p className="text-xs text-stone-400 mb-3">
-                  <span className="font-semibold text-[#2C1810]">{voteTarget.actorName}</span>
-                  {voteTarget.roleName?.trim() && ` · ${voteTarget.roleName} 역`}
-                </p>
-                <KeywordVote
-                  showId={showId}
-                  actorId={voteTarget.resolvedId}
-                  roleName={voteTarget.roleName}
-                />
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      {/* 키워드 모달 */}
+      {modal.open && (
+        <KeywordModal
+          showId={showId}
+          actor={modal.actor}
+          cast={enriched}
+          onClose={() => setModal({ open: false, actor: null })}
+        />
+      )}
     </div>
   )
 }
@@ -535,9 +500,10 @@ export default function ShowPage() {
       <div className="border-b border-[#E8E4DF]">
         <div className="flex">
           {[
-            { key: 'info',   label: '정보' },
-            { key: 'cast',   label: `출연진${show.cast?.length ? ` ${show.cast.length}` : ''}` },
-            { key: 'review', label: '날짜별 후기' },
+            { key: 'info',    label: '정보' },
+            { key: 'cast',    label: `출연진${show.cast?.length ? ` ${show.cast.length}` : ''}` },
+            { key: 'archive', label: '노선 아카이브' },
+            { key: 'review',  label: '날짜별 후기' },
           ].map(t => (
             <button
               key={t.key}
@@ -660,6 +626,15 @@ export default function ShowPage() {
           )
         )}
 
+        {/* 노선 아카이브 탭 */}
+        {tab === 'archive' && (
+          <NosonArchive
+            showId={show.id}
+            cast={show.cast ?? []}
+            actorIdMap={actorIdMap}
+          />
+        )}
+
         {/* 날짜별 후기 탭 */}
         {tab === 'review' && (
           <ReviewTab show={show} actorIdMap={actorIdMap} />
@@ -712,8 +687,8 @@ export default function ShowPage() {
         </div>
       )}
 
-      {/* ── 댓글 (날짜별 후기 탭 제외하고 항상 표시) ── */}
-      {tab !== 'review' && (
+      {/* ── 댓글 (정보·출연진 탭에서만 표시) ── */}
+      {tab !== 'review' && tab !== 'archive' && (
         <>
           <hr className="border-[#E8E4DF]" />
           <section className="bg-white border border-stone-100 rounded-2xl p-5">

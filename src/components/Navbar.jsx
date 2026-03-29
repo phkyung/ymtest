@@ -43,7 +43,7 @@ export default function Navbar() {
             className="font-display text-lg tracking-wide hover:text-[#7A9E7F] transition-colors"
           >
             플레이픽
-            <span className="ml-2 text-xs font-body text-stone-400 hidden sm:inline">
+            <span className="ml-2 text-xs font-body text-stone-400 truncate max-w-[160px] sm:max-w-none inline">
               공연을 기록하고, 함께 기억하는 곳
             </span>
           </Link>

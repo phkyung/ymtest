@@ -19,8 +19,8 @@ function isPlayingToday(startDate, endDate) {
 const GENRE_OPTIONS = ['전체', '뮤지컬', '연극']
 
 const MOOD_TAGS = [
-  '위태로움', '비장미', '처연함', '먹먹함', '자기파괴',
-  '따뜻함', '통쾌함', '선연함', '서늘함', '섬뜩함', '아릿함',
+  '파멸극', '힐링', '로맨스', '코믹', '스릴러',
+  '성장', '비극', '판타지', '감동', '긴장감',
 ]
 
 const SHOW_TAG_COLORS = {
@@ -112,7 +112,7 @@ export default function HomePage() {
         s.keywords?.some(k => k.toLowerCase().includes(kw))
       )
 
-      const moodOk = !moodTag || s.topKeywords?.includes(moodTag)
+      const moodOk = !moodTag || s.showTags?.includes(moodTag)
 
       return genreOk && todayOk && searchOk && aiOk && moodOk
     })
