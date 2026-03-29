@@ -107,7 +107,17 @@ def parse_cast(prfcast: str) -> list[dict]:
     if not prfcast.strip():
         return []
     names = [n.strip() for n in re.split(r"[,，、\n]", prfcast) if n.strip()]
-    return [{"actorName": name, "roleName": ""} for name in names]
+
+    cleaned = []
+    for name in names:
+        # 끝에 " 등" 제거 (예: "조영화 등" → "조영화")
+        if name.endswith(" 등"):
+            name = name[:-2].strip()
+        # 이름이 비어있거나 1글자면 스킵
+        if len(name) <= 1:
+            continue
+        cleaned.append({"actorName": name, "roleName": ""})
+    return cleaned
 
 
 def pick_ticket_url(relates_el: ET.Element | None) -> str:

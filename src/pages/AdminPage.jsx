@@ -345,6 +345,39 @@ function TicketLinksSection({ links, onChange }) {
 
 // ── 공연 정보 편집 폼 (대기 중 · 등록 완료 공통) ──
 function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
+  const [synopsisLoading, setSynopsisLoading] = useState(false)
+
+  // sourceUrl에서 mt20id 파싱 (예: ...?pc=02&mt20id=PF12345)
+  const mt20id = draft.sourceUrl
+    ? new URLSearchParams(draft.sourceUrl.split('?')[1] ?? '').get('mt20id')
+    : null
+
+  async function handleFetchSynopsis() {
+    if (!mt20id) return
+    const apiKey = import.meta.env.VITE_KOPIS_API_KEY
+    if (!apiKey) { alert('VITE_KOPIS_API_KEY 환경변수가 설정되지 않았습니다.'); return }
+    setSynopsisLoading(true)
+    try {
+      const res = await fetch(
+        `https://www.kopis.or.kr/openApi/restful/pblprfr/${mt20id}?service=${apiKey}`
+      )
+      const text = await res.text()
+      const parser = new DOMParser()
+      const xml = parser.parseFromString(text, 'text/xml')
+      const sty = xml.querySelector('sty')?.textContent?.trim() ?? ''
+      if (sty) {
+        onChangeDraft('synopsis', sty)
+      } else {
+        alert('KOPIS에서 시놉시스 정보를 찾을 수 없습니다.')
+      }
+    } catch (err) {
+      console.error('KOPIS 시놉시스 불러오기 실패:', err)
+      alert('불러오기 중 오류가 발생했습니다.')
+    } finally {
+      setSynopsisLoading(false)
+    }
+  }
+
   // tags 배열 → 쉼표 문자열로 편집
   const [tagsStr, setTagsStr] = useState(
     Array.isArray(draft.tags) ? draft.tags.join(', ') : (draft.tags ?? '')
@@ -483,7 +516,20 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
 
       {/* ── 시놉시스 ── */}
       <div>
-        <label className={LABEL}>시놉시스</label>
+        <div className="flex items-center justify-between mb-1">
+          <label className={LABEL}>시놉시스</label>
+          {mt20id && (
+            <button
+              type="button"
+              onClick={handleFetchSynopsis}
+              disabled={synopsisLoading}
+              className="text-xs px-2.5 py-1 rounded-lg bg-stone-100 text-stone-600
+                         hover:bg-stone-200 transition-colors disabled:opacity-50"
+            >
+              {synopsisLoading ? '불러오는 중…' : 'KOPIS에서 불러오기'}
+            </button>
+          )}
+        </div>
         <textarea
           value={draft.synopsis ?? ''}
           onChange={e => onChangeDraft('synopsis', e.target.value)}
@@ -1320,6 +1366,8 @@ export default function AdminPage() {
   const [filterDuration, setFilterDuration] = useState('all')
   // 지역 필터: all / daehakro / seoul_center / seoul_outer / province
   const [filterRegion,   setFilterRegion]   = useState('all')
+  // 장르 필터: all / 뮤지컬 / 연극 / 오페라 / 기타
+  const [filterGenre,    setFilterGenre]    = useState('all')
   // 정렬: collectedAt_desc(등록일) / startDate_asc(시작일) / duration_asc(기간 짧은 순)
   const [sortBy,         setSortBy]         = useState('collectedAt_desc')
   // 대기 중 현재 페이지 (0-indexed)
@@ -1405,6 +1453,12 @@ export default function AdminPage() {
       if (filterRegion !== 'all') {
         if (getRegionCategory(show) !== filterRegion) return false
       }
+      // 장르 필터 적용
+      if (filterGenre !== 'all') {
+        const genre = show.genre ?? ''
+        const isOther = !['뮤지컬', '연극', '오페라'].includes(genre)
+        if (filterGenre === '기타' ? !isOther : genre !== filterGenre) return false
+      }
       return true
     })
     .sort((a, b) => {
@@ -1423,7 +1477,7 @@ export default function AdminPage() {
     })
 
   // ── 페이지네이션: 필터 변경 시 첫 페이지로 리셋 ──
-  useEffect(() => { setPendingPage(0) }, [filterDuration, filterRegion, sortBy])
+  useEffect(() => { setPendingPage(0) }, [filterDuration, filterRegion, filterGenre, sortBy])
 
   // 현재 페이지에 보여줄 행 (50건 슬라이싱)
   const totalPendingPages   = Math.max(1, Math.ceil(filteredPendingList.length / PENDING_PAGE_SIZE))
@@ -1843,6 +1897,30 @@ export default function AdminPage() {
                   ))}
                 </div>
 
+                {/* 장르 필터 */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-semibold text-stone-500 w-10 shrink-0">장르</span>
+                  {[
+                    { value: 'all',   label: '전체' },
+                    { value: '뮤지컬', label: '뮤지컬' },
+                    { value: '연극',   label: '연극' },
+                    { value: '오페라', label: '오페라' },
+                    { value: '기타',   label: '기타' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setFilterGenre(opt.value)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                        filterGenre === opt.value
+                          ? 'bg-stone-900 text-white'
+                          : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
                 {/* 정렬 */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-semibold text-stone-500 w-10 shrink-0">정렬</span>
@@ -1866,7 +1944,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* 필터 적용 결과 건수 */}
-                {(filterDuration !== 'all' || filterRegion !== 'all') && (
+                {(filterDuration !== 'all' || filterRegion !== 'all' || filterGenre !== 'all') && (
                   <p className="text-xs text-stone-400 pt-0.5">
                     필터 결과: <span className="font-semibold text-stone-600">{filteredPendingList.length}개</span>
                     {' '}/ 전체 {pendingList.length}개
@@ -1947,7 +2025,7 @@ export default function AdminPage() {
                 <div className="text-4xl mb-3">🔍</div>
                 <p className="font-medium text-stone-600 mb-2">필터에 해당하는 공연이 없습니다</p>
                 <button
-                  onClick={() => { setFilterDuration('all'); setFilterRegion('all') }}
+                  onClick={() => { setFilterDuration('all'); setFilterRegion('all'); setFilterGenre('all') }}
                   className="text-sm text-amber-600 underline hover:text-amber-500"
                 >
                   필터 초기화
