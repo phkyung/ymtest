@@ -1,94 +1,104 @@
 // ─────────────────────────────────────────────
-// KeywordVote.jsx — 배우-공연-배역 조합에 키워드 투표
+// KeywordVote.jsx — 배우-공연 조합 키워드 투표
 // ─────────────────────────────────────────────
-// 구조: Firestore "votes" 컬렉션
-//   문서 ID = "{showId}_{actorId}_{keyword}"
-//   필드: count(숫자), voterIds(배열), showId, actorId, keyword
+// Firestore 구조:
+//   컬렉션: keywords
+//   문서 ID: {showId}_{actorId}
+//   필드: { [tag]: { count: number, voters: string[] } }
 // ─────────────────────────────────────────────
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  doc, getDoc, setDoc,
-  updateDoc, arrayUnion, arrayRemove, increment, onSnapshot,
+  doc, onSnapshot, setDoc, updateDoc,
+  increment, arrayUnion, arrayRemove,
 } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../firebase'
 import { useAuth } from '../hooks/useAuth'
 
-// MVP에서 사용할 키워드 목록 (나중에 Firestore에서 관리 가능)
-const PRESET_KEYWORDS = [
-  '카리스마', '섬세함', '코믹', '광기', '서정적',
-  '압도적', '따뜻함', '냉혹함', '몰입감', '유머',
-  '절제', '폭발적', '고독', '순수', '복잡한 내면',
+export const KEYWORD_CATEGORIES = [
+  {
+    label: '이 캐릭터의 결',
+    tags: ['서늘함', '따뜻함', '건조함', '날것', '단단함', '연약함', '위태로움', '기품'],
+  },
+  {
+    label: '이 캐릭터를 움직이는 힘',
+    tags: ['인정욕', '구원욕', '복수심', '생존욕', '통제욕', '헌신', '자기파괴', '도피'],
+  },
+  {
+    label: '상대를 대하는 방식',
+    tags: ['직진', '회피', '헌신', '지배', '유혹', '거리두기', '소유욕', '보호본능'],
+  },
+  {
+    label: '배우가 감정을 푸는 방식',
+    tags: ['절제', '누름', '지연폭발', '속울음', '스며듦', '냉소', '폭발'],
+  },
+  {
+    label: '보고 나서 남는 것',
+    tags: ['아릿함', '먹먹함', '처연함', '섬뜩함', '통쾌함', '허무', '선연함', '비장미'],
+  },
 ]
 
-// 로컬(더미) 투표 상태 관리 — Firebase 미연결 시 사용
-const localVotes = {}
+const ALL_TAGS = KEYWORD_CATEGORIES.flatMap(c => c.tags)
 
-// ── 토스트 컴포넌트 ──────────────────────────
+// 더미 모드 로컬 상태
+const localStore = {}
+
 function Toast({ message, visible }) {
   return (
-    <div
-      className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50
-                  bg-[#2C1810] text-white rounded-lg px-4 py-2 text-sm
-                  transition-all duration-300 pointer-events-none
-                  ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
-    >
+    <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50
+                     bg-[#2C1810] text-white rounded-lg px-4 py-2 text-sm
+                     transition-all duration-300 pointer-events-none
+                     ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
       {message}
     </div>
   )
 }
 
-export default function KeywordVote({ showId, actorId, roleName }) {
+export default function KeywordVote({ showId, actorId }) {
   const { user, signIn } = useAuth()
-  const [votes, setVotes]         = useState({}) // { keyword: { count, voted } }
-  const [loading, setLoading]     = useState(false)
-  const [toast, setToast]         = useState({ visible: false, message: '' })
+  // votes: { [tag]: { count: number, voted: boolean } }
+  const [votes, setVotes]   = useState({})
+  const [loading, setLoading] = useState(false)
+  const [toast, setToast]   = useState({ visible: false, message: '' })
 
-  // ── 토스트 표시 ──────────────────────────────
-  const showToast = useCallback((message) => {
-    setToast({ visible: true, message })
-    setTimeout(() => setToast({ visible: false, message }), 2000)
+  const showToast = useCallback(msg => {
+    setToast({ visible: true, message: msg })
+    setTimeout(() => setToast(t => ({ ...t, visible: false })), 2000)
   }, [])
 
-  // ── 투표 데이터 로드 ──────────────────────────
+  // ── 투표 데이터 로드 ─────────────────────────
   useEffect(() => {
+    if (!showId || !actorId) return
+    const docId = `${showId}_${actorId}`
+
     if (!isFirebaseConfigured || !db) {
-      // 더미 모드: 로컬 상태만 사용
-      const initial = {}
-      PRESET_KEYWORDS.forEach(kw => {
-        initial[kw] = {
-          count: localVotes[`${showId}_${actorId}_${kw}`]?.count ?? 0,
-          voted: localVotes[`${showId}_${actorId}_${kw}`]?.voted ?? false,
-        }
-      })
-      setVotes(initial)
+      const local = localStore[docId] ?? {}
+      setVotes(Object.fromEntries(
+        ALL_TAGS.map(tag => [tag, {
+          count: local[tag]?.count ?? 0,
+          voted: local[tag]?.voted ?? false,
+        }])
+      ))
       return
     }
 
-    // Firestore 실시간 구독
-    const unsubs = PRESET_KEYWORDS.map(kw => {
-      const docId  = `${showId}_${actorId}_${kw}`
-      const docRef = doc(db, 'votes', docId)
-
-      return onSnapshot(docRef, snap => {
-        if (snap.exists()) {
-          const data   = snap.data()
-          const voted  = user ? data.voterIds?.includes(user.uid) : false
-          setVotes(prev => ({
-            ...prev,
-            [kw]: { count: data.count ?? 0, voted },
-          }))
-        } else {
-          setVotes(prev => ({ ...prev, [kw]: { count: 0, voted: false } }))
-        }
-      })
+    const unsub = onSnapshot(doc(db, 'keywords', docId), snap => {
+      const data = snap.exists() ? snap.data() : {}
+      setVotes(Object.fromEntries(
+        ALL_TAGS.map(tag => {
+          const d = data[tag] ?? {}
+          return [tag, {
+            count: d.count ?? 0,
+            voted: user ? (d.voters ?? []).includes(user.uid) : false,
+          }]
+        })
+      ))
     })
-
-    return () => unsubs.forEach(u => u())
+    return () => unsub()
   }, [showId, actorId, user])
 
-  // ── 투표 처리 ──────────────────────────────────
-  async function handleVote(keyword) {
+  // ── 투표 토글 ───────────────────────────────
+  async function handleVote(tag) {
     if (!user) {
       showToast('투표하려면 로그인이 필요해요 😊')
       return
@@ -96,62 +106,31 @@ export default function KeywordVote({ showId, actorId, roleName }) {
     if (loading) return
     setLoading(true)
 
-    const key    = `${showId}_${actorId}_${keyword}`
-    const alreadyVoted = votes[keyword]?.voted
+    const docId = `${showId}_${actorId}`
+    const alreadyVoted = votes[tag]?.voted ?? false
 
-    // 더미 모드
     if (!isFirebaseConfigured || !db) {
-      if (alreadyVoted) {
-        localVotes[key] = {
-          count: Math.max(0, (localVotes[key]?.count ?? 1) - 1),
-          voted: false,
-        }
-        setVotes(prev => ({
-          ...prev,
-          [keyword]: { count: Math.max(0, (prev[keyword]?.count ?? 1) - 1), voted: false },
-        }))
-      } else {
-        localVotes[key] = {
-          count: (localVotes[key]?.count ?? 0) + 1,
-          voted: true,
-        }
-        setVotes(prev => ({
-          ...prev,
-          [keyword]: { count: (prev[keyword]?.count ?? 0) + 1, voted: true },
-        }))
-      }
+      const local = localStore[docId] ?? {}
+      local[tag] = alreadyVoted
+        ? { count: Math.max(0, (local[tag]?.count ?? 1) - 1), voted: false }
+        : { count: (local[tag]?.count ?? 0) + 1, voted: true }
+      localStore[docId] = local
+      setVotes(prev => ({ ...prev, [tag]: { count: local[tag].count, voted: local[tag].voted } }))
       setLoading(false)
       return
     }
 
-    // Firestore 업데이트
     try {
-      const docRef = doc(db, 'votes', key)
-      const snap   = await getDoc(docRef)
-
+      const docRef = doc(db, 'keywords', docId)
       if (alreadyVoted) {
-        // 투표 취소
-        if (snap.exists()) {
-          await updateDoc(docRef, {
-            count: increment(-1),
-            voterIds: arrayRemove(user.uid),
-          })
-        }
+        await updateDoc(docRef, {
+          [`${tag}.count`]:  increment(-1),
+          [`${tag}.voters`]: arrayRemove(user.uid),
+        })
       } else {
-        // 투표 추가
-        if (snap.exists()) {
-          await updateDoc(docRef, {
-            count: increment(1),
-            voterIds: arrayUnion(user.uid),
-          })
-        } else {
-          await setDoc(docRef, {
-            showId, actorId, keyword,
-            count: 1,
-            voterIds: [user.uid],
-            createdAt: new Date(),
-          })
-        }
+        await setDoc(docRef, {
+          [tag]: { count: increment(1), voters: arrayUnion(user.uid) },
+        }, { merge: true })
       }
     } catch (err) {
       console.error('투표 오류:', err)
@@ -160,46 +139,46 @@ export default function KeywordVote({ showId, actorId, roleName }) {
     }
   }
 
-  // 득표 순으로 정렬
-  const sorted = PRESET_KEYWORDS.slice().sort(
-    (a, b) => (votes[b]?.count ?? 0) - (votes[a]?.count ?? 0)
-  )
-
   return (
-    <div>
-      <h3 className="font-display text-base font-semibold text-stone-700 mb-3">
-        {roleName} 역 · 키워드 투표
-        <span className="ml-2 text-xs font-body text-stone-400 font-normal">
-          공감되는 키워드를 눌러주세요
-        </span>
-      </h3>
+    <div className="space-y-4">
+      {KEYWORD_CATEGORIES.map((cat, idx) => (
+        <div key={cat.label}>
+          {idx > 0 && <hr className="border-stone-100 mb-4" />}
 
-      <div className="flex flex-wrap gap-2">
-        {sorted.map(kw => {
-          const count = votes[kw]?.count ?? 0
-          const voted = votes[kw]?.voted ?? false
+          <p className="text-xs text-[#8FAF94] font-medium mb-2">{cat.label}</p>
 
-          return (
-            <button
-              key={kw}
-              onClick={() => handleVote(kw)}
-              disabled={voted || loading}
-              className={`keyword-badge ${voted ? 'keyword-badge-voted' : 'keyword-badge-unvoted'}`}
-            >
-              <span>{kw}</span>
-              {count > 0 && (
-                <span className={`text-xs font-medium ${voted ? 'text-white/70' : 'text-stone-400'}`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
+          <div className="flex flex-wrap gap-2">
+            {cat.tags.map(tag => {
+              const count = votes[tag]?.count ?? 0
+              const voted = votes[tag]?.voted ?? false
+              return (
+                <button
+                  key={tag}
+                  onClick={() => handleVote(tag)}
+                  disabled={loading}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm
+                              font-medium border transition-all duration-150 min-h-[40px] select-none
+                              ${voted
+                                ? 'bg-[#8FAF94] border-[#8FAF94] text-[#2C1810]'
+                                : 'bg-white border-[#C8D8CA] text-[#4A6B4F] hover:bg-[#8FAF94]/10 hover:border-[#8FAF94]'
+                              }`}
+                >
+                  <span>{tag}</span>
+                  {count > 0 && (
+                    <span className={`text-xs font-semibold ${voted ? 'text-[#2C1810]/60' : 'text-stone-400'}`}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ))}
 
       {!user && (
-        <p className="text-xs text-stone-400 mt-3">
-          로그인하면 공감 키워드를 투표할 수 있어요 ·{' '}
+        <p className="text-xs text-stone-400 pt-1">
+          로그인하면 키워드를 투표할 수 있어요 ·{' '}
           <button onClick={signIn} className="text-[#4A6B4F] underline hover:text-[#7A9E7F]">
             구글 로그인
           </button>
