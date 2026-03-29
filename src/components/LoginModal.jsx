@@ -21,11 +21,19 @@ function parseError(err) {
 
 export default function LoginModal({ onClose }) {
   const { signIn, signInWithEmail, signUpWithEmail } = useAuth()
-  const [tab,      setTab]      = useState('login') // 'login' | 'signup'
+  const [tab,      setTab]      = useState('login')  // 'login' | 'signup'
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
+  const [confirm,  setConfirm]  = useState('')
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
+  const [toast,    setToast]    = useState(false)
+
+  function switchTab(t) {
+    setTab(t)
+    setError('')
+    setConfirm('')
+  }
 
   async function handleGoogle() {
     setError('')
@@ -43,16 +51,22 @@ export default function LoginModal({ onClose }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+
+    if (tab === 'signup' && password !== confirm) {
+      setError('비밀번호가 일치하지 않습니다.')
+      return
+    }
+
     setLoading(true)
     try {
       if (tab === 'login') {
         await signInWithEmail(email, password)
+        onClose()
       } else {
         await signUpWithEmail(email, password)
-        // TODO: 이메일 인증 발송 (나중에 추가)
-        // await sendEmailVerification(auth.currentUser)
+        setToast(true)
+        setTimeout(onClose, 1500)
       }
-      onClose()
     } catch (err) {
       setError(parseError(err))
     } finally {
@@ -61,19 +75,19 @@ export default function LoginModal({ onClose }) {
   }
 
   return (
-    /* 배경 오버레이 */
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 relative">
+
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex gap-1 bg-stone-100 rounded-xl p-1">
             {[{ key: 'login', label: '로그인' }, { key: 'signup', label: '회원가입' }].map(t => (
               <button
                 key={t.key}
-                onClick={() => { setTab(t.key); setError('') }}
+                onClick={() => switchTab(t.key)}
                 className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                   tab === t.key ? 'bg-white text-[#2C1810] shadow-sm' : 'text-stone-400 hover:text-stone-600'
                 }`}
@@ -88,29 +102,6 @@ export default function LoginModal({ onClose }) {
           >
             ×
           </button>
-        </div>
-
-        {/* 구글 로그인 */}
-        <button
-          onClick={handleGoogle}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-2 border border-stone-200
-                     rounded-xl py-2.5 text-sm font-medium text-stone-700
-                     hover:bg-stone-50 transition-colors disabled:opacity-50"
-        >
-          <img
-            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-            alt="Google"
-            className="w-4 h-4"
-          />
-          Google로 {tab === 'login' ? '로그인' : '가입'}
-        </button>
-
-        {/* 구분선 */}
-        <div className="flex items-center gap-3 my-4">
-          <div className="flex-1 h-px bg-stone-100" />
-          <span className="text-xs text-stone-400">또는</span>
-          <div className="flex-1 h-px bg-stone-100" />
         </div>
 
         {/* 이메일/비밀번호 폼 */}
@@ -133,6 +124,17 @@ export default function LoginModal({ onClose }) {
             className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm
                        focus:outline-none focus:border-[#8FAF94] focus:ring-1 focus:ring-[#8FAF94]"
           />
+          {tab === 'signup' && (
+            <input
+              type="password"
+              value={confirm}
+              onChange={e => setConfirm(e.target.value)}
+              placeholder="비밀번호 확인"
+              required
+              className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm
+                         focus:outline-none focus:border-[#8FAF94] focus:ring-1 focus:ring-[#8FAF94]"
+            />
+          )}
 
           {/* 에러 메시지 */}
           {error && (
@@ -148,6 +150,37 @@ export default function LoginModal({ onClose }) {
             {loading ? '처리 중...' : tab === 'login' ? '로그인' : '회원가입'}
           </button>
         </form>
+
+        {/* 구분선 */}
+        <div className="flex items-center gap-3 my-4">
+          <div className="flex-1 h-px bg-stone-100" />
+          <span className="text-xs text-stone-400">또는</span>
+          <div className="flex-1 h-px bg-stone-100" />
+        </div>
+
+        {/* 구글 로그인 */}
+        <button
+          onClick={handleGoogle}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 border border-stone-200
+                     rounded-xl py-2.5 text-sm font-medium text-stone-700
+                     hover:bg-stone-50 transition-colors disabled:opacity-50"
+        >
+          <img
+            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+            alt="Google"
+            className="w-4 h-4"
+          />
+          Google로 {tab === 'login' ? '로그인' : '가입'}
+        </button>
+
+        {/* 회원가입 완료 토스트 */}
+        {toast && (
+          <div className="absolute inset-x-0 bottom-0 rounded-b-2xl bg-[#2C1810] text-white
+                          text-sm font-medium text-center py-3">
+            환영해요! 🎭
+          </div>
+        )}
       </div>
     </div>
   )

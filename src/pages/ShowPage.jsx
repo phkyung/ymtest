@@ -11,7 +11,7 @@ import KeywordModal from '../components/KeywordModal'
 import NosonArchive from '../components/NosonArchive'
 import CommentSection from '../components/CommentSection'
 import { db, isFirebaseConfigured } from '../firebase'
-import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, getDocs, addDoc, serverTimestamp, onSnapshot, query, where, orderBy, deleteDoc, doc as firestoreDoc } from 'firebase/firestore'
 import { getNickname } from '../components/NicknameModal'
 
 const TAG_OPTIONS = ['파멸극', '힐링', '로맨스', '코믹', '스릴러', '성장', '비극', '판타지', '감동', '긴장감']
@@ -49,6 +49,19 @@ function getShowDates(startDate, endDate) {
     cur.setDate(cur.getDate() + 1)
   }
   return dates
+}
+
+function timeAgo(date) {
+  if (!date) return ''
+  const d = date instanceof Date ? date : date.toDate?.()
+  if (!d) return ''
+  const diff = Date.now() - d.getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1)  return '방금 전'
+  if (mins < 60) return `${mins}분 전`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24)  return `${hrs}시간 전`
+  return `${Math.floor(hrs / 24)}일 전`
 }
 
 // ── 시놉시스 (접기/펼치기) ────────────────────────
@@ -179,137 +192,327 @@ function CastSection({ cast, showId, actorIdMap }) {
 
 // ── 날짜별 후기 탭 ────────────────────────────────
 function ReviewTab({ show, actorIdMap }) {
-  const dates = getShowDates(show.startDate, show.endDate)
-  const today = new Date().toISOString().slice(0, 10)
-  const defaultDate = dates.includes(today) ? today : (dates[0] ?? null)
-  const [selectedDate, setSelectedDate] = useState(defaultDate)
+  const { user, signIn } = useAuth()
+  const dates  = getShowDates(show.startDate, show.endDate)
+  const today  = new Date().toISOString().slice(0, 10)
+
+  const [viewMode,     setViewMode]    = useState('all')
+  const [selectedDate, setSelectedDate] = useState(
+    dates.includes(today) ? today : (dates[0] ?? null)
+  )
+  const [allReviews,   setAllReviews]  = useState([])
+  const [dateReviews,  setDateReviews] = useState([])
+
+  // write form
+  const [formDate,    setFormDate]    = useState(dates.includes(today) ? today : (dates[0] ?? ''))
+  const [formCast,    setFormCast]    = useState([])
+  const [formText,    setFormText]    = useState('')
+  const [formLoading, setFormLoading] = useState(false)
+  const [formToast,   setFormToast]   = useState(false)
 
   const enrichedCast = (show.cast ?? []).map(m => ({
     ...m,
     resolvedId: actorIdMap[m.actorName] || m.actorId || null,
   }))
 
-  if (dates.length === 0) {
-    return (
-      <p className="text-sm text-stone-400 py-8 text-center">공연 날짜 정보가 없습니다.</p>
+  // 전체 후기 구독
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db) return
+    const q = query(collection(db, 'comments'), where('showId', '==', show.id))
+    return onSnapshot(q, snap => {
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      docs.sort((a, b) => {
+        const ta = a.createdAt?.toDate?.()?.getTime() ?? 0
+        const tb = b.createdAt?.toDate?.()?.getTime() ?? 0
+        return tb - ta
+      })
+      setAllReviews(docs)
+    })
+  }, [show.id])
+
+  // 날짜별 후기 구독
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db || !selectedDate) return
+    const q = query(
+      collection(db, 'comments'),
+      where('targetId',   '==', `${show.id}_${selectedDate}`),
+      where('targetType', '==', 'show_date'),
+      orderBy('createdAt', 'desc'),
     )
+    return onSnapshot(q, snap => {
+      setDateReviews(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    })
+  }, [show.id, selectedDate])
+
+  // 날짜별 보기 전환 시 작성 날짜 동기화
+  useEffect(() => {
+    if (viewMode === 'byDate' && selectedDate) setFormDate(selectedDate)
+  }, [viewMode, selectedDate])
+
+  // 후기 있는 날짜 집합 (date picker 점 표시용)
+  const datesWithReviews = new Set(allReviews.map(r => r.date).filter(Boolean))
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!formText.trim() || !user || !formDate) return
+    setFormLoading(true)
+    try {
+      await addDoc(collection(db, 'comments'), {
+        targetId:     `${show.id}_${formDate}`,
+        targetType:   'show_date',
+        showId:       show.id,
+        date:         formDate,
+        selectedCast: formCast,
+        text:         formText.trim(),
+        nickname:     getNickname(),
+        userId:       user.uid,
+        createdAt:    serverTimestamp(),
+      })
+      setFormText('')
+      setFormCast([])
+      setFormToast(true)
+      setTimeout(() => setFormToast(false), 2000)
+    } catch (err) {
+      console.error('후기 작성 오류:', err)
+    } finally {
+      setFormLoading(false)
+    }
   }
 
-  // 날짜 그룹: 월별로 묶기
+  async function handleDelete(reviewId) {
+    if (!window.confirm('후기를 삭제할까요?')) return
+    try { await deleteDoc(firestoreDoc(db, 'comments', reviewId)) }
+    catch (err) { console.error('삭제 오류:', err) }
+  }
+
+  function toggleCast(name) {
+    setFormCast(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name])
+  }
+
+  const reviews = viewMode === 'all' ? allReviews : dateReviews
+
+  // 월별 그룹
   const byMonth = {}
   dates.forEach(d => {
-    const month = d.slice(0, 7)
-    if (!byMonth[month]) byMonth[month] = []
-    byMonth[month].push(d)
+    const mo = d.slice(0, 7)
+    if (!byMonth[mo]) byMonth[mo] = []
+    byMonth[mo].push(d)
   })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
 
-      {/* 날짜 선택 — 월별 그룹 */}
-      <div className="space-y-3">
-        {Object.entries(byMonth).map(([month, ds]) => {
-          const [y, m] = month.split('-')
-          return (
-            <div key={month}>
-              <p className="text-xs font-semibold text-stone-400 mb-2">
-                {parseInt(y)}년 {parseInt(m)}월
-              </p>
-              <div className="flex gap-1.5 flex-wrap">
-                {ds.map(d => {
-                  const date = new Date(d)
-                  const day  = ['일','월','화','수','목','금','토'][date.getDay()]
-                  const isWeekend = date.getDay() === 0 || date.getDay() === 6
-                  const isPast    = d < today
-                  const isToday   = d === today
-                  return (
-                    <button
-                      key={d}
-                      onClick={() => setSelectedDate(d)}
-                      className={`flex flex-col items-center px-2.5 py-2 rounded-xl
-                                  text-xs font-medium transition-all min-w-[44px] ${
-                        selectedDate === d
-                          ? 'bg-[#2C1810] text-white shadow-sm'
-                          : isToday
-                            ? 'bg-[#EEF5EF] text-[#4A6B4F] border border-[#8FAF94]'
-                            : isPast
-                              ? 'bg-stone-50 text-stone-300 border border-stone-100'
-                              : 'bg-white border border-[#E8E4DF] text-stone-600 hover:border-[#8FAF94] hover:text-[#4A6B4F]'
-                      }`}
-                    >
-                      <span className={
-                        selectedDate !== d && isWeekend
-                          ? (date.getDay() === 0 ? 'text-red-400' : 'text-blue-400')
-                          : ''
-                      }>
-                        {day}
-                      </span>
-                      <span className="font-semibold mt-0.5">{date.getDate()}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })}
+      {/* 보기 전환 */}
+      <div className="flex gap-1 bg-stone-100 rounded-xl p-1 w-fit">
+        {[{ key: 'all', label: '전체 보기' }, { key: 'byDate', label: '날짜별 보기' }].map(m => (
+          <button
+            key={m.key}
+            onClick={() => setViewMode(m.key)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              viewMode === m.key
+                ? 'bg-white text-[#2C1810] shadow-sm'
+                : 'text-stone-400 hover:text-stone-600'
+            }`}
+          >
+            {m.label}
+          </button>
+        ))}
       </div>
 
-      {selectedDate && (
-        <div className="space-y-4">
-          {/* 날짜 헤더 */}
-          <div className="flex items-center gap-2">
-            <h3 className="font-display text-base font-semibold text-[#2C1810]">
-              {formatDateLabel(selectedDate)}
-            </h3>
-            {selectedDate === today && (
-              <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full animate-pulse">
-                오늘
-              </span>
-            )}
-          </div>
+      {/* 날짜별 보기 — 날짜 피커 */}
+      {viewMode === 'byDate' && dates.length > 0 && (
+        <div className="space-y-3">
+          {Object.entries(byMonth).map(([month, ds]) => {
+            const [y, mo] = month.split('-')
+            return (
+              <div key={month}>
+                <p className="text-xs font-semibold text-stone-400 mb-2">
+                  {parseInt(y)}년 {parseInt(mo)}월
+                </p>
+                <div className="flex gap-1.5 flex-wrap">
+                  {ds.map(d => {
+                    const dateObj  = new Date(d + 'T00:00:00')
+                    const dayLabel = ['일','월','화','수','목','금','토'][dateObj.getDay()]
+                    const isWeekend   = dateObj.getDay() === 0 || dateObj.getDay() === 6
+                    const isSelected  = selectedDate === d
+                    const isToday     = d === today
+                    const hasReview   = datesWithReviews.has(d)
+                    return (
+                      <button
+                        key={d}
+                        onClick={() => setSelectedDate(d)}
+                        className={`flex flex-col items-center px-2.5 py-2 rounded-xl
+                                    text-xs font-medium transition-all min-w-[44px] ${
+                          isSelected
+                            ? 'bg-[#2C1810] text-white shadow-sm'
+                            : isToday
+                              ? 'bg-[#EEF5EF] text-[#4A6B4F] border border-[#8FAF94]'
+                              : hasReview
+                                ? 'bg-white border border-[#C8D8CA] text-stone-600 hover:border-[#8FAF94]'
+                                : 'bg-stone-50 text-stone-300 border border-stone-100 hover:text-stone-500'
+                        }`}
+                      >
+                        <span className={
+                          !isSelected && isWeekend
+                            ? (dateObj.getDay() === 0 ? 'text-red-400' : 'text-blue-400')
+                            : ''
+                        }>
+                          {dayLabel}
+                        </span>
+                        <span className="font-semibold mt-0.5">{dateObj.getDate()}</span>
+                        {hasReview && !isSelected && (
+                          <span className="w-1 h-1 rounded-full bg-[#8FAF94] mt-0.5" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
-          {/* 출연진 */}
-          {enrichedCast.length > 0 && (
-            <div className="bg-[#FAF8F5] rounded-xl p-4">
-              <p className="text-xs font-semibold text-stone-400 mb-3">출연진</p>
-              <div className="flex flex-wrap gap-2">
-                {enrichedCast.map((m, idx) =>
-                  m.resolvedId ? (
-                    <Link
-                      key={idx}
-                      to={`/actors/${m.resolvedId}`}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#C8D8CA]
-                                 rounded-full text-xs text-[#4A6B4F] hover:bg-[#8FAF94] hover:text-white
-                                 hover:border-[#8FAF94] transition-colors"
-                    >
-                      {m.actorName}
-                      {m.roleName && <span className="opacity-60">· {m.roleName}</span>}
-                    </Link>
-                  ) : (
-                    <span
-                      key={idx}
-                      className="px-3 py-1.5 bg-white border border-stone-100 rounded-full
-                                 text-xs text-stone-500"
-                    >
-                      {m.actorName}
-                      {m.roleName && <span className="opacity-60"> · {m.roleName}</span>}
-                    </span>
-                  )
+      {viewMode === 'byDate' && dates.length === 0 && (
+        <p className="text-sm text-stone-400 py-4 text-center">공연 날짜 정보가 없습니다.</p>
+      )}
+
+      {/* 후기 목록 */}
+      {reviews.length === 0 ? (
+        <div className="py-10 flex flex-col items-center gap-2">
+          <span className="text-3xl">✍️</span>
+          <p className="text-sm text-stone-400">이 공연의 첫 번째 후기를 남겨보세요</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {reviews.map(r => {
+            const reviewDate = r.date || r.targetId?.slice(show.id.length + 1)
+            return (
+              <div key={r.id} className="bg-white rounded-xl border border-stone-100 p-4 group">
+                {/* 캐스트 */}
+                {r.selectedCast?.length > 0 && (
+                  <p className="text-xs text-stone-400 mb-2">
+                    🎭 {r.selectedCast.join(' · ')}
+                  </p>
                 )}
+                {/* 헤더 */}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-stone-600">
+                    {r.nickname || '익명'}
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {reviewDate && (
+                      <button
+                        onClick={() => { setSelectedDate(reviewDate); setViewMode('byDate') }}
+                        className="text-xs text-stone-300 hover:text-[#8FAF94] transition-colors"
+                      >
+                        {formatDateLabel(reviewDate)}
+                      </button>
+                    )}
+                    <span className="text-xs text-stone-300">{timeAgo(r.createdAt)}</span>
+                    {user && r.userId === user.uid && (
+                      <button
+                        onClick={() => handleDelete(r.id)}
+                        className="text-xs text-stone-300 hover:text-red-400 transition-colors
+                                   opacity-0 group-hover:opacity-100"
+                      >
+                        삭제
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-sm text-stone-700 leading-relaxed">{r.text}</p>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* 후기 작성 폼 */}
+      {user ? (
+        <form onSubmit={handleSubmit}
+              className="bg-[#FAF8F5] rounded-2xl p-4 space-y-3 border border-[#E8E4DF]">
+          <p className="text-xs font-semibold text-stone-500">후기 남기기</p>
+
+          {/* 날짜 선택 (전체 보기 모드) */}
+          {viewMode === 'all' && dates.length > 0 && (
+            <select
+              value={formDate}
+              onChange={e => setFormDate(e.target.value)}
+              className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm bg-white
+                         focus:outline-none focus:border-[#8FAF94] text-stone-600"
+            >
+              <option value="">관람 날짜 선택</option>
+              {dates.map(d => (
+                <option key={d} value={d}>{formatDateLabel(d)}</option>
+              ))}
+            </select>
+          )}
+
+          {/* 캐스트 선택 */}
+          {enrichedCast.length > 0 && (
+            <div>
+              <p className="text-xs text-stone-400 mb-1.5">본 캐스팅 (선택)</p>
+              <div className="flex flex-wrap gap-1.5">
+                {enrichedCast.map((m, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => toggleCast(m.actorName)}
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                      formCast.includes(m.actorName)
+                        ? 'bg-[#2C1810] text-white border-[#2C1810]'
+                        : 'bg-white border-stone-200 text-stone-600 hover:border-stone-400'
+                    }`}
+                  >
+                    {m.actorName}
+                  </button>
+                ))}
               </div>
             </div>
           )}
 
-          {/* 날짜별 후기 댓글 */}
-          <div className="bg-white border border-stone-100 rounded-2xl p-5">
-            <p className="text-xs text-stone-400 mb-4">
-              이 날 공연을 보셨나요? 첫 번째 후기를 남겨보세요 ✍️
+          {/* 텍스트 */}
+          <textarea
+            value={formText}
+            onChange={e => setFormText(e.target.value)}
+            placeholder="공연 후기를 남겨보세요... (500자 이내)"
+            maxLength={500}
+            rows={3}
+            className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm resize-none
+                       bg-white focus:outline-none focus:border-[#8FAF94] focus:ring-1
+                       focus:ring-[#8FAF94] placeholder:text-stone-300 transition-colors"
+          />
+
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-stone-400">
+              <span className="text-[#8FAF94] font-medium">{getNickname()}</span> 으로 등록
             </p>
-            <CommentSection
-              targetId={`${show.id}_${selectedDate}`}
-              targetType="show_date"
-            />
+            <button
+              type="submit"
+              disabled={!formText.trim() || formLoading || (viewMode === 'all' && !formDate)}
+              className="px-4 py-2 bg-[#8FAF94] hover:bg-[#7A9E7F] text-white text-sm
+                         font-medium rounded-xl transition-colors disabled:opacity-40"
+            >
+              {formLoading ? '등록 중...' : '후기 등록'}
+            </button>
           </div>
+
+          {formToast && (
+            <p className="text-xs text-[#4A6B4F] text-center font-medium">후기가 등록됐어요 ✓</p>
+          )}
+        </form>
+      ) : (
+        <div className="border border-[#E8E4DF] rounded-xl p-4 bg-[#FAF8F5]
+                        flex items-center justify-between gap-3">
+          <p className="text-sm text-stone-400">로그인 후 후기를 남길 수 있어요</p>
+          <button
+            onClick={signIn}
+            className="shrink-0 text-xs px-3 py-1.5 bg-[#8FAF94] text-white
+                       rounded-lg font-medium hover:bg-[#7A9E7F] transition-colors"
+          >
+            로그인
+          </button>
         </div>
       )}
     </div>
@@ -503,18 +706,18 @@ export default function ShowPage() {
       </section>
 
       {/* ── 탭 네비게이션 ── */}
-      <div className="border-b border-[#E8E4DF]">
-        <div className="flex">
+      <div className="border-b border-[#E8E4DF] overflow-x-auto scrollbar-hide">
+        <div className="flex min-w-max">
           {[
             { key: 'info',    label: '정보' },
             { key: 'cast',    label: `출연진${show.cast?.length ? ` ${show.cast.length}` : ''}` },
-            { key: 'archive', label: '노선 아카이브' },
+            { key: 'archive', label: '노선' },
             { key: 'review',  label: '날짜별 후기' },
           ].map(t => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`px-5 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
+              className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-all border-b-2 -mb-px ${
                 tab === t.key
                   ? 'border-[#2C1810] text-[#2C1810]'
                   : 'border-transparent text-stone-400 hover:text-stone-600'

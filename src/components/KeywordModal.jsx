@@ -367,7 +367,7 @@ export default function KeywordModal({ showId, actor, cast, onClose }) {
                 className="shrink-0 text-xs px-4 py-2 bg-[#8FAF94] text-white rounded-xl
                            font-medium hover:bg-[#7A9E7F] transition-colors"
               >
-                구글 로그인
+                로그인이 필요해요
               </button>
             </div>
           ) : (

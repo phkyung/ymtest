@@ -1865,22 +1865,13 @@ export default function AdminPage() {
     }
   }
 
-  // ── shows → pending 반려 ─────────────────────
+  // ── shows 반려: 문서는 보존하고 status만 변경 ──
   async function handleRevertShow(id) {
-    if (!window.confirm('이 공연을 대기열로 되돌릴까요?')) return
+    if (!window.confirm('이 공연을 반려 처리할까요?\n연결된 댓글·투표 데이터는 유지됩니다.')) return
     const show = showsList.find(s => s.id === id)
     if (!show) return
     try {
-      const { approvedAt, ...showData } = show
-      const batch = writeBatch(db)
-      batch.set(doc(db, 'pending', id), {
-        ...showData,
-        id,
-        status:      'pending',
-        collectedAt: serverTimestamp(),
-      })
-      batch.delete(doc(db, 'shows', id))
-      await batch.commit()
+      await updateDoc(doc(db, 'shows', id), { status: 'rejected' })
     } catch (err) {
       console.error('반려 오류:', err)
       alert('반려 중 오류가 발생했습니다.')

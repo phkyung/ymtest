@@ -29,7 +29,9 @@ export function useShows() {
       q,
       snap => {
         // d.id(문서 ID)를 마지막에 두어 data.id 필드보다 항상 우선
-        const data = snap.docs.map(d => ({ ...d.data(), id: d.id }))
+        const data = snap.docs
+          .map(d => ({ ...d.data(), id: d.id }))
+          .filter(s => s.status !== 'rejected')
         // Firestore에 데이터 없으면 더미 폴백
         setShows(data.length > 0 ? data : sampleShows)
         setLoading(false)
@@ -74,7 +76,8 @@ export function useShow(showId) {
       if (snap.exists()) {
         // 1차: 문서 ID로 바로 찾은 경우
         console.debug('[useShow] 문서 ID로 찾음 — doc.id:', snap.id)
-        setShow({ ...snap.data(), id: snap.id })
+        const data = { ...snap.data(), id: snap.id }
+        setShow(data.status === 'rejected' ? null : data)
       } else {
         // 2차: 문서 ID로 못 찾은 경우 → id 필드 값으로 쿼리
         console.debug('[useShow] 문서 ID로 못 찾음. id 필드 쿼리 시도 — id:', showId)
@@ -82,9 +85,10 @@ export function useShow(showId) {
         const result = await getDocs(q)
 
         if (!result.empty) {
-          const d = result.docs[0]
+          const d    = result.docs[0]
+          const data = { ...d.data(), id: d.id }
           console.debug('[useShow] id 필드로 찾음 — 실제 doc.id:', d.id, '/ data.id:', d.data().id)
-          setShow({ ...d.data(), id: d.id })
+          setShow(data.status === 'rejected' ? null : data)
         } else {
           // 3차: 더미 데이터에서 탐색
           console.debug('[useShow] Firestore에서 찾지 못함. 더미 탐색')
