@@ -5,11 +5,15 @@
 import { useParams, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useShow } from '../hooks/useShows'
+import { useAuth } from '../hooks/useAuth'
 import { toHttps } from '../utils/imageUrl'
 import KeywordVote from '../components/KeywordVote'
 import CommentSection from '../components/CommentSection'
 import { db, isFirebaseConfigured } from '../firebase'
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
+import { getNickname } from '../components/NicknameModal'
+
+const TAG_OPTIONS = ['파멸극', '힐링', '로맨스', '코믹', '스릴러', '성장', '비극', '판타지', '감동', '긴장감']
 
 const GENRE_EMOJI = {
   '뮤지컬': '🎭', '연극': '🎬', '오페라': '🎼', '콘서트': '🎵', '무용': '💃',
@@ -351,9 +355,42 @@ function ReviewTab({ show, actorIdMap }) {
 export default function ShowPage() {
   const { showId } = useParams()
   const { show, loading } = useShow(showId)
+  const { user, signIn } = useAuth()
   const [actorIdMap, setActorIdMap] = useState({})
   const [tab, setTab] = useState('info')
   const [posterError, setPosterError] = useState(false)
+
+  // 태그 제안 모달
+  const [suggestOpen,    setSuggestOpen]    = useState(false)
+  const [suggestTag,     setSuggestTag]     = useState('')
+  const [suggestLoading, setSuggestLoading] = useState(false)
+  const [suggestDone,    setSuggestDone]    = useState(false)
+
+  async function handleSuggestSubmit() {
+    if (!suggestTag || suggestLoading) return
+    setSuggestLoading(true)
+    try {
+      if (isFirebaseConfigured && db) {
+        await addDoc(collection(db, 'tagSuggestions'), {
+          showId,
+          showTitle: show.title,
+          tag: suggestTag,
+          userId: user?.uid ?? '',
+          nickname: getNickname(),
+          status: 'pending',
+          createdAt: serverTimestamp(),
+        })
+      }
+      setSuggestDone(true)
+      setSuggestOpen(false)
+      setSuggestTag('')
+      setTimeout(() => setSuggestDone(false), 3000)
+    } catch (err) {
+      console.error('태그 제안 오류:', err)
+    } finally {
+      setSuggestLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (!show?.cast?.length || !isFirebaseConfigured || !db) return
@@ -530,18 +567,52 @@ export default function ShowPage() {
               </section>
             )}
 
-            {show.topKeywords?.length > 0 && (
+            {/* 이 공연의 성격 (showTags) */}
+            {(show.showTags?.length > 0 || show.topKeywords?.length > 0) && (
               <section>
-                <p className="text-sm text-[#8FAF94] font-medium mb-2">이 공연의 분위기</p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-[#8FAF94] font-medium">이 공연의 성격</p>
+                  <button
+                    onClick={() => {
+                      if (!user) { signIn(); return }
+                      setSuggestOpen(true)
+                    }}
+                    className="text-xs text-stone-400 hover:text-[#8FAF94] transition-colors"
+                  >
+                    + 제안하기
+                  </button>
+                </div>
                 <div className="flex flex-wrap gap-2">
-                  {show.topKeywords.map(kw => (
-                    <span
-                      key={kw}
-                      className="bg-[#8FAF94]/15 text-[#2C1810] rounded-full px-3 py-1 text-sm"
-                    >
+                  {show.showTags?.map(tag => (
+                    <span key={tag}
+                      className="bg-[#2C1810]/10 text-[#2C1810] rounded-full px-3 py-1 text-sm font-medium">
+                      {tag}
+                    </span>
+                  ))}
+                  {show.topKeywords?.map(kw => (
+                    <span key={kw}
+                      className="bg-[#8FAF94]/15 text-[#2C1810] rounded-full px-3 py-1 text-sm">
                       ✦ {kw}
                     </span>
                   ))}
+                </div>
+              </section>
+            )}
+
+            {/* showTags만 있고 topKeywords 없을 때도 제안 버튼 보이게 */}
+            {!show.showTags?.length && !show.topKeywords?.length && (
+              <section>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-stone-300">등록된 태그가 없습니다</p>
+                  <button
+                    onClick={() => {
+                      if (!user) { signIn(); return }
+                      setSuggestOpen(true)
+                    }}
+                    className="text-xs text-stone-400 hover:text-[#8FAF94] transition-colors"
+                  >
+                    + 태그 제안하기
+                  </button>
                 </div>
               </section>
             )}
@@ -595,6 +666,51 @@ export default function ShowPage() {
         )}
 
       </div>
+
+      {/* ── 태그 제안 모달 ── */}
+      {suggestOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40"
+             onClick={e => e.target === e.currentTarget && setSuggestOpen(false)}>
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-base font-semibold text-[#2C1810]">태그 제안</h3>
+              <button onClick={() => setSuggestOpen(false)}
+                className="text-stone-400 hover:text-stone-600 text-lg leading-none">✕</button>
+            </div>
+            <p className="text-xs text-stone-400">
+              이 공연의 성격을 가장 잘 표현하는 태그를 선택해주세요. 검토 후 반영됩니다.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {TAG_OPTIONS.map(tag => (
+                <button key={tag} onClick={() => setSuggestTag(t => t === tag ? '' : tag)}
+                  className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${
+                    suggestTag === tag
+                      ? 'bg-[#2C1810] text-white border-[#2C1810]'
+                      : 'bg-white border-stone-200 text-stone-600 hover:border-stone-400'
+                  }`}>
+                  {tag}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleSuggestSubmit}
+              disabled={!suggestTag || suggestLoading}
+              className="w-full py-2.5 bg-[#8FAF94] hover:bg-[#7A9E7F] text-white text-sm font-medium
+                         rounded-xl transition-colors disabled:opacity-40"
+            >
+              {suggestLoading ? '제출 중...' : '제안하기'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 제안 완료 토스트 */}
+      {suggestDone && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#2C1810] text-white
+                        rounded-lg px-4 py-2 text-sm shadow-lg pointer-events-none">
+          제안이 접수됐어요! 검토 후 반영됩니다 🙌
+        </div>
+      )}
 
       {/* ── 댓글 (탭 무관하게 항상 표시) ── */}
       <hr className="border-[#E8E4DF]" />

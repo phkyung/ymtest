@@ -158,13 +158,17 @@ export default function ShowCard({ show }) {
           <span className="font-medium text-stone-900 text-sm group-hover:text-[#2C1810] transition-colors truncate block">
             {show.title}
           </span>
-          {show.topKeywords?.length > 0 && (
+          {(show.topKeywords?.length > 0 || show.showTags?.length > 0) && (
             <div className="flex gap-1 mt-0.5 flex-wrap">
-              {show.topKeywords.slice(0, 3).map(kw => (
-                <span
-                  key={kw}
-                  className="text-xs bg-[#8FAF94]/15 text-[#2C1810] rounded-full px-2 py-0.5 leading-tight"
-                >
+              {show.showTags?.slice(0, 2).map(tag => (
+                <span key={tag}
+                  className="text-xs bg-[#2C1810]/10 text-[#2C1810] rounded-full px-2 py-0.5 leading-tight">
+                  {tag}
+                </span>
+              ))}
+              {show.topKeywords?.slice(0, 3).map(kw => (
+                <span key={kw}
+                  className="text-xs bg-[#8FAF94]/15 text-[#2C1810] rounded-full px-2 py-0.5 leading-tight">
                   {kw}
                 </span>
               ))}

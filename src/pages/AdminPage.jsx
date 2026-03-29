@@ -20,10 +20,12 @@ import { toHttps } from '../utils/imageUrl'
 import {
   doc, setDoc, deleteDoc, addDoc, collection,
   onSnapshot, writeBatch, serverTimestamp,
-  query, orderBy, getDocs, updateDoc,
+  query, orderBy, where, getDocs, updateDoc, arrayUnion,
 } from 'firebase/firestore'
 
 const ADMIN_PW = import.meta.env.VITE_ADMIN_PASSWORD ?? 'theater2025'
+
+const SHOW_TAGS = ['파멸극', '힐링', '로맨스', '코믹', '스릴러', '성장', '비극', '판타지', '감동', '긴장감']
 
 // 대기 중 탭 한 페이지에 표시할 행 수
 const PENDING_PAGE_SIZE = 50
@@ -420,6 +422,16 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
     Array.isArray(draft.tags) ? draft.tags.join(', ') : (draft.tags ?? '')
   )
 
+  // 극 성격 태그 (다중 선택)
+  const [showTags, setShowTags] = useState(
+    Array.isArray(draft.showTags) ? draft.showTags : []
+  )
+  function toggleShowTag(tag) {
+    setShowTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    )
+  }
+
   // ── 출연진: draft.cast 배열에서 초기화 ──
   // 구조: [{ actorId, actorName, roleName, isDouble, imageUrl }]
   const [cast, setCast] = useState(
@@ -454,6 +466,7 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
     onSave({
       ...draft,
       tags,
+      showTags,
       cast,
       ticketLinks,
       ticketUrl,      // 하위 호환 단일 URL
@@ -585,6 +598,27 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
           placeholder="대형뮤지컬, 명작, 가족"
           className={INPUT}
         />
+      </div>
+
+      {/* ── 극 성격 태그 ── */}
+      <div>
+        <label className={LABEL}>극 성격 태그</label>
+        <div className="flex flex-wrap gap-2 mt-1">
+          {SHOW_TAGS.map(tag => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => toggleShowTag(tag)}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                showTags.includes(tag)
+                  ? 'bg-[#2C1810] text-white border-[#2C1810]'
+                  : 'bg-white border-stone-300 text-stone-600 hover:border-stone-500'
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── 포스터 이미지 URL + 미리보기 ── */}
@@ -1460,6 +1494,9 @@ export default function AdminPage() {
   const [showsSortBy,      setShowsSortBy]      = useState('collectedAt_desc')
   const [showsPage,        setShowsPage]        = useState(0)
 
+  // ── 태그 제안 탭 상태 ──────────────────────────
+  const [suggestionsList, setSuggestionsList] = useState([])
+
   // ── 대기 중 탭 필터 상태 ──────────────────────
   // 기간 필터: all / short(7일↓) / medium(8~30일) / long(31일↑)
   const [filterDuration, setFilterDuration] = useState('all')
@@ -1527,6 +1564,31 @@ export default function AdminPage() {
       })
       .catch(err => { console.error('배우 로드 오류:', err); setActorsLoading(false) })
   }, [tab, authed])
+
+  // 태그 제안 탭 진입 시 tagSuggestions 로드
+  useEffect(() => {
+    if (tab !== 'suggestions' || !authed || !isFirebaseConfigured || !db) return
+    getDocs(query(collection(db, 'tagSuggestions'), where('status', '==', 'pending'), orderBy('createdAt', 'desc')))
+      .then(snap => setSuggestionsList(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+      .catch(err => console.error('태그 제안 로드 오류:', err))
+  }, [tab, authed])
+
+  async function handleApproveSuggestion(s) {
+    if (!isFirebaseConfigured || !db) return
+    try {
+      await updateDoc(doc(db, 'shows', s.showId), { showTags: arrayUnion(s.tag) })
+      await updateDoc(doc(db, 'tagSuggestions', s.id), { status: 'approved' })
+      setSuggestionsList(prev => prev.filter(x => x.id !== s.id))
+    } catch (err) { console.error('승인 오류:', err) }
+  }
+
+  async function handleRejectSuggestion(id) {
+    if (!isFirebaseConfigured || !db) return
+    try {
+      await updateDoc(doc(db, 'tagSuggestions', id), { status: 'rejected' })
+      setSuggestionsList(prev => prev.filter(x => x.id !== id))
+    } catch (err) { console.error('거절 오류:', err) }
+  }
 
   // 사진 검토 서브탭 진입 시 pending_actors 컬렉션 로드
   useEffect(() => {
@@ -1948,10 +2010,11 @@ export default function AdminPage() {
         {/* 탭 */}
         <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-1.5 flex gap-1">
           {[
-            { key: 'pending', icon: '⏳', label: '대기 중',  count: pendingList.length },
-            { key: 'add',     icon: '➕', label: '공연 추가', count: null },
-            { key: 'shows',   icon: '✅', label: '등록 완료', count: showsList.length },
-            { key: 'actors',  icon: '👤', label: '배우 관리', count: null },
+            { key: 'pending',     icon: '⏳', label: '대기 중',  count: pendingList.length },
+            { key: 'add',         icon: '➕', label: '공연 추가', count: null },
+            { key: 'shows',       icon: '✅', label: '등록 완료', count: showsList.length },
+            { key: 'actors',      icon: '👤', label: '배우 관리', count: null },
+            { key: 'suggestions', icon: '🏷️', label: '태그 제안', count: suggestionsList.length || null },
           ].map(({ key, icon, label, count }) => (
             <button
               key={key}
@@ -2579,6 +2642,55 @@ export default function AdminPage() {
                   </>
                 )}
               </>
+            )}
+          </div>
+        )}
+
+
+        {/* ════════ 태그 제안 탭 ════════ */}
+        {tab === 'suggestions' && (
+          <div className="space-y-3">
+            <h2 className="font-display text-lg font-bold text-stone-800">태그 제안 관리</h2>
+
+            {suggestionsList.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-stone-100 text-center py-12 text-stone-400">
+                <p className="text-3xl mb-2">🏷️</p>
+                <p className="text-sm">검토 대기 중인 태그 제안이 없습니다</p>
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {suggestionsList.map(s => (
+                  <li key={s.id}
+                    className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl
+                               border border-stone-100 hover:border-stone-200 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-stone-800 truncate">{s.showTitle}</p>
+                      <p className="text-xs text-stone-400 mt-0.5">
+                        제안자: {s.nickname || '익명'} · 태그:{' '}
+                        <span className="font-semibold text-[#2C1810]">{s.tag}</span>
+                      </p>
+                    </div>
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-[#2C1810]/10 text-[#2C1810] font-medium shrink-0">
+                      {s.tag}
+                    </span>
+                    <button
+                      onClick={() => handleApproveSuggestion(s)}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white
+                                 font-semibold hover:bg-emerald-500 transition-colors shrink-0"
+                    >
+                      승인
+                    </button>
+                    <button
+                      onClick={() => handleRejectSuggestion(s.id)}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-stone-100 text-stone-600
+                                 font-semibold hover:bg-stone-200 transition-colors shrink-0"
+                    >
+                      거절
+                    </button>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         )}
