@@ -16,12 +16,25 @@ function isPlayingToday(startDate, endDate) {
   return new Date(startDate) <= today && today <= new Date(endDate)
 }
 
-const GENRE_OPTIONS = ['전체', '뮤지컬', '연극', '오페라']
+const GENRE_OPTIONS = ['전체', '뮤지컬', '연극']
 
 const MOOD_TAGS = [
   '위태로움', '비장미', '처연함', '먹먹함', '자기파괴',
   '따뜻함', '통쾌함', '선연함', '서늘함', '섬뜩함', '아릿함',
 ]
+
+const SHOW_TAG_COLORS = {
+  '파멸극': '#2C1810',
+  '힐링':   '#8FAF94',
+  '로맨스': '#E8A598',
+  '코믹':   '#F5C842',
+  '스릴러': '#6B7280',
+  '성장':   '#7BAE8A',
+  '비극':   '#8B6B8B',
+  '판타지': '#7B9EC4',
+  '감동':   '#E8C49A',
+  '긴장감': '#C4846B',
+}
 
 export default function HomePage() {
   const { shows, loading } = useShows()
@@ -107,6 +120,19 @@ export default function HomePage() {
 
   const todayCount = shows.filter(s => isPlayingToday(s.startDate, s.endDate)).length
 
+  // showTags 집계 — 태그별 공연 수, 내림차순
+  const showTagStats = useMemo(() => {
+    const tally = {}
+    shows.forEach(s => {
+      s.showTags?.forEach(tag => {
+        tally[tag] = (tally[tag] ?? 0) + 1
+      })
+    })
+    return Object.entries(tally)
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+  }, [shows])
+
   return (
     <div>
       {/* 헤더 */}
@@ -131,7 +157,7 @@ export default function HomePage() {
 
       {/* ── 분위기로 찾기 ── */}
       <div className="mb-5">
-        <p className="text-sm text-[#8FAF94] font-medium mb-2">분위기로 찾기</p>
+        <p className="text-sm text-[#8FAF94] font-medium mb-2">장르로 찾기</p>
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {MOOD_TAGS.map(tag => (
             <button
@@ -150,6 +176,38 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* ── 극 성격 분포 ── */}
+      {showTagStats.length > 0 && (
+        <div className="mb-6 bg-white border border-stone-100 rounded-2xl p-4 space-y-2.5">
+          <p className="text-sm text-[#2C1810] font-medium">지금 플레이픽의 공연들은</p>
+          {showTagStats.map(({ tag, count }) => {
+            const max   = showTagStats[0].count
+            const pct   = Math.round((count / max) * 100)
+            const color = SHOW_TAG_COLORS[tag] ?? '#8FAF94'
+            return (
+              <button
+                key={tag}
+                onClick={() => setMoodTag(t => t === tag ? '' : tag)}
+                className="w-full flex items-center gap-3 group"
+              >
+                <span className={`text-xs w-14 shrink-0 text-right transition-colors ${
+                  moodTag === tag ? 'font-semibold text-[#2C1810]' : 'text-stone-500'
+                }`}>
+                  {tag}
+                </span>
+                <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${pct}%`, backgroundColor: color }}
+                  />
+                </div>
+                <span className="text-xs text-stone-400 w-8 shrink-0 text-right">{count}개</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {/* ── AI 검색창 ── */}
       <div className="mb-4 rounded-2xl border border-[#C8D8CA] bg-[#F4FAF5] p-4 space-y-2">
         <div className="flex gap-2">
@@ -158,7 +216,7 @@ export default function HomePage() {
             value={aiInput}
             onChange={e => setAiInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !aiLoading && handleAiSearch()}
-            placeholder="어떤 공연이 보고 싶어요? (예: 파멸극이 보고 싶어, 감동적인 뮤지컬 추천해줘)"
+            placeholder="어떤 공연이 보고 싶어요? (예: 코믹극이 보고 싶어, 감동적인 뮤지컬 추천해줘)"
             className="flex-1 px-4 py-2.5 rounded-xl border border-[#C8D8CA] bg-white
                        text-sm text-stone-800 placeholder:text-stone-300
                        focus:outline-none focus:border-[#8FAF94] focus:ring-1 focus:ring-[#8FAF94]

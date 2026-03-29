@@ -712,11 +712,15 @@ export default function ShowPage() {
         </div>
       )}
 
-      {/* ── 댓글 (탭 무관하게 항상 표시) ── */}
-      <hr className="border-[#E8E4DF]" />
-      <section className="bg-white border border-stone-100 rounded-2xl p-5">
-        <CommentSection targetId={show.id} targetType="show" />
-      </section>
+      {/* ── 댓글 (날짜별 후기 탭 제외하고 항상 표시) ── */}
+      {tab !== 'review' && (
+        <>
+          <hr className="border-[#E8E4DF]" />
+          <section className="bg-white border border-stone-100 rounded-2xl p-5">
+            <CommentSection targetId={show.id} targetType="show" />
+          </section>
+        </>
+      )}
 
     </div>
   )
