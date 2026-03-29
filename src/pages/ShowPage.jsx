@@ -11,7 +11,7 @@ import KeywordModal from '../components/KeywordModal'
 import NosonArchive from '../components/NosonArchive'
 import CommentSection from '../components/CommentSection'
 import { db, isFirebaseConfigured } from '../firebase'
-import { collection, getDocs, addDoc, serverTimestamp, onSnapshot, query, where, orderBy, deleteDoc, doc as firestoreDoc } from 'firebase/firestore'
+import { collection, getDocs, addDoc, serverTimestamp, onSnapshot, query, where, orderBy, deleteDoc, doc as firestoreDoc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { getNickname } from '../components/NicknameModal'
 
 const TAG_OPTIONS = ['파멸극', '힐링', '로맨스', '코믹', '스릴러', '성장', '비극', '판타지', '감동', '긴장감']
@@ -105,6 +105,145 @@ function ActorAvatar({ name, imageUrl }) {
                     justify-center text-xs font-semibold shrink-0">
       {name?.[0] ?? '?'}
     </div>
+  )
+}
+
+// ── 공연장 온도 ───────────────────────────────────
+const TEMP_OPTIONS = [
+  { key: 'cold', emoji: '🥶', label: '추워요' },
+  { key: 'mild', emoji: '🌡️', label: '적당해요' },
+  { key: 'hot',  emoji: '🥵', label: '더워요' },
+]
+
+function VenueTemp({ showId }) {
+  const { user } = useAuth()
+  const [data,    setData]    = useState(null)   // { cold, mild, hot }
+  const [myVote,  setMyVote]  = useState(null)   // 'cold' | 'mild' | 'hot' | null
+  const [saving,  setSaving]  = useState(false)
+  const [toast,   setToast]   = useState(false)
+
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db) return
+    const ref = firestoreDoc(db, 'venueTemp', showId)
+    return onSnapshot(ref, snap => {
+      if (snap.exists()) {
+        const d = snap.data()
+        setData(d)
+        if (user) {
+          const voted = TEMP_OPTIONS.find(o => d[o.key]?.voters?.includes(user.uid))
+          setMyVote(voted?.key ?? null)
+        }
+      } else {
+        setData(null)
+        setMyVote(null)
+      }
+    })
+  }, [showId, user])
+
+  async function handleVote(key) {
+    if (!user) { setToast(true); setTimeout(() => setToast(false), 2000); return }
+    if (saving) return
+    setSaving(true)
+    try {
+      const ref = firestoreDoc(db, 'venueTemp', showId)
+      const snap = await getDoc(ref)
+
+      if (!snap.exists()) {
+        // 문서 없으면 초기화 후 투표
+        const init = {
+          cold: { count: 0, voters: [] },
+          mild: { count: 0, voters: [] },
+          hot:  { count: 0, voters: [] },
+        }
+        init[key] = { count: 1, voters: [user.uid] }
+        await setDoc(ref, init)
+        setMyVote(key)
+      } else if (myVote === key) {
+        // 재클릭 → 취소
+        await updateDoc(ref, {
+          [`${key}.count`]:  Math.max(0, (snap.data()[key]?.count ?? 1) - 1),
+          [`${key}.voters`]: arrayRemove(user.uid),
+        })
+        setMyVote(null)
+      } else {
+        // 기존 투표 취소 + 새 투표
+        const updates = { [`${key}.count`]: (snap.data()[key]?.count ?? 0) + 1, [`${key}.voters`]: arrayUnion(user.uid) }
+        if (myVote) {
+          updates[`${myVote}.count`]  = Math.max(0, (snap.data()[myVote]?.count ?? 1) - 1)
+          updates[`${myVote}.voters`] = arrayRemove(user.uid)
+        }
+        await updateDoc(ref, updates)
+        setMyVote(key)
+      }
+    } catch (err) {
+      console.error('온도 투표 오류:', err)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const total = TEMP_OPTIONS.reduce((s, o) => s + (data?.[o.key]?.count ?? 0), 0)
+
+  return (
+    <section className="space-y-3">
+      <p className="text-sm text-stone-500 font-medium">공연장 온도</p>
+
+      {/* 버튼 3개 */}
+      <div className="flex gap-2">
+        {TEMP_OPTIONS.map(o => {
+          const count   = data?.[o.key]?.count ?? 0
+          const isMyVote = myVote === o.key
+          return (
+            <button
+              key={o.key}
+              onClick={() => handleVote(o.key)}
+              disabled={saving}
+              className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl border
+                          text-xs font-medium transition-all ${
+                isMyVote
+                  ? 'bg-[#8FAF94]/20 border-[#8FAF94] text-[#2C1810]'
+                  : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+              }`}
+            >
+              <span className="text-lg">{o.emoji}</span>
+              <span>{o.label}</span>
+              <span className={`text-xs ${isMyVote ? 'text-[#4A6B4F] font-semibold' : 'text-stone-400'}`}>
+                {count}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* 결과 바 */}
+      {total > 0 && (
+        <div className="space-y-1.5">
+          {TEMP_OPTIONS.map(o => {
+            const count = data?.[o.key]?.count ?? 0
+            const pct   = Math.round((count / total) * 100)
+            return (
+              <div key={o.key} className="flex items-center gap-2 text-xs">
+                <span className="w-5 text-center">{o.emoji}</span>
+                <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      o.key === 'cold' ? 'bg-sky-300' : o.key === 'mild' ? 'bg-[#8FAF94]' : 'bg-orange-300'
+                    }`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <span className="w-8 text-right text-stone-400">{pct}%</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* 비로그인 토스트 */}
+      {toast && (
+        <p className="text-xs text-center text-[#8FAF94]">로그인 후 투표할 수 있어요</p>
+      )}
+    </section>
   )
 }
 
@@ -815,6 +954,9 @@ export default function ShowPage() {
                 </div>
               )}
             </section>
+
+            {/* 공연장 온도 */}
+            <VenueTemp showId={show.id} />
 
           </div>
         )}
