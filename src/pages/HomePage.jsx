@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 
 import { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useShows } from '../hooks/useShows'
 import ShowCard from '../components/ShowCard'
 import { isFirebaseConfigured } from '../firebase'
@@ -22,6 +23,13 @@ const MOOD_TAGS = [
   '파멸극', '힐링', '로맨스', '코믹', '스릴러',
   '성장', '비극', '판타지', '감동', '긴장감',
 ]
+
+const GENRE_COLOR = {
+  '뮤지컬': 'bg-amber-100 text-amber-800',
+  '연극':   'bg-sky-100 text-sky-800',
+  '오페라': 'bg-purple-100 text-purple-800',
+  '콘서트': 'bg-pink-100 text-pink-800',
+}
 
 const SHOW_TAG_COLORS = {
   '파멸극': '#2C1810',
@@ -98,10 +106,13 @@ export default function HomePage() {
       const genreOk = filter === '전체' || s.genre === filter
       const todayOk = !todayOnly || isPlayingToday(s.startDate, s.endDate)
 
-      const searchOk = !q || (
-        s.title?.toLowerCase().includes(q) ||
-        s.venue?.toLowerCase().includes(q) ||
-        s.cast?.some(c => c.actorName?.toLowerCase().includes(q))
+      const words = q ? q.split(/\s+/).filter(Boolean) : []
+      const searchOk = words.length === 0 || words.every(word =>
+        s.title?.toLowerCase().includes(word) ||
+        s.venue?.toLowerCase().includes(word) ||
+        s.genre?.toLowerCase().includes(word) ||
+        s.synopsis?.toLowerCase().includes(word) ||
+        s.cast?.some(c => c.actorName?.toLowerCase().includes(word))
       )
 
       const aiOk = kws.length === 0 || kws.some(kw =>
@@ -109,7 +120,10 @@ export default function HomePage() {
         s.genre?.toLowerCase().includes(kw) ||
         s.synopsis?.toLowerCase().includes(kw) ||
         s.venue?.toLowerCase().includes(kw) ||
-        s.keywords?.some(k => k.toLowerCase().includes(kw))
+        s.keywords?.some(k => k.toLowerCase().includes(kw)) ||
+        s.showTags?.some(t => t.toLowerCase().includes(kw)) ||
+        s.topKeywords?.some(t => t.toLowerCase().includes(kw)) ||
+        s.cast?.some(c => c.actorName?.toLowerCase().includes(kw))
       )
 
       const moodOk = !moodTag || s.showTags?.includes(moodTag)
@@ -119,6 +133,11 @@ export default function HomePage() {
   }, [shows, filter, todayOnly, query, aiKeywords, moodTag])
 
   const todayCount = shows.filter(s => isPlayingToday(s.startDate, s.endDate)).length
+
+  // 화제 노선&케미 — topKeywords 있는 공연, 최대 8개
+  const nosonShows = useMemo(() =>
+    shows.filter(s => s.topKeywords?.length > 0).slice(0, 8)
+  , [shows])
 
   // showTags 집계 — 태그별 공연 수, 내림차순
   const showTagStats = useMemo(() => {
@@ -208,6 +227,61 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* ── 지금 화제의 노선&케미 ── */}
+      {nosonShows.length > 0 && (
+        <div className="mb-6">
+          <p className="text-sm text-[#8FAF94] font-medium mb-3">지금 화제의 노선&케미</p>
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            {nosonShows.map(show => (
+              <div
+                key={show.id}
+                className="min-w-[240px] w-[240px] bg-white rounded-xl border border-stone-100
+                           p-4 shadow-sm shrink-0 hover:shadow-md hover:-translate-y-px
+                           transition-all duration-200 flex flex-col gap-3"
+              >
+                {/* 공연명 + 장르 */}
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-medium text-sm text-[#2C1810] leading-tight line-clamp-2 flex-1">
+                    {show.title}
+                  </p>
+                  <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium
+                    ${GENRE_COLOR[show.genre] ?? 'bg-stone-100 text-stone-600'}`}>
+                    {show.genre}
+                  </span>
+                </div>
+
+                <hr className="border-stone-100" />
+
+                {/* 배우별 키워드 */}
+                <div className="space-y-1.5 flex-1">
+                  {(show.cast ?? []).slice(0, 3).map((m, i) => (
+                    <div key={i} className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs text-stone-500 shrink-0">{m.actorName}</span>
+                      {show.topKeywords?.map(kw => (
+                        <span key={kw}
+                          className="text-xs bg-[#8FAF94]/15 text-[#2C1810] rounded-full px-2 py-0.5">
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                <hr className="border-stone-100" />
+
+                {/* 노선 아카이브 링크 */}
+                <Link
+                  to={`/shows/${show.id}?tab=archive`}
+                  className="text-xs text-[#8FAF94] hover:text-[#7A9E7F] transition-colors"
+                >
+                  노선 아카이브 →
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── AI 검색창 ── */}
       <div className="mb-4 rounded-2xl border border-[#C8D8CA] bg-[#F4FAF5] p-4 space-y-2">
         <div className="flex gap-2">
@@ -216,7 +290,7 @@ export default function HomePage() {
             value={aiInput}
             onChange={e => setAiInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !aiLoading && handleAiSearch()}
-            placeholder="어떤 공연이 보고 싶어요? (예: 코믹극이 보고 싶어, 감동적인 뮤지컬 추천해줘)"
+            placeholder="어떤 공연이 보고 싶어요?"
             className="flex-1 px-4 py-2.5 rounded-xl border border-[#C8D8CA] bg-white
                        text-sm text-stone-800 placeholder:text-stone-300
                        focus:outline-none focus:border-[#8FAF94] focus:ring-1 focus:ring-[#8FAF94]
@@ -236,6 +310,13 @@ export default function HomePage() {
             AI 검색
           </button>
         </div>
+
+        {/* 힌트 */}
+        {!aiError && (
+          <p className="text-xs text-stone-400 pl-1">
+            예: 코믹극 보고 싶어 / 감동적인 뮤지컬 추천
+          </p>
+        )}
 
         {/* AI 오류 */}
         {aiError && (

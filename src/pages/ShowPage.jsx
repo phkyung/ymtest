@@ -2,7 +2,7 @@
 // ShowPage.jsx — 공연 상세 페이지 (탭 구조)
 // ─────────────────────────────────────────────
 
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useShow } from '../hooks/useShows'
 import { useAuth } from '../hooks/useAuth'
@@ -319,10 +319,16 @@ function ReviewTab({ show, actorIdMap }) {
 // ── 메인 페이지 ───────────────────────────────────
 export default function ShowPage() {
   const { showId } = useParams()
+  const [searchParams] = useSearchParams()
   const { show, loading } = useShow(showId)
   const { user, signIn } = useAuth()
   const [actorIdMap, setActorIdMap] = useState({})
-  const [tab, setTab] = useState('info')
+
+  const VALID_TABS = ['info', 'cast', 'archive', 'review']
+  const [tab, setTab] = useState(() => {
+    const t = searchParams.get('tab')
+    return VALID_TABS.includes(t) ? t : 'info'
+  })
   const [posterError, setPosterError] = useState(false)
 
   // 태그 제안 모달
