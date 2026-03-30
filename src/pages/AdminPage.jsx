@@ -2028,6 +2028,7 @@ export default function AdminPage() {
             { key: 'shows',       icon: '✅', label: '등록 완료', count: showsList.length },
             { key: 'actors',      icon: '👤', label: '배우 관리', count: null },
             { key: 'suggestions', icon: '🏷️', label: '태그 제안', count: suggestionsList.length || null },
+            { key: 'casting',     icon: '🎬', label: '캐스팅',   count: null },
           ].map(({ key, icon, label, count }) => (
             <button
               key={key}
@@ -2936,6 +2937,358 @@ export default function AdminPage() {
           </div>
         )}
 
+
+        {/* ════════ 캐스팅 탭 ════════ */}
+        {tab === 'casting' && (
+          <CastingTab db={db} showsList={showsList} />
+        )}
+
+      </div>
+    </div>
+  )
+}
+
+
+// ══════════════════════════════════════════════
+// CastingTab — 캐스팅 업로드 + 이벤트 캘린더 등록
+// ══════════════════════════════════════════════
+function CastingTab({ db, showsList }) {
+  return (
+    <div className="space-y-6">
+      <CastingUploadSection db={db} showsList={showsList} />
+      <CastingEventSection  db={db} showsList={showsList} />
+    </div>
+  )
+}
+
+
+// ── [섹션 1] 캐스팅 사진 분석 ──────────────────
+const WORKER_URL = 'https://playpick-ai.merhen08.workers.dev/casting'
+
+function CastingUploadSection({ db }) {
+  const [file,      setFile]      = useState(null)
+  const [preview,   setPreview]   = useState('')   // object URL
+  const [analyzing, setAnalyzing] = useState(false)
+  const [rows,      setRows]      = useState([])   // [{ date, showTitle, actorName, roleName }]
+  const [saving,    setSaving]    = useState(false)
+  const [saveMsg,   setSaveMsg]   = useState('')
+  const [error,     setError]     = useState('')
+  const dropRef = useRef(null)
+
+  function handleFile(f) {
+    if (!f) return
+    setFile(f)
+    setPreview(URL.createObjectURL(f))
+    setRows([])
+    setError('')
+    setSaveMsg('')
+  }
+
+  function onDrop(e) {
+    e.preventDefault()
+    handleFile(e.dataTransfer.files[0])
+  }
+
+  async function analyze() {
+    if (!file) return
+    setAnalyzing(true)
+    setError('')
+    setRows([])
+    try {
+      const buf    = await file.arrayBuffer()
+      const b64    = btoa(String.fromCharCode(...new Uint8Array(buf)))
+      const res    = await fetch(WORKER_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ imageBase64: b64, mimeType: file.type }),
+      })
+      if (!res.ok) throw new Error(`Worker 오류: ${res.status}`)
+      const data = await res.json()
+      // Worker가 반환하는 rows: [{ date, showTitle, actorName, roleName }]
+      setRows(Array.isArray(data.rows) ? data.rows : [])
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setAnalyzing(false)
+    }
+  }
+
+  function updateRow(i, field, val) {
+    setRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: val } : r))
+  }
+
+  async function saveToFirestore() {
+    if (!rows.length || !db) return
+    setSaving(true)
+    setSaveMsg('')
+    try {
+      // date + showTitle 별로 그룹핑
+      const grouped = {}
+      rows.forEach(r => {
+        const key = `${(r.showTitle || 'unknown').replace(/\s/g, '_')}_${r.date || 'nodate'}`
+        if (!grouped[key]) grouped[key] = { date: r.date, showTitle: r.showTitle, casts: [] }
+        grouped[key].casts.push({ actorName: r.actorName, roleName: r.roleName })
+      })
+      const batch = writeBatch(db)
+      Object.entries(grouped).forEach(([docId, data]) => {
+        const ref = doc(db, 'dailyCasts', docId)
+        batch.set(ref, { ...data, createdAt: serverTimestamp() }, { merge: true })
+      })
+      await batch.commit()
+      setSaveMsg(`✅ ${Object.keys(grouped).length}건 저장 완료`)
+    } catch (e) {
+      setSaveMsg(`❌ 저장 실패: ${e.message}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 space-y-5">
+      <h3 className="font-bold text-stone-700">🎬 캐스팅 사진 분석</h3>
+
+      {/* 드래그앤드롭 업로드 영역 */}
+      <div
+        ref={dropRef}
+        onDragOver={e => e.preventDefault()}
+        onDrop={onDrop}
+        onClick={() => dropRef.current.querySelector('input').click()}
+        className="border-2 border-dashed border-stone-200 rounded-xl p-8 text-center cursor-pointer
+                   hover:border-amber-300 hover:bg-amber-50/30 transition-colors"
+      >
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={e => handleFile(e.target.files[0])}
+        />
+        {preview ? (
+          <img src={preview} alt="미리보기" className="max-h-48 mx-auto rounded-lg object-contain" />
+        ) : (
+          <div className="space-y-1">
+            <p className="text-3xl">🖼️</p>
+            <p className="text-sm text-stone-400">클릭하거나 이미지를 드래그하세요</p>
+          </div>
+        )}
+      </div>
+
+      {file && (
+        <p className="text-xs text-stone-400">{file.name} ({(file.size / 1024).toFixed(0)} KB)</p>
+      )}
+
+      <button
+        onClick={analyze}
+        disabled={!file || analyzing}
+        className="px-5 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-semibold
+                   hover:bg-amber-400 disabled:opacity-40 transition-colors"
+      >
+        {analyzing ? '분석 중...' : 'Gemini로 분석하기'}
+      </button>
+
+      {error && <p className="text-sm text-red-500">{error}</p>}
+
+      {/* 분석 결과 테이블 */}
+      {rows.length > 0 && (
+        <div className="space-y-3">
+          <p className="text-xs text-stone-500 font-semibold">분석 결과 — 수정 후 저장하세요</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-stone-100">
+                  {['날짜', '공연명', '배우명', '역할'].map(h => (
+                    <th key={h} className="text-left text-xs font-semibold text-stone-400 pb-2 pr-3">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => (
+                  <tr key={i} className="border-b border-stone-50">
+                    {['date', 'showTitle', 'actorName', 'roleName'].map(field => (
+                      <td key={field} className="py-1.5 pr-3">
+                        <input
+                          value={row[field] ?? ''}
+                          onChange={e => updateRow(i, field, e.target.value)}
+                          className="w-full border border-stone-200 rounded-lg px-2 py-1 text-xs
+                                     focus:outline-none focus:ring-1 focus:ring-amber-300"
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={saveToFirestore}
+              disabled={saving}
+              className="px-5 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold
+                         hover:bg-emerald-500 disabled:opacity-40 transition-colors"
+            >
+              {saving ? '저장 중...' : 'Firestore 저장'}
+            </button>
+            {saveMsg && <span className="text-sm text-stone-600">{saveMsg}</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+// ── [섹션 2] 이벤트 캘린더 등록 ────────────────
+function CastingEventSection({ db, showsList }) {
+  const [date,      setDate]      = useState('')
+  const [label,     setLabel]     = useState('')
+  const [showId,    setShowId]    = useState('')
+  const [saving,    setSaving]    = useState(false)
+  const [events,    setEvents]    = useState([])   // [{ docId, date, events: [{label, showId?, showTitle?}] }]
+  const [loadingEv, setLoadingEv] = useState(true)
+
+  // 이벤트 목록 로드
+  useEffect(() => {
+    if (!db) { setLoadingEv(false); return }
+    getDocs(query(collection(db, 'castingEvents'), orderBy('date', 'desc')))
+      .then(snap => setEvents(snap.docs.map(d => ({ docId: d.id, ...d.data() }))))
+      .finally(() => setLoadingEv(false))
+  }, [db])
+
+  async function handleAdd() {
+    if (!date || !label.trim() || !db) return
+    setSaving(true)
+    try {
+      const selectedShow = showsList.find(s => s.id === showId)
+      const newEntry = {
+        label: label.trim(),
+        ...(selectedShow ? { showId: selectedShow.id, showTitle: selectedShow.title } : {}),
+      }
+      const ref = doc(db, 'castingEvents', date)
+      await setDoc(ref, {
+        date,
+        events: arrayUnion(newEntry),
+      }, { merge: true })
+
+      // 로컬 상태 업데이트
+      setEvents(prev => {
+        const idx = prev.findIndex(e => e.date === date)
+        if (idx >= 0) {
+          const updated = [...prev]
+          updated[idx] = {
+            ...updated[idx],
+            events: [...(updated[idx].events ?? []), newEntry],
+          }
+          return updated
+        }
+        return [{ docId: date, date, events: [newEntry] }, ...prev]
+      })
+      setLabel('')
+      setShowId('')
+    } catch (e) {
+      alert('저장 실패: ' + e.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDeleteEvent(docId, entryIdx) {
+    if (!db) return
+    const target = events.find(e => e.docId === docId)
+    if (!target) return
+    const newEntries = target.events.filter((_, i) => i !== entryIdx)
+    try {
+      if (newEntries.length === 0) {
+        await deleteDoc(doc(db, 'castingEvents', docId))
+        setEvents(prev => prev.filter(e => e.docId !== docId))
+      } else {
+        await setDoc(doc(db, 'castingEvents', docId), { ...target, events: newEntries })
+        setEvents(prev => prev.map(e => e.docId === docId ? { ...e, events: newEntries } : e))
+      }
+    } catch (e) {
+      alert('삭제 실패: ' + e.message)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 space-y-5">
+      <h3 className="font-bold text-stone-700">📅 이벤트 캘린더 등록</h3>
+
+      {/* 입력 폼 */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-stone-500 mb-1">날짜</label>
+          <input
+            type="date"
+            value={date}
+            onChange={e => setDate(e.target.value)}
+            className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-amber-300"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-stone-500 mb-1">이벤트명</label>
+          <input
+            type="text"
+            value={label}
+            onChange={e => setLabel(e.target.value)}
+            placeholder="예: 커튼콜 데이, 마지막 공연"
+            className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-amber-300 placeholder:text-stone-300"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-stone-500 mb-1">공연 (선택)</label>
+          <select
+            value={showId}
+            onChange={e => setShowId(e.target.value)}
+            className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white"
+          >
+            <option value="">— 공통 이벤트</option>
+            {showsList.map(s => (
+              <option key={s.id} value={s.id}>{s.title}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <button
+        onClick={handleAdd}
+        disabled={!date || !label.trim() || saving}
+        className="px-5 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-semibold
+                   hover:bg-amber-400 disabled:opacity-40 transition-colors"
+      >
+        {saving ? '등록 중...' : '등록'}
+      </button>
+
+      {/* 등록된 이벤트 목록 */}
+      <div className="space-y-2">
+        <p className="text-xs font-semibold text-stone-500">등록된 이벤트</p>
+        {loadingEv ? (
+          <p className="text-sm text-stone-400">불러오는 중...</p>
+        ) : events.length === 0 ? (
+          <p className="text-sm text-stone-400">등록된 이벤트가 없어요</p>
+        ) : (
+          events.map(ev => (
+            <div key={ev.docId} className="border border-stone-100 rounded-xl px-4 py-3 space-y-1.5">
+              <p className="text-xs font-bold text-stone-500">{ev.date}</p>
+              {(ev.events ?? []).map((entry, i) => (
+                <div key={i} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-medium text-stone-700">{entry.label}</span>
+                    {entry.showTitle && (
+                      <span className="text-xs text-stone-400">({entry.showTitle})</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleDeleteEvent(ev.docId, i)}
+                    className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                  >삭제</button>
+                </div>
+              ))}
+            </div>
+          ))
+        )}
       </div>
     </div>
   )

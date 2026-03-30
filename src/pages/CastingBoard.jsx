@@ -2,38 +2,156 @@
 // CastingBoard.jsx — 날짜별 캐스팅 보드
 // ─────────────────────────────────────────────
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { db, isFirebaseConfigured } from '../firebase'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 
-// 날짜 → "YYYY-MM-DD" 문자열
+// ── 날짜 유틸 ─────────────────────────────────
+const DAYS_KO  = ['일', '월', '화', '수', '목', '금', '토']
+
 function toDateStr(date) {
-  return date.toISOString().slice(0, 10)
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
-// "YYYY-MM-DD" → "M월 D일 (요일)"
-function formatLabel(dateStr, isToday) {
-  const d = new Date(dateStr + 'T00:00:00')
-  const days = ['일', '월', '화', '수', '목', '금', '토']
-  const label = `${d.getMonth() + 1}/${d.getDate()}(${days[d.getDay()]})`
-  return isToday ? `오늘 ${label}` : label
+function parseDateStr(str) {
+  // "YYYY-MM-DD" → local Date (시간 0시)
+  const [y, m, d] = str.split('-').map(Number)
+  return new Date(y, m - 1, d)
 }
 
-// 오늘 기준 ±3일 날짜 배열 생성
-function buildDateRange() {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const dates = []
-  for (let i = -3; i <= 3; i++) {
-    const d = new Date(today)
-    d.setDate(today.getDate() + i)
-    dates.push(toDateStr(d))
-  }
-  return dates
+function formatDisplay(dateStr) {
+  const d   = parseDateStr(dateStr)
+  const dow = DAYS_KO[d.getDay()]
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${dow})`
 }
 
 const TODAY = toDateStr(new Date())
 
+// ── castingEvents 로드 ────────────────────────
+// { "YYYY-MM-DD": ["이벤트명1", "이벤트명2"] }
+function useCastingEvents() {
+  const [eventMap, setEventMap] = useState({})
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db) return
+    getDocs(collection(db, 'castingEvents')).then(snap => {
+      const map = {}
+      snap.docs.forEach(d => {
+        const { date, events } = d.data()
+        if (date && Array.isArray(events)) {
+          map[date] = events.map(e => e.label).filter(Boolean)
+        }
+      })
+      setEventMap(map)
+    })
+  }, [])
+  return eventMap
+}
+
+// ── 달력 컴포넌트 ─────────────────────────────
+function Calendar({ selected, onSelect, onClose, eventMap = {} }) {
+  const today     = new Date()
+  const selDate   = parseDateStr(selected)
+  const [year,  setYear]  = useState(selDate.getFullYear())
+  const [month, setMonth] = useState(selDate.getMonth())  // 0-indexed
+
+  function prevMonth() {
+    if (month === 0) { setYear(y => y - 1); setMonth(11) }
+    else setMonth(m => m - 1)
+  }
+  function nextMonth() {
+    if (month === 11) { setYear(y => y + 1); setMonth(0) }
+    else setMonth(m => m + 1)
+  }
+
+  // 해당 월의 달력 그리드 생성
+  const firstDay  = new Date(year, month, 1).getDay()   // 0=일
+  const daysInMon = new Date(year, month + 1, 0).getDate()
+
+  // 앞 빈 칸 + 날짜 셀
+  const cells = []
+  for (let i = 0; i < firstDay; i++) cells.push(null)
+  for (let d = 1; d <= daysInMon; d++) cells.push(d)
+
+  return (
+    <div className="absolute top-full left-0 mt-2 z-50 bg-white rounded-2xl shadow-xl border border-[#E8E4DF] p-4 w-72">
+      {/* 월 이동 */}
+      <div className="flex items-center justify-between mb-3">
+        <button
+          onClick={prevMonth}
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-[#6B5E52] transition-colors"
+        >‹</button>
+        <span className="text-sm font-semibold text-[#2C1810]">
+          {year}년 {month + 1}월
+        </span>
+        <button
+          onClick={nextMonth}
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-[#6B5E52] transition-colors"
+        >›</button>
+      </div>
+
+      {/* 요일 헤더 */}
+      <div className="grid grid-cols-7 mb-1">
+        {DAYS_KO.map((d, i) => (
+          <div
+            key={d}
+            className={`text-center text-xs py-1 font-medium
+              ${i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-stone-400'}`}
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {/* 날짜 셀 */}
+      <div className="grid grid-cols-7 gap-y-1">
+        {cells.map((day, idx) => {
+          if (!day) return <div key={`e${idx}`} />
+          const dateStr    = toDateStr(new Date(year, month, day))
+          const isSel      = dateStr === selected
+          const isToday    = dateStr === TODAY
+          const dow        = (firstDay + day - 1) % 7
+          const dayEvents  = eventMap[dateStr] ?? []
+          return (
+            <div key={day} className="flex flex-col items-center">
+              <button
+                onClick={() => { onSelect(dateStr); onClose() }}
+                className={`h-8 w-8 flex items-center justify-center rounded-full text-xs transition-colors
+                  ${isSel
+                    ? 'bg-[#8FAF94] text-white font-bold'
+                    : isToday
+                      ? 'border border-[#8FAF94] text-[#8FAF94] font-semibold'
+                      : dow === 0
+                        ? 'text-red-400 hover:bg-stone-100'
+                        : dow === 6
+                          ? 'text-blue-400 hover:bg-stone-100'
+                          : 'text-[#2C1810] hover:bg-stone-100'
+                  }`}
+              >
+                {day}
+              </button>
+              {/* 이벤트 뱃지 */}
+              {dayEvents.slice(0, 1).map((ev, i) => (
+                <span
+                  key={i}
+                  className="mt-0.5 text-[9px] leading-tight px-1 py-0.5 rounded
+                             bg-[#8FAF94]/20 text-[#2C1810] max-w-[36px] truncate text-center"
+                  title={ev}
+                >
+                  {ev}
+                </span>
+              ))}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── 장르 뱃지 ─────────────────────────────────
 const GENRE_COLORS = {
   뮤지컬: 'bg-[#D4E6D7] text-[#2C5F35]',
   연극:   'bg-[#E6DDD4] text-[#5F3E2C]',
@@ -44,25 +162,36 @@ function genreBadgeClass(genre) {
   return GENRE_COLORS[genre] ?? 'bg-stone-100 text-stone-500'
 }
 
+// ── 메인 ──────────────────────────────────────
 export default function CastingBoard() {
-  const dates = buildDateRange()
-  const [selected, setSelected] = useState(TODAY)
-  const [casts, setCasts]       = useState([])   // [{ showId, showTitle, genre, entries: [{actorName, role}] }]
-  const [loading, setLoading]   = useState(false)
+  const [selected,     setSelected]     = useState(TODAY)
+  const [calendarOpen, setCalendarOpen] = useState(false)
+  const [casts,        setCasts]        = useState([])
+  const [loading,      setLoading]      = useState(false)
+  const eventMap   = useCastingEvents()
+  const wrapperRef = useRef(null)
 
+  // 달력 외부 클릭 시 닫기
+  useEffect(() => {
+    if (!calendarOpen) return
+    function handleClick(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setCalendarOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [calendarOpen])
+
+  // 선택 날짜 변경 시 데이터 로드
   useEffect(() => {
     if (!isFirebaseConfigured || !db) return
     setLoading(true)
     setCasts([])
-
-    const q = query(
-      collection(db, 'dailyCasts'),
-      where('date', '==', selected),
-    )
+    const q = query(collection(db, 'dailyCasts'), where('date', '==', selected))
     getDocs(q)
       .then(snap => {
         const items = snap.docs.map(d => d.data())
-        // showTitle 기준 정렬
         items.sort((a, b) => (a.showTitle ?? '').localeCompare(b.showTitle ?? '', 'ko'))
         setCasts(items)
       })
@@ -79,26 +208,41 @@ export default function CastingBoard() {
           <p className="text-[#6B5E52] text-sm">오늘 무대에 누가 서나요?</p>
         </div>
 
-        {/* 날짜 선택 */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-8 scrollbar-none">
-          {dates.map(dateStr => {
-            const isToday    = dateStr === TODAY
-            const isSelected = dateStr === selected
-            return (
-              <button
-                key={dateStr}
-                onClick={() => setSelected(dateStr)}
-                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors
-                  ${isSelected
-                    ? 'bg-[#8FAF94] text-white shadow-sm'
-                    : 'bg-white border border-[#E8E4DF] text-[#6B5E52] hover:border-[#8FAF94] hover:text-[#8FAF94]'
-                  }`}
-              >
-                {formatLabel(dateStr, isToday)}
-              </button>
-            )
-          })}
+        {/* 날짜 선택 (달력 팝업) */}
+        <div className="relative mb-8 inline-block" ref={wrapperRef}>
+          <button
+            onClick={() => setCalendarOpen(o => !o)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-xl border border-[#E8E4DF]
+                       hover:border-[#8FAF94] transition-colors text-sm font-medium text-[#2C1810] shadow-sm"
+          >
+            <span>📅</span>
+            <span>{formatDisplay(selected)}</span>
+            <span className="text-stone-300 text-xs ml-1">▾</span>
+          </button>
+
+          {calendarOpen && (
+            <Calendar
+              selected={selected}
+              onSelect={setSelected}
+              onClose={() => setCalendarOpen(false)}
+              eventMap={eventMap}
+            />
+          )}
         </div>
+
+        {/* 선택 날짜 이벤트 뱃지 */}
+        {(eventMap[selected] ?? []).length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {(eventMap[selected]).map((ev, i) => (
+              <span
+                key={i}
+                className="px-3 py-1 rounded-full text-xs font-medium bg-[#8FAF94]/20 text-[#2C1810] border border-[#8FAF94]/30"
+              >
+                🎪 {ev}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* 캐스팅 카드 목록 */}
         {loading ? (
@@ -115,7 +259,6 @@ export default function CastingBoard() {
                 key={cast.showId ?? i}
                 className="bg-white rounded-2xl border border-[#E8E4DF] px-6 py-5 shadow-sm"
               >
-                {/* 공연 제목 + 장르 */}
                 <div className="flex items-center gap-2 mb-3">
                   <span className="font-semibold text-[#2C1810] text-base leading-tight">
                     {cast.showTitle ?? '(제목 없음)'}
@@ -126,8 +269,6 @@ export default function CastingBoard() {
                     </span>
                   )}
                 </div>
-
-                {/* 배우 목록 */}
                 <ul className="flex flex-col gap-1.5">
                   {(cast.entries ?? []).map((entry, j) => (
                     <li key={j} className="flex items-baseline gap-2 text-sm">
@@ -145,6 +286,7 @@ export default function CastingBoard() {
             ))}
           </div>
         )}
+
       </div>
     </div>
   )
