@@ -59,6 +59,41 @@ const EMPTY_FORM = {
 }
 
 
+// " 등" 제거 헬퍼 ("한재아 등" → "한재아")
+function cleanActorName(name) {
+  return (name ?? '').replace(/\s*등$/, '').trim()
+}
+
+// 배우 이름 목록 → { name: imageUrl } 맵 (Firestore actors 컬렉션 배치 조회)
+function useActorImageMap(actorNames) {
+  const [imageMap, setImageMap] = useState({})
+  // 이름 배열이 바뀔 때만 재조회 (join으로 의존성 단순화)
+  const namesKey = actorNames.join(',')
+  useEffect(() => {
+    if (!namesKey || !isFirebaseConfigured || !db) return
+    const names   = actorNames.filter(Boolean)
+    if (!names.length) return
+    // Firestore 'in' 쿼리 최대 30개 → 청크 분할
+    const chunks = []
+    for (let i = 0; i < names.length; i += 30) chunks.push(names.slice(i, i + 30))
+    Promise.all(
+      chunks.map(chunk =>
+        getDocs(query(collection(db, 'actors'), where('name', 'in', chunk)))
+      )
+    ).then(snaps => {
+      const map = {}
+      snaps.forEach(snap =>
+        snap.docs.forEach(d => {
+          const { name, imageUrl } = d.data()
+          if (name && imageUrl) map[name] = imageUrl
+        })
+      )
+      setImageMap(prev => ({ ...prev, ...map }))
+    }).catch(() => {})
+  }, [namesKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  return imageMap
+}
+
 // 동명이인 구분 라벨: 같은 이름이 여러 명이면 bio 앞부분 또는 #1/#2 반환
 function getDuplicateLabel(actor, allResults) {
   const same = allResults.filter(a => a.name === actor.name)
@@ -164,6 +199,10 @@ function CastEditSection({ cast, onChange }) {
     onChange(cast.filter((_, i) => i !== idx))
   }
 
+  // ── 출연진 이름 → Firestore actors 이미지 맵 (배치 조회) ──
+  const castCleanNames = cast.map(c => cleanActorName(c.actorName)).filter(Boolean)
+  const actorImageMap  = useActorImageMap(castCleanNames)
+
   return (
     <div className="space-y-3">
       <label className={LABEL}>출연진</label>
@@ -171,23 +210,26 @@ function CastEditSection({ cast, onChange }) {
       {/* 기존 출연진 태그 목록 */}
       {cast.length > 0 && (
         <div className="space-y-2">
-          {cast.map((c, idx) => (
+          {cast.map((c, idx) => {
+            const displayName = cleanActorName(c.actorName)
+            const imgSrc      = toHttps(c.imageUrl || actorImageMap[displayName] || '')
+            return (
             <div key={idx}
                  className="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-xl p-2">
               {/* 배우 사진 */}
               <div className="w-10 h-10 rounded-lg overflow-hidden bg-stone-200 shrink-0
                               flex items-center justify-center">
-                {c.imageUrl ? (
-                  <img src={c.imageUrl} alt={c.actorName}
+                {imgSrc ? (
+                  <img src={imgSrc} alt={displayName}
                        className="w-full h-full object-cover"
                        onError={e => { e.target.style.display = 'none' }} />
                 ) : (
-                  <span className="text-base font-bold text-stone-400">{c.actorName?.[0]}</span>
+                  <span className="text-base font-bold text-stone-400">{displayName?.[0]}</span>
                 )}
               </div>
               {/* 배우 이름 */}
               <span className="text-sm font-semibold text-stone-800 w-16 shrink-0 truncate">
-                {c.actorName}
+                {displayName}
               </span>
               {/* 역할명 입력칸 */}
               <input
@@ -219,7 +261,8 @@ function CastEditSection({ cast, onChange }) {
                 ×
               </button>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -1009,7 +1052,7 @@ function ShowCard({ show, onUpdate, onDelete, onRevert }) {
 // cast: [{ actorId, actorName, actorImage, role }]
 // onChange: (newCast) => void
 // ── 드래그 가능한 출연진 태그 ─────────────────────
-function SortableCastItem({ c, onRemove }) {
+function SortableCastItem({ c, onRemove, imageFromMap }) {
   // actorId가 없는 경우 actorName을 fallback id로 사용
   const dndId = c.actorId || `name_${c.actorName}`
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: dndId })
@@ -1032,14 +1075,19 @@ function SortableCastItem({ c, onRemove }) {
         ⠿
       </span>
       {/* 썸네일 */}
-      {c.actorImage ? (
-        <img src={c.actorImage} alt={c.actorName} className="w-6 h-6 rounded-full object-cover shrink-0" />
-      ) : (
-        <div className="w-6 h-6 rounded-full bg-amber-200 shrink-0 flex items-center justify-center font-bold text-amber-700">
-          {c.actorName?.[0]}
-        </div>
-      )}
-      <span className="font-medium text-stone-800">{c.actorName}</span>
+      {(() => {
+        const displayName = cleanActorName(c.actorName)
+        const imgSrc = toHttps(c.actorImage || imageFromMap || '')
+        return imgSrc ? (
+          <img src={imgSrc} alt={displayName} className="w-6 h-6 rounded-full object-cover shrink-0"
+               onError={e => { e.target.style.display = 'none' }} />
+        ) : (
+          <div className="w-6 h-6 rounded-full bg-amber-200 shrink-0 flex items-center justify-center font-bold text-amber-700">
+            {displayName?.[0]}
+          </div>
+        )
+      })()}
+      <span className="font-medium text-stone-800">{cleanActorName(c.actorName)}</span>
       {c.role && <span className="text-stone-400">({c.role})</span>}
       <button
         type="button"
@@ -1158,6 +1206,10 @@ function ActorCastSection({ cast, onChange }) {
     onChange(cast.filter(c => c.actorId !== actorId))
   }
 
+  // ── 출연진 이름 → Firestore actors 이미지 맵 (배치 조회) ──
+  const castCleanNames = cast.map(c => cleanActorName(c.actorName)).filter(Boolean)
+  const actorImageMap  = useActorImageMap(castCleanNames)
+
   return (
     <div className="space-y-3">
       <label className={LABEL}>출연진</label>
@@ -1168,7 +1220,12 @@ function ActorCastSection({ cast, onChange }) {
           <SortableContext items={cast.map(c => c.actorId || `name_${c.actorName}`)} strategy={horizontalListSortingStrategy}>
             <div className="flex flex-wrap gap-2">
               {cast.map(c => (
-                <SortableCastItem key={c.actorId} c={c} onRemove={removeCast} />
+                <SortableCastItem
+                  key={c.actorId}
+                  c={c}
+                  onRemove={removeCast}
+                  imageFromMap={actorImageMap[cleanActorName(c.actorName)]}
+                />
               ))}
             </div>
           </SortableContext>
