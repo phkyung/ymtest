@@ -3184,15 +3184,23 @@ function CastingTab({ db, showsList }) {
 // ── [섹션 1] 캐스팅 사진 분석 ──────────────────
 const WORKER_URL = 'https://playpick-ai.merhen08.workers.dev/casting'
 
-function CastingUploadSection({ db }) {
-  const [file,      setFile]      = useState(null)
-  const [preview,   setPreview]   = useState('')
-  const [analyzing, setAnalyzing] = useState(false)
-  const [rows,      setRows]      = useState(null)   // null=미분석, []이상=분석완료
-  const [saving,    setSaving]    = useState(false)
-  const [toast,     setToast]     = useState('')     // 저장 완료 토스트
-  const [error,     setError]     = useState('')
+function CastingUploadSection({ db, showsList = [] }) {
+  const [file,           setFile]           = useState(null)
+  const [preview,        setPreview]        = useState('')
+  const [analyzing,      setAnalyzing]      = useState(false)
+  const [rows,           setRows]           = useState(null)   // null=미분석, []이상=분석완료
+  const [saving,         setSaving]         = useState(false)
+  const [toast,          setToast]          = useState('')
+  const [error,          setError]          = useState('')
+  const [selectedShowId, setSelectedShowId] = useState('')
   const dropRef = useRef(null)
+
+  // 선택한 공연의 cast 배열
+  const selectedShow = showsList.find(s => s.id === selectedShowId) ?? null
+  const castList = (selectedShow?.cast ?? []).map(c => ({
+    actorName: c.actorName,
+    roleName:  c.roleName ?? '',
+  }))
 
   function handleFile(f) {
     if (!f) return
@@ -3208,13 +3216,12 @@ function CastingUploadSection({ db }) {
     handleFile(e.dataTransfer.files[0])
   }
 
-  // Worker 응답에서 rows 배열 추출 (구조가 다를 수 있으므로 방어적으로 처리)
+  // Worker 응답에서 rows 배열 추출
   function extractRows(data) {
-    if (Array.isArray(data))      return data
-    if (Array.isArray(data.rows)) return data.rows
+    if (Array.isArray(data))       return data
+    if (Array.isArray(data.rows))  return data.rows
     if (Array.isArray(data.casts)) return data.casts
     if (Array.isArray(data.results)) return data.results
-    // 객체 값 중 첫 번째 배열
     for (const v of Object.values(data)) {
       if (Array.isArray(v)) return v
     }
@@ -3234,10 +3241,14 @@ function CastingUploadSection({ db }) {
         reader.onerror = reject
         reader.readAsDataURL(file)
       })
+      // castList를 함께 전송 — Worker가 역할명 매칭에 활용
+      const body = { imageBase64: b64, mimeType: file.type }
+      if (castList.length > 0) body.castList = castList
+      if (selectedShow)        body.showTitle = selectedShow.title
       const res = await fetch(WORKER_URL, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ imageBase64: b64, mimeType: file.type }),
+        body:    JSON.stringify(body),
       })
       const text = await res.text()
       if (!res.ok) throw new Error(`Worker 오류 ${res.status}: ${text.slice(0, 200)}`)
@@ -3247,10 +3258,11 @@ function CastingUploadSection({ db }) {
       const extracted = extractRows(data)
       // 각 항목에 기본 필드 보장
       const normalized = extracted.map(r => ({
-        date:       r.date       ?? '',
-        showTitle:  r.showTitle  ?? r.show_title  ?? r.title ?? '',
-        actorName:  r.actorName  ?? r.actor_name  ?? r.actor ?? '',
-        roleName:   r.roleName   ?? r.role_name   ?? r.role  ?? '',
+        date:       r.date      ?? '',
+        // 공연 선택 시 공연명 자동 채움
+        showTitle:  r.showTitle ?? r.show_title ?? r.title ?? selectedShow?.title ?? '',
+        actorName:  r.actorName ?? r.actor_name ?? r.actor ?? '',
+        roleName:   r.roleName  ?? r.role_name  ?? r.role  ?? '',
       }))
       setRows(normalized)
     } catch (e) {
@@ -3303,6 +3315,31 @@ function CastingUploadSection({ db }) {
   return (
     <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 space-y-5">
       <h3 className="font-bold text-stone-700">🎬 캐스팅 사진 분석</h3>
+
+      {/* 공연 선택 */}
+      <div className="space-y-1">
+        <label className={LABEL}>공연 선택 (선택 시 cast 데이터로 역할명 자동 매칭)</label>
+        <select
+          value={selectedShowId}
+          onChange={e => setSelectedShowId(e.target.value)}
+          className={INPUT}
+        >
+          <option value="">— 공연 선택 안 함</option>
+          {showsList
+            .slice()
+            .sort((a, b) => (a.title ?? '').localeCompare(b.title ?? '', 'ko'))
+            .map(s => (
+              <option key={s.id} value={s.id}>{s.title}</option>
+            ))}
+        </select>
+        {selectedShow && castList.length > 0 && (
+          <p className="text-xs text-stone-400">
+            cast {castList.length}명 로드됨 —{' '}
+            {castList.slice(0, 3).map(c => c.actorName).join(', ')}
+            {castList.length > 3 ? ` 외 ${castList.length - 3}명` : ''}
+          </p>
+        )}
+      </div>
 
       {/* 업로드 영역 */}
       <div
