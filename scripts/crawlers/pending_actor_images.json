@@ -1,0 +1,59 @@
+[
+  {
+    "actorId": "박규원",
+    "actorName": "박규원",
+    "imageUrl": "http://ticketimage.interpark.com/PlayDictionary/DATA/PlayDic/PlayDicUpload/040004/11/02/0400041102_24832_02654.242.gif",
+    "profileUrl": "http://www.playdb.co.kr/artistdb/detail.asp?ManNo=24832",
+    "reason": "출연작 미매칭",
+    "candidates": [
+      {
+        "name": "박규원",
+        "imageUrl": "http://ticketimage.interpark.com/PlayDictionary/DATA/PlayDic/PlayDicUpload/040004/11/02/0400041102_24832_02654.242.gif",
+        "profileUrl": "http://www.playdb.co.kr/artistdb/detail.asp?ManNo=24832"
+      }
+    ]
+  },
+  {
+    "actorId": "0Pfu9VLbPEePSclZUuEt",
+    "actorName": "이호석",
+    "imageUrl": "http://ticketimage.interpark.com/PlayDictionary/DATA/PlayDic/PlayDicUpload/040004/18/07/0400041807_43315_02614.gif",
+    "profileUrl": "http://www.playdb.co.kr/artistdb/detail.asp?ManNo=43315",
+    "reason": "동명이인 3명",
+    "candidates": [
+      {
+        "name": "이호석",
+        "imageUrl": "http://ticketimage.interpark.com/PlayDictionary/DATA/PlayDic/PlayDicUpload/040004/18/07/0400041807_43315_02614.gif",
+        "profileUrl": "http://www.playdb.co.kr/artistdb/detail.asp?ManNo=43315"
+      },
+      {
+        "name": "이호석",
+        "imageUrl": "http://ticketimage.interpark.com/PlayDictionary/DATA/PlayDic/PlayDicUpload/040004/21/09/0400042109_48344_02.735.gif",
+        "profileUrl": "http://www.playdb.co.kr/artistdb/detail.asp?ManNo=48344"
+      },
+      {
+        "name": "이호석",
+        "imageUrl": "http://ticketimage.interpark.com/PlayDictionary/DATA/PlayDic/PlayDicUpload/040004/15/09/0400041509_37998_02.gif",
+        "profileUrl": "http://www.playdb.co.kr/artistdb/detail.asp?ManNo=37998"
+      }
+    ]
+  },
+  {
+    "actorId": "TnR8KAj2jcfdg8PHINed",
+    "actorName": "이주순",
+    "imageUrl": "http://ticketimage.interpark.com/PlayDictionary/DATA/PlayDic/PlayDicUpload/040004/19/07/0400041907_44957_02615.gif",
+    "profileUrl": "http://www.playdb.co.kr/artistdb/detail.asp?ManNo=44957",
+    "reason": "동명이인 2명",
+    "candidates": [
+      {
+        "name": "이주순",
+        "imageUrl": "http://ticketimage.interpark.com/PlayDictionary/DATA/PlayDic/PlayDicUpload/040004/19/07/0400041907_44957_02615.gif",
+        "profileUrl": "http://www.playdb.co.kr/artistdb/detail.asp?ManNo=44957"
+      },
+      {
+        "name": "이주순",
+        "imageUrl": "http://ticketimage.interpark.com/PlayDictionary/DATA/PlayDic/PlayDicUpload/040004/09/12/0400040912_19322_02.gif",
+        "profileUrl": "http://www.playdb.co.kr/artistdb/detail.asp?ManNo=19322"
+      }
+    ]
+  }
+]

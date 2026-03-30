@@ -24,8 +24,10 @@ export default function Navbar() {
   }, [user])
 
   const links = [
-    { to: '/',      label: '공연 목록' },
-    { to: '/admin', label: '관리자' },
+    { to: '/',        label: '공연 목록' },
+    { to: '/casting', label: '캐스팅 보드' },
+    { to: '/actors',  label: '배우 아카이브' },
+    { to: '/admin',   label: '관리자' },
   ]
 
   function openLogin() {

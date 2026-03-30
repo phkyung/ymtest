@@ -12,8 +12,10 @@ import Layout    from './components/Layout'
 import HomePage  from './pages/HomePage'
 import ShowPage  from './pages/ShowPage'
 import ActorPage from './pages/ActorPage'
-import AdminPage    from './pages/AdminPage'
-import NotFoundPage from './pages/NotFoundPage'
+import AdminPage      from './pages/AdminPage'
+import CastingBoard   from './pages/CastingBoard'
+import ActorArchive   from './pages/ActorArchive'
+import NotFoundPage   from './pages/NotFoundPage'
 
 export default function App() {
   return (
@@ -28,6 +30,12 @@ export default function App() {
 
           {/* 배우 상세 */}
           <Route path="/actors/:actorId" element={<ActorPage />} />
+
+          {/* 캐스팅 보드 */}
+          <Route path="/casting"       element={<CastingBoard />} />
+
+          {/* 배우 아카이브 */}
+          <Route path="/actors"        element={<ActorArchive />} />
 
           {/* 관리자 (JSON 업로드) */}
           <Route path="/admin"         element={<AdminPage />} />

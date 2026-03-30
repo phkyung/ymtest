@@ -10,15 +10,17 @@ get_actor_images_playdb.py — 플레이DB에서 배우 사진 스마트 자동/
                 → Firestore pending_actors 컬렉션 저장 (관리자 UI용)
   ❌ 스킵:      검색 결과 없음 / 이름 형식 이상
 
-진행 출력 예시:
-  [1/1497] 조규현 ✅ 자동저장 (출연작 매칭: 데스노트)
-  [2/1497] 김민석 ⚠️ 검토대기 (동명이인 3명)
-  [3/1497] 이정환 등 ❌ 스킵 (이름 형식 이상)
+" 등" 처리:
+  actorName에 " 등"이 포함된 경우 → 제거 후 검색 및 저장 ("홍나현 등" → "홍나현")
+
+--from-shows 모드:
+  shows 컬렉션 cast[].actorName 수집 → actors 없는 배우 자동 등록 후 이미지 검색
 
 사용법:
     python get_actor_images_playdb.py --key path/to/serviceAccountKey.json
     python get_actor_images_playdb.py --key key.json --name "김준현"
     python get_actor_images_playdb.py --key key.json --overwrite
+    python get_actor_images_playdb.py --key key.json --from-shows --test
     python get_actor_images_playdb.py --key key.json --pending-out ./pending_actor_images.json
 """
 
@@ -183,56 +185,174 @@ def fetch_actor_shows(actor_id, client):
 
 def _parse_actor_shows(soup):
     """
-    배우 상세 페이지에서 출연작 제목 집합 추출.
+    배우 상세 페이지에서 출연작 (제목, 장르) 집합 추출.
 
-    플레이DB 출연작 구조 (대략):
-      <table class="list_table">
-        <tr>
-          <td class="title"><a href="/show/...">데스노트</a></td>
-          ...
-        </tr>
-      </table>
-    또는 showdetail.asp 링크에서 직접 추출.
+    플레이DB 구조:
+      - div.detail_contents : 실제 출연작 섹션 (여기만 파싱)
+      - div.ranking         : 페이지 상단 검색 랭킹 (무시)
+      - div#header 등       : 네비게이션/배너 (무시)
+
+    출연작 표기: "뮤지컬 〈제목〉" 형식
+    → 장르(뮤지컬/연극 등) + 제목을 함께 추출.
+    장르 없는 경우 빈 문자열로 저장.
     """
+    import re as _re
+    GENRES = r"(뮤지컬|연극|오페라|콘서트|창극|무용|발레|쇼|음악극)"
     show_titles = set()
 
-    # 출연작 테이블에서 제목 셀 파싱
-    for row in soup.select("table.list_table tr, .work_list tr, .show_list tr"):
-        # 제목 셀: td.title 또는 2번째 td
-        title_cell = row.select_one("td.title, td.name, td:nth-child(2)")
-        if title_cell:
-            title = title_cell.get_text(strip=True)
-            if title and len(title) > 1:
-                show_titles.add(title)
+    # ── 출연작 섹션만 사용 (div.detail_contents) ──
+    # 없으면 fallback: ranking/header 제거 후 전체 파싱
+    section = soup.find("div", class_="detail_contents")
+    if not section:
+        # ranking, header 등 노이즈 태그 제거 후 전체 사용
+        section = BeautifulSoup(str(soup), "html.parser")
+        for noise in section.find_all(
+            ["div", "header"],
+            class_=lambda c: c and any(k in c for k in ["ranking", "gnb", "topmenu", "logo", "banner"]),
+        ):
+            noise.decompose()
+        for noise in section.find_all(True, id=lambda i: i and any(
+            k in i.lower() for k in ["header", "rank_layer", "servicelayer", "banner"]
+        )):
+            noise.decompose()
 
-    # showdetail 링크 텍스트에서도 추출 (대안)
-    for a in soup.select("a[href*='showdetail'], a[href*='PlayCd='], a[href*='showId=']"):
-        title = a.get_text(strip=True)
+    # "장르 〈제목〉" 패턴 추출
+    section_text = section.get_text()
+    for m in _re.finditer(GENRES + r"?\s*[〈《](.+?)[〉》]", section_text):
+        genre = (m.group(1) or "").strip()
+        title = m.group(2).strip()
         if title and len(title) > 1:
-            show_titles.add(title)
+            show_titles.add((title, genre))
 
     return show_titles
 
 
-# ── 공연명 정규화 (공백·대소문자 무시 비교) ──────────
+# ── 공연명 정규화 ([] 괄호·공백·특수문자 제거 + 소문자 변환) ──────────
 def _normalize(text):
-    """비교를 위해 공백 제거 + 소문자 변환."""
-    return re.sub(r"\s+", "", text).lower()
+    """
+    비교를 위한 정규화:
+    1. [대학로] [명동] 등 [] 괄호 내용 제거
+    2. 공백 전체 제거
+    3. 특수문자 제거 (한글·영문·숫자만 유지)
+    4. 소문자 변환
+    """
+    text = re.sub(r"\[.*?\]", "", text)   # [] 괄호 내용 제거
+    text = re.sub(r"[^\w]", "", text)     # 공백·특수문자 제거 (한글/영문/숫자 유지)
+    return text.lower()
 
 
-# ── 출연작 겹침 확인 ───────────────────────────────
+# ── 출연작 겹침 확인 (유사도 + 장르 기반) ────────────────
+def _titles_match(norm, our_norm, norm_genre="", our_norm_genre=""):
+    """
+    두 정규화 공연명 + 장르 비교.
+    - 제목 비교:
+        완전 일치: 항상 허용
+        포함 관계: 양쪽 모두 6자 이상일 때만 허용
+    - 장르 비교:
+        둘 다 있으면 반드시 일치해야 함
+        어느 한쪽이라도 없으면 제목만으로 판단
+    """
+    # 제목 조건
+    title_ok = norm == our_norm or (
+        len(norm) >= 6 and len(our_norm) >= 6
+        and (norm in our_norm or our_norm in norm)
+    )
+    if not title_ok:
+        return False
+    # 장르 조건 (둘 다 있을 때만 검사)
+    if norm_genre and our_norm_genre:
+        return norm_genre == our_norm_genre
+    return True
+
+
 def has_show_overlap(actor_shows, our_shows_normalized):
     """
-    플레이DB 배우의 출연작과 우리 DB 공연명이 1개 이상 겹치는지 확인.
-    정규화된 집합으로 비교.
+    플레이DB 배우 출연작과 우리 DB 공연명 유사도+장르 기반 매칭.
+    actor_shows: set of (title, genre)
+    our_shows_normalized: list of (norm_title, norm_genre)
     """
-    normalized = {_normalize(t) for t in actor_shows}
-    return bool(normalized & our_shows_normalized)
+    for (title, genre) in actor_shows:
+        norm      = _normalize(title)
+        norm_genre = _normalize(genre)
+        if not norm:
+            continue
+        for (our_norm, our_norm_genre) in our_shows_normalized:
+            if not our_norm:
+                continue
+            if _titles_match(norm, our_norm, norm_genre, our_norm_genre):
+                return True
+    return False
 
 
 def get_matched_titles(actor_shows, our_shows_normalized):
     """겹치는 공연명 리스트 반환 (로그 출력용)."""
-    return [t for t in actor_shows if _normalize(t) in our_shows_normalized]
+    matched = []
+    for (title, genre) in actor_shows:
+        norm      = _normalize(title)
+        norm_genre = _normalize(genre)
+        if not norm:
+            continue
+        for (our_norm, our_norm_genre) in our_shows_normalized:
+            if not our_norm:
+                continue
+            if _titles_match(norm, our_norm, norm_genre, our_norm_genre):
+                matched.append(title)
+                break
+    return matched
+
+
+# ── shows cast 배우 자동 등록 ─────────────────────
+def load_and_register_cast_actors(db, actors_ref, limit_shows=None, limit_cast=None):
+    """
+    shows 컬렉션의 cast[].actorName을 수집하여 actors 컬렉션에 없는 배우를 자동 등록.
+    반환값: 새로 등록된 actor 목록 [{"id": doc_id, "name": clean_name}]
+    """
+    # 기존 actors 이름 세트
+    existing_names = {d.to_dict().get("name", "").strip() for d in actors_ref.stream()}
+
+    # shows 로드
+    shows_docs = list(db.collection("shows").stream())
+    if limit_shows:
+        shows_docs = shows_docs[:limit_shows]
+    print(f"📺 shows {len(shows_docs)}개 스캔 중...")
+
+    # cast actorName 수집 (중복 제거, actors에 없는 것만)
+    cast_names = []
+    seen = set()
+    for doc in shows_docs:
+        data = doc.to_dict()
+        for member in data.get("cast", []):
+            raw_name = member.get("actorName", "").strip()
+            if not raw_name or raw_name in seen:
+                continue
+            seen.add(raw_name)
+            # " 등" 제거 후 비교
+            clean = re.sub(r"\s+등$", "", raw_name).strip()
+            if clean not in existing_names:
+                cast_names.append((raw_name, clean))
+
+    if limit_cast:
+        cast_names = cast_names[:limit_cast]
+
+    print(f"   → actors 컬렉션에 없는 배우 {len(cast_names)}명 발견")
+
+    # actors 문서 생성
+    new_actors = []
+    for raw_name, clean_name in cast_names:
+        # 형식 이상 스킵 (" 등" 제거 후에도 이상한 경우)
+        if re.search(r"[·,&]|\s+외$", clean_name):
+            print(f"   ⏭️  {raw_name} 스킵 (이름 형식 이상)")
+            continue
+        doc_ref = actors_ref.document()
+        doc_ref.set({
+            "name": clean_name,
+            "createdAt": firestore.SERVER_TIMESTAMP,
+        })
+        label = f"{raw_name} → {clean_name}" if raw_name != clean_name else clean_name
+        print(f"   ➕ {label} (actors 등록, id={doc_ref.id})")
+        new_actors.append({"id": doc_ref.id, "name": clean_name})
+
+    return new_actors
 
 
 # ── 메인 ────────────────────────────────────────
@@ -241,6 +361,9 @@ def main(
     target_name=None,
     overwrite=False,
     pending_out="pending_actor_images.json",
+    from_shows=False,
+    test=False,
+    debug=False,
 ):
     db = init_firebase(key_path)
 
@@ -250,17 +373,30 @@ def main(
     actors_ref  = db.collection("actors")
     all_actors  = [{"id": d.id, **d.to_dict()} for d in actors_ref.stream()]
 
-    # ── shows + pending 공연명 수집 (출연작 매칭용) ──
+    # ── [2] shows cast 배우 자동 등록 ──
+    if from_shows:
+        limit_shows = 3 if test else None
+        limit_cast  = 5 if test else None
+        new_actors = load_and_register_cast_actors(
+            db, actors_ref,
+            limit_shows=limit_shows,
+            limit_cast=limit_cast,
+        )
+        print(f"   → {len(new_actors)}명 새로 등록, 이미지 검색 진행\n")
+        # 새로 등록된 배우만 이미지 검색 대상으로
+        all_actors = new_actors
+
+    # ── shows + pending 공연명 + 장르 수집 (출연작 매칭용) ──
     print("📋 shows / pending 공연명 로드 중...")
-    our_show_titles = set()
+    our_shows_normalized = []   # list of (norm_title, norm_genre)
     for col_name in ("shows", "pending"):
         for d in db.collection(col_name).stream():
-            title = d.to_dict().get("title", "").strip()
+            data  = d.to_dict()
+            title = data.get("title", "").strip()
+            genre = data.get("genre", "").strip()
             if title:
-                our_show_titles.add(title)
-    # 정규화된 집합 캐싱
-    our_shows_normalized = {_normalize(t) for t in our_show_titles}
-    print(f"   → 총 {len(our_show_titles)}개 공연명 로드됨\n")
+                our_shows_normalized.append((_normalize(title), _normalize(genre)))
+    print(f"   → 총 {len(our_shows_normalized)}개 공연명 로드됨\n")
 
     # ── 처리 대상 필터링 ──
     if target_name:
@@ -307,16 +443,26 @@ def main(
                 skipped += 1
                 continue
 
-            # ── 이름 형식 이상 체크: "홍길동 등" / "홍·이" / "A, B" 등 ──
-            if re.search(r"[·,&]|\s+등$|\s+외$", actor_name):
+            # ── [1] " 등" 제거 처리 ("홍나현 등" → "홍나현") ──
+            search_name  = actor_name
+            name_cleaned = False
+            if re.search(r"\s+등$", actor_name):
+                search_name  = re.sub(r"\s+등$", "", actor_name).strip()
+                name_cleaned = True
+
+            # ── 이름 형식 이상 체크: "홍·이" / "A, B" / " 외" 등 ──
+            if re.search(r"[·,&]|\s+외$", search_name):
                 print(f"[{idx}/{total}] {actor_name} ❌ 스킵 (이름 형식 이상)")
                 skipped += 1
                 continue
 
-            print(f"[{idx}/{total}] {actor_name}", end=" ", flush=True)
+            if name_cleaned:
+                print(f"[{idx}/{total}] {actor_name} → {search_name}", end=" ", flush=True)
+            else:
+                print(f"[{idx}/{total}] {actor_name}", end=" ", flush=True)
 
             # ── 플레이DB 검색 ──
-            results = search_playdb_actors(actor_name, client)
+            results = search_playdb_actors(search_name, client)
             time.sleep(REQUEST_DELAY)
 
             # ── 검색 결과 없음 → 스킵 ──
@@ -326,7 +472,7 @@ def main(
                 continue
 
             # ── 이름 완전 일치 결과만 추출 ──
-            exact_matches = [r for r in results if r["name"] == actor_name]
+            exact_matches = [r for r in results if r["name"] == search_name]
 
             # ── 이름 부분 일치만 있음 → 검토 대기 ──
             if not exact_matches:
@@ -335,7 +481,7 @@ def main(
                 if actor_id not in pending_actor_ids:
                     pending_list.append({
                         "actorId":    actor_id,
-                        "actorName":  actor_name,
+                        "actorName":  search_name,
                         "imageUrl":   results[0]["image_url"],
                         "profileUrl": results[0]["profile_url"],
                         "reason":     f"이름 부분 일치 ({results[0]['name']})",
@@ -358,7 +504,7 @@ def main(
                 if actor_id not in pending_actor_ids:
                     pending_list.append({
                         "actorId":    actor_id,
-                        "actorName":  actor_name,
+                        "actorName":  search_name,
                         "imageUrl":   exact_matches[0]["image_url"],
                         "profileUrl": exact_matches[0]["profile_url"],
                         "reason":     f"동명이인 {len(exact_matches)}명",
@@ -380,12 +526,37 @@ def main(
             actor_shows = fetch_actor_shows(match["actor_id"], client)
             time.sleep(REQUEST_DELAY)
 
+            # ── [DEBUG] 플레이DB 출연작 목록 + 매칭 상세 출력 ──
+            if debug:
+                if actor_shows:
+                    print(f"\n  [DEBUG] 플레이DB 출연작 원본 ({len(actor_shows)}개):")
+                    for title, genre in sorted(actor_shows):
+                        print(f"    [{genre or '장르없음'}] {title}")
+                else:
+                    print("\n  [DEBUG] 플레이DB 출연작 없음")
+
+                print(f"  [DEBUG] 매칭 결과:")
+                for title, genre in sorted(actor_shows):
+                    norm = _normalize(title)
+                    norm_genre = _normalize(genre)
+                    if not norm:
+                        continue
+                    for our_norm, our_norm_genre in our_shows_normalized:
+                        if not our_norm:
+                            continue
+                        if _titles_match(norm, our_norm, norm_genre, our_norm_genre):
+                            print(f"    ✅ '{title}'({genre or '장르없음'}) ↔ our='{our_norm}'({our_norm_genre or '장르없음'})")
+
             if has_show_overlap(actor_shows, our_shows_normalized):
                 # ── ✅ 자동 저장 조건 충족: 이름 일치 + 출연작 겹침 ──
                 matched_titles = get_matched_titles(actor_shows, our_shows_normalized)
                 print(f"✅ 자동저장 (출연작 매칭: {matched_titles[0] if matched_titles else '?'})")
                 try:
-                    actors_ref.document(actor_id).update({"imageUrl": match["image_url"]})
+                    update_data = {"imageUrl": match["image_url"]}
+                    # " 등" 제거한 경우 name 필드도 정리된 이름으로 업데이트
+                    if name_cleaned:
+                        update_data["name"] = search_name
+                    actors_ref.document(actor_id).update(update_data)
                     auto_saved += 1
                 except Exception as e:
                     print(f"   ❌ Firestore 업데이트 실패: {e}")
@@ -396,7 +567,7 @@ def main(
                 if actor_id not in pending_actor_ids:
                     pending_list.append({
                         "actorId":    actor_id,
-                        "actorName":  actor_name,
+                        "actorName":  search_name,
                         "imageUrl":   match["image_url"],
                         "profileUrl": match["profile_url"],
                         "reason":     "출연작 미매칭",
@@ -468,10 +639,25 @@ if __name__ == "__main__":
         default="pending_actor_images.json",
         help="검토 대기 목록 저장 파일 경로 (기본값: pending_actor_images.json)",
     )
+    parser.add_argument(
+        "--from-shows", action="store_true",
+        help="shows 컬렉션 cast 배우 중 actors에 없는 배우를 자동 등록 후 이미지 검색",
+    )
+    parser.add_argument(
+        "--test", action="store_true",
+        help="--from-shows 테스트 모드: shows 3개, cast 배우 5명만 처리",
+    )
+    parser.add_argument(
+        "--debug", action="store_true",
+        help="플레이DB 출연작 원본 및 매칭 결과 상세 출력",
+    )
     args = parser.parse_args()
     main(
         key_path=args.key,
         target_name=args.name,
         overwrite=args.overwrite,
         pending_out=args.pending_out,
+        from_shows=args.from_shows,
+        test=args.test,
+        debug=args.debug,
     )
