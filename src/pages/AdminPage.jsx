@@ -2778,6 +2778,7 @@ export default function AdminPage() {
             <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-1.5 flex gap-1">
               {[
                 { key: 'review', icon: '🔍', label: '사진 검토',     count: pendingActors.length },
+                { key: 'search', icon: '📸', label: '사진 직접 등록', count: null },
                 { key: 'list',   icon: '👤', label: '배우 전체 목록', count: actorsList.length   },
               ].map(({ key, icon, label, count }) => (
                 <button
@@ -2844,6 +2845,11 @@ export default function AdminPage() {
               </div>
             )}
 
+
+            {/* ── 사진 직접 등록 서브탭 ── */}
+            {actorSubTab === 'search' && (
+              <ActorImageDirectUpload db={db} />
+            )}
 
             {/* ── 배우 전체 목록 서브탭 ── */}
             {/* actors 컬렉션 전체 목록, 사진 없는 배우는 흐릿하게 표시 */}
@@ -3007,6 +3013,162 @@ export default function AdminPage() {
 
 
 // ══════════════════════════════════════════════
+// ActorImageDirectUpload — 배우 이름 검색 후 사진 URL 직접 등록
+// ══════════════════════════════════════════════
+function ActorImageDirectUpload({ db }) {
+  const [searchTerm,  setSearchTerm]  = useState('')
+  const [results,     setResults]     = useState([])
+  const [searching,   setSearching]   = useState(false)
+  // { [actorId]: { url, saving, saved, open } }
+  const [edits,       setEdits]       = useState({})
+  const [toast,       setToast]       = useState('')
+
+  function showToast(msg) {
+    setToast(msg)
+    setTimeout(() => setToast(''), 2500)
+  }
+
+  useEffect(() => {
+    const term = searchTerm.trim()
+    if (!term) { setResults([]); return }
+    if (!isFirebaseConfigured || !db) return
+    setSearching(true)
+    getDocs(query(collection(db, 'actors'), where('name', '>=', term), where('name', '<=', term + '\uf8ff')))
+      .then(snap => {
+        setResults(snap.docs.map(d => ({ id: d.id, ...d.data() })).slice(0, 10))
+      })
+      .finally(() => setSearching(false))
+  }, [searchTerm, db])
+
+  function toggleOpen(actorId, currentUrl) {
+    setEdits(prev => ({
+      ...prev,
+      [actorId]: {
+        url:    prev[actorId]?.url ?? currentUrl ?? '',
+        open:   !prev[actorId]?.open,
+        saving: false,
+        saved:  false,
+      },
+    }))
+  }
+
+  async function handleSave(actor) {
+    const url = (edits[actor.id]?.url ?? '').trim()
+    if (!url || !db) return
+    setEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], saving: true, saved: false } }))
+    try {
+      await updateDoc(doc(db, 'actors', actor.id), { imageUrl: url })
+      setResults(prev => prev.map(a => a.id === actor.id ? { ...a, imageUrl: url } : a))
+      setEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], saving: false, saved: true, open: false } }))
+      showToast('사진이 등록됐어요 🙌')
+    } catch (e) {
+      alert('저장 실패: ' + e.message)
+      setEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], saving: false } }))
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+        <strong>사진 직접 등록</strong> — 배우 이름으로 검색한 뒤 사진 URL을 직접 입력해 저장합니다.
+      </div>
+
+      {/* 검색창 */}
+      <div className="relative">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          placeholder="배우 이름 검색..."
+          className={INPUT}
+        />
+        {searching && (
+          <span className="absolute right-3 top-2.5 text-xs text-stone-400 pointer-events-none">검색 중...</span>
+        )}
+      </div>
+
+      {/* 검색 결과 */}
+      {results.length > 0 && (
+        <div className="space-y-3">
+          {results.map(actor => {
+            const edit    = edits[actor.id] ?? {}
+            const imgSrc  = toHttps(actor.imageUrl ?? '')
+            return (
+              <div key={actor.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  {/* 현재 사진 */}
+                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-stone-100 shrink-0 flex items-center justify-center">
+                    {imgSrc ? (
+                      <img src={imgSrc} alt={actor.name} className="w-full h-full object-cover"
+                           onError={e => { e.target.style.display = 'none' }} />
+                    ) : (
+                      <span className="text-xl text-stone-400">{actor.name?.[0]}</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-stone-800 text-sm">{actor.name}</p>
+                    {actor.imageUrl ? (
+                      <p className="text-xs text-stone-400 truncate">{actor.imageUrl}</p>
+                    ) : (
+                      <p className="text-xs text-stone-300">사진 없음</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => toggleOpen(actor.id, actor.imageUrl)}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg
+                               bg-stone-100 text-stone-600 hover:bg-amber-100 hover:text-amber-700
+                               transition-colors shrink-0"
+                  >
+                    📸 사진 URL 직접 입력
+                  </button>
+                </div>
+
+                {/* URL 입력창 (토글) */}
+                {edit.open && (
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={edit.url ?? ''}
+                      onChange={e => setEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], url: e.target.value } }))}
+                      placeholder="https://..."
+                      className="flex-1 border border-stone-200 rounded-lg px-3 py-2 text-sm
+                                 focus:outline-none focus:ring-2 focus:ring-amber-300 placeholder:text-stone-300"
+                    />
+                    <button
+                      onClick={() => handleSave(actor)}
+                      disabled={edit.saving || !edit.url?.trim()}
+                      className="px-4 py-2 text-xs font-semibold rounded-lg
+                                 bg-emerald-600 text-white hover:bg-emerald-500
+                                 disabled:opacity-40 transition-colors shrink-0"
+                    >
+                      {edit.saving ? '저장 중...' : '저장'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {searchTerm.trim() && !searching && results.length === 0 && (
+        <p className="text-sm text-stone-400 text-center py-6">검색 결과가 없어요</p>
+      )}
+
+      {/* 토스트 */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50
+                        bg-stone-900 text-white text-sm px-5 py-3 rounded-2xl shadow-xl
+                        animate-fade-in">
+          {toast}
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+// ══════════════════════════════════════════════
 // CastingTab — 캐스팅 업로드 + 이벤트 캘린더 등록
 // ══════════════════════════════════════════════
 function CastingTab({ db, showsList }) {
@@ -3052,8 +3214,13 @@ function CastingUploadSection({ db }) {
     setError('')
     setRows([])
     try {
-      const buf    = await file.arrayBuffer()
-      const b64    = btoa(String.fromCharCode(...new Uint8Array(buf)))
+      // FileReader로 base64 추출 (btoa 스택오버플로 방지)
+      const b64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload  = e => resolve(e.target.result.split(',')[1])
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
       const res    = await fetch(WORKER_URL, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },

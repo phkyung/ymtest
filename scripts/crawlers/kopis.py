@@ -23,6 +23,8 @@ import argparse
 import json
 import os
 import re
+import sys
+import tempfile
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
@@ -427,11 +429,146 @@ def _get_api_key(cli_key: str | None) -> str:
     if not key:
         raise SystemExit(
             "❌ KOPIS API 키가 없습니다.\n"
-            "  방법 1: python kopis.py --key YOUR_KEY\n"
+            "  방법 1: python kopis.py --kopis-key YOUR_KEY\n"
             "  방법 2: export KOPIS_API_KEY=YOUR_KEY\n"
             "  키 발급: https://www.kopis.or.kr/por/cs/openapi/openApiGuide.do"
         )
     return key
+
+
+def _init_firebase(key_path: str | None):
+    """Firebase Admin SDK 초기화 후 Firestore 클라이언트 반환."""
+    try:
+        import firebase_admin
+        from firebase_admin import credentials, firestore as fs
+    except ImportError:
+        raise SystemExit("❌ firebase-admin 패키지가 필요합니다: pip install firebase-admin")
+
+    if firebase_admin._apps:
+        return fs.client()
+
+    if key_path:
+        cred = credentials.Certificate(key_path)
+    else:
+        json_str = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
+        if not json_str:
+            raise SystemExit(
+                "❌ Firebase 인증 정보가 없습니다.\n"
+                "  --firebase-key 옵션 또는 FIREBASE_SERVICE_ACCOUNT_JSON 환경변수를 설정하세요."
+            )
+        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
+        tmp.write(json_str)
+        tmp.close()
+        cred = credentials.Certificate(tmp.name)
+        os.unlink(tmp.name)
+
+    firebase_admin.initialize_app(cred)
+    return fs.client()
+
+
+def _extract_mt20id(doc_data: dict) -> str | None:
+    """
+    Firestore shows 문서에서 KOPIS mt20id 추출.
+    우선순위: kopisId 필드 → sourceUrl에서 파싱
+    """
+    mid = doc_data.get("kopisId", "").strip()
+    if mid:
+        return mid
+    source_url = doc_data.get("sourceUrl", "")
+    m = re.search(r"mt20id=([A-Z0-9]+)", source_url)
+    return m.group(1) if m else None
+
+
+def synopsis_only(kopis_key: str, firebase_key: str | None, limit: int | None) -> None:
+    """
+    shows 컬렉션에서 synopsis 없는 공연을 찾아
+    KOPIS API로 synopsis / synopsisImages 만 업데이트.
+    """
+    db = _init_firebase(firebase_key)
+
+    print("🔍 synopsis 없는 공연 조회 중...")
+    # select로 필요한 필드만 읽어 읽기 비용 최소화
+    docs = list(
+        db.collection("shows")
+          .select(["synopsis", "kopisId", "sourceUrl", "title"])
+          .stream()
+    )
+
+    targets = []
+    for d in docs:
+        data = d.to_dict()
+        if not (data.get("synopsis") or "").strip():
+            mid = _extract_mt20id(data)
+            if mid:
+                targets.append((d.id, data.get("title", ""), mid))
+
+    total_no_syn = len([d for d in docs if not (d.to_dict().get("synopsis") or "").strip()])
+    total_no_id  = total_no_syn - len(targets)
+
+    print(f"   shows 전체: {len(docs)}개")
+    print(f"   synopsis 없음: {total_no_syn}개")
+    print(f"   → kopisId 없어 스킵: {total_no_id}개")
+    print(f"   → 처리 대상: {len(targets)}개")
+
+    if limit:
+        targets = targets[:limit]
+        print(f"   → --limit {limit} 적용: {len(targets)}개만 처리\n")
+    else:
+        print()
+
+    if not targets:
+        print("처리할 공연이 없습니다.")
+        return
+
+    updated = 0
+    skipped = 0
+
+    with httpx.Client(follow_redirects=True, timeout=20) as client:
+        for idx, (doc_id, title, mt20id) in enumerate(targets, 1):
+            print(f"[{idx}/{len(targets)}] {title[:30]} ({mt20id})", end=" ")
+
+            root = _get(client, f"pblprfr/{mt20id}", {"service": kopis_key})
+            if root is None:
+                print("⚠️  API 오류 스킵")
+                skipped += 1
+                time.sleep(REQUEST_DELAY)
+                continue
+
+            db_el = root.find("db")
+            if db_el is None:
+                print("⚠️  데이터 없음 스킵")
+                skipped += 1
+                time.sleep(REQUEST_DELAY)
+                continue
+
+            synopsis   = _xml_text(db_el, "sty")
+            sty_images = _xml_children_text(db_el, "styurls")
+
+            if not synopsis.strip() and not sty_images:
+                print("— synopsis 없음 (KOPIS에도 없음)")
+                skipped += 1
+            else:
+                update = {}
+                if synopsis.strip():
+                    update["synopsis"] = synopsis
+                if sty_images:
+                    update["synopsisImages"] = sty_images
+                try:
+                    db.collection("shows").document(doc_id).update(update)
+                    print(f"✅ 저장 (synopsis {len(synopsis)}자, 이미지 {len(sty_images)}개)")
+                    updated += 1
+                except Exception as e:
+                    print(f"❌ 저장 실패: {e}")
+                    skipped += 1
+
+            time.sleep(REQUEST_DELAY)
+
+    print(f"""
+──────────────────────────────────────
+synopsis 보완 완료
+  ✅ 업데이트: {updated}개
+  ⏭️  스킵:    {skipped}개
+──────────────────────────────────────""")
 
 
 def probe(api_key: str) -> None:
@@ -508,7 +645,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="KOPIS 공공 API 공연 크롤러 (연극+뮤지컬, 서울 전체)"
     )
-    parser.add_argument("--key",    default=None, help="KOPIS API 키 (없으면 KOPIS_API_KEY 환경변수)")
+    # ── KOPIS 키 (기존 --key 유지 + --kopis-key 별칭 추가) ──
+    parser.add_argument("--kopis-key", "--key", dest="kopis_key",
+                        default=None, help="KOPIS API 키 (없으면 KOPIS_API_KEY 환경변수)")
+    # ── Firebase 키 (synopsis-only 모드용) ──
+    parser.add_argument("--firebase-key", dest="firebase_key",
+                        default=None, help="Firebase 서비스 계정 JSON 파일 경로")
     parser.add_argument("--days",   type=int, default=180, help="수집 기간(일) (기본 180)")
     parser.add_argument("--rows",   type=int, default=100, help="페이지당 건수 (기본 100, 최대 100)")
     parser.add_argument("--output", default=None, help="출력 파일 경로 (기본: pending_shows.json)")
@@ -523,6 +665,19 @@ if __name__ == "__main__":
         action="store_true",
         help="진단 모드: 여러 shcate 코드를 실제 API로 테스트해 올바른 코드를 확인",
     )
+    parser.add_argument(
+        "--synopsis-only",
+        action="store_true",
+        dest="synopsis_only",
+        help="synopsis 보완 모드: shows 컬렉션에서 synopsis 없는 공연만 KOPIS API로 업데이트",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        metavar="N",
+        help="처리할 최대 공연 수 (테스트용, 기본값: 제한 없음)",
+    )
     args = parser.parse_args()
 
     if args.output:
@@ -530,18 +685,27 @@ if __name__ == "__main__":
 
     # --probe: 장르코드 진단 후 종료
     if args.probe:
-        probe(_get_api_key(args.key))
+        probe(_get_api_key(args.kopis_key))
         raise SystemExit(0)
 
-    # --genre 값에 따라 수집할 장르 코드 결정
+    # --synopsis-only: synopsis 보완 후 종료
+    if args.synopsis_only:
+        synopsis_only(
+            kopis_key=_get_api_key(args.kopis_key),
+            firebase_key=args.firebase_key,
+            limit=args.limit,
+        )
+        raise SystemExit(0)
+
+    # ── 기본 모드: 공연 수집 ──
     GENRE_FILTER = {
-        "all":     None,                    # 기본값: GENRE_CODES 전체
+        "all":     None,
         "play":    [("연극",   "AAAA")],
-        "musical": [("뮤지컬", "GGGA")],   # BBAA → GGGA 수정
+        "musical": [("뮤지컬", "GGGA")],
     }
 
     main(
-        api_key=_get_api_key(args.key),
+        api_key=_get_api_key(args.kopis_key),
         days=args.days,
         rows=args.rows,
         genre_codes=GENRE_FILTER[args.genre],

@@ -185,16 +185,15 @@ def fetch_actor_shows(actor_id, client):
 
 def _parse_actor_shows(soup):
     """
-    배우 상세 페이지에서 출연작 (제목, 장르) 집합 추출.
+    배우 상세 페이지에서 출연작 (제목, 장르, 연도) 집합 추출.
 
     플레이DB 구조:
       - div.detail_contents : 실제 출연작 섹션 (여기만 파싱)
       - div.ranking         : 페이지 상단 검색 랭킹 (무시)
       - div#header 등       : 네비게이션/배너 (무시)
 
-    출연작 표기: "뮤지컬 〈제목〉" 형식
-    → 장르(뮤지컬/연극 등) + 제목을 함께 추출.
-    장르 없는 경우 빈 문자열로 저장.
+    출연작 표기: "뮤지컬 〈제목〉\n2024.03.01 ~ 2024.06.30" 형식
+    → (제목, 장르, 시작연도) 튜플로 추출.
     """
     import re as _re
     GENRES = r"(뮤지컬|연극|오페라|콘서트|창극|무용|발레|쇼|음악극)"
@@ -204,7 +203,6 @@ def _parse_actor_shows(soup):
     # 없으면 fallback: ranking/header 제거 후 전체 파싱
     section = soup.find("div", class_="detail_contents")
     if not section:
-        # ranking, header 등 노이즈 태그 제거 후 전체 사용
         section = BeautifulSoup(str(soup), "html.parser")
         for noise in section.find_all(
             ["div", "header"],
@@ -216,13 +214,18 @@ def _parse_actor_shows(soup):
         )):
             noise.decompose()
 
-    # "장르 〈제목〉" 패턴 추출
+    # "장르 〈제목〉" 패턴 추출 + 바로 뒤 날짜에서 시작 연도 추출
     section_text = section.get_text()
     for m in _re.finditer(GENRES + r"?\s*[〈《](.+?)[〉》]", section_text):
         genre = (m.group(1) or "").strip()
         title = m.group(2).strip()
-        if title and len(title) > 1:
-            show_titles.add((title, genre))
+        if not title or len(title) <= 1:
+            continue
+        # 매치 직후 80자 내에서 "YYYY.MM.DD" 시작 날짜 추출
+        after   = section_text[m.end():m.end() + 80]
+        year_m  = _re.search(r"(\d{4})\.\d{2}\.\d{2}", after)
+        year    = year_m.group(1) if year_m else ""
+        show_titles.add((title, genre, year))
 
     return show_titles
 
@@ -268,11 +271,11 @@ def _titles_match(norm, our_norm, norm_genre="", our_norm_genre=""):
 def has_show_overlap(actor_shows, our_shows_normalized):
     """
     플레이DB 배우 출연작과 우리 DB 공연명 유사도+장르 기반 매칭.
-    actor_shows: set of (title, genre)
+    actor_shows: set of (title, genre, year)
     our_shows_normalized: list of (norm_title, norm_genre)
     """
-    for (title, genre) in actor_shows:
-        norm      = _normalize(title)
+    for (title, genre, _year) in actor_shows:
+        norm       = _normalize(title)
         norm_genre = _normalize(genre)
         if not norm:
             continue
@@ -287,8 +290,8 @@ def has_show_overlap(actor_shows, our_shows_normalized):
 def get_matched_titles(actor_shows, our_shows_normalized):
     """겹치는 공연명 리스트 반환 (로그 출력용)."""
     matched = []
-    for (title, genre) in actor_shows:
-        norm      = _normalize(title)
+    for (title, genre, _year) in actor_shows:
+        norm       = _normalize(title)
         norm_genre = _normalize(genre)
         if not norm:
             continue
@@ -530,13 +533,13 @@ def main(
             if debug:
                 if actor_shows:
                     print(f"\n  [DEBUG] 플레이DB 출연작 원본 ({len(actor_shows)}개):")
-                    for title, genre in sorted(actor_shows):
-                        print(f"    [{genre or '장르없음'}] {title}")
+                    for title, genre, year in sorted(actor_shows):
+                        print(f"    [{genre or '장르없음'}] {title} ({year or '연도미상'})")
                 else:
                     print("\n  [DEBUG] 플레이DB 출연작 없음")
 
                 print(f"  [DEBUG] 매칭 결과:")
-                for title, genre in sorted(actor_shows):
+                for title, genre, _year in sorted(actor_shows):
                     norm = _normalize(title)
                     norm_genre = _normalize(genre)
                     if not norm:
@@ -552,7 +555,16 @@ def main(
                 matched_titles = get_matched_titles(actor_shows, our_shows_normalized)
                 print(f"✅ 자동저장 (출연작 매칭: {matched_titles[0] if matched_titles else '?'})")
                 try:
-                    update_data = {"imageUrl": match["image_url"]}
+                    # filmography: 플레이DB 출연작 전체를 연도 내림차순 정렬
+                    filmography = [
+                        {"title": t, "genre": g, "year": y}
+                        for t, g, y in sorted(actor_shows, key=lambda x: x[2] or "0", reverse=True)
+                        if t
+                    ]
+                    update_data = {
+                        "imageUrl":    match["image_url"],
+                        "filmography": filmography,
+                    }
                     # " 등" 제거한 경우 name 필드도 정리된 이름으로 업데이트
                     if name_cleaned:
                         update_data["name"] = search_name
