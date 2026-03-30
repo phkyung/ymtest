@@ -3186,11 +3186,11 @@ const WORKER_URL = 'https://playpick-ai.merhen08.workers.dev/casting'
 
 function CastingUploadSection({ db }) {
   const [file,      setFile]      = useState(null)
-  const [preview,   setPreview]   = useState('')   // object URL
+  const [preview,   setPreview]   = useState('')
   const [analyzing, setAnalyzing] = useState(false)
-  const [rows,      setRows]      = useState([])   // [{ date, showTitle, actorName, roleName }]
+  const [rows,      setRows]      = useState(null)   // null=미분석, []이상=분석완료
   const [saving,    setSaving]    = useState(false)
-  const [saveMsg,   setSaveMsg]   = useState('')
+  const [toast,     setToast]     = useState('')     // 저장 완료 토스트
   const [error,     setError]     = useState('')
   const dropRef = useRef(null)
 
@@ -3198,9 +3198,9 @@ function CastingUploadSection({ db }) {
     if (!f) return
     setFile(f)
     setPreview(URL.createObjectURL(f))
-    setRows([])
+    setRows(null)
     setError('')
-    setSaveMsg('')
+    setToast('')
   }
 
   function onDrop(e) {
@@ -3208,30 +3208,55 @@ function CastingUploadSection({ db }) {
     handleFile(e.dataTransfer.files[0])
   }
 
+  // Worker 응답에서 rows 배열 추출 (구조가 다를 수 있으므로 방어적으로 처리)
+  function extractRows(data) {
+    if (Array.isArray(data))      return data
+    if (Array.isArray(data.rows)) return data.rows
+    if (Array.isArray(data.casts)) return data.casts
+    if (Array.isArray(data.results)) return data.results
+    // 객체 값 중 첫 번째 배열
+    for (const v of Object.values(data)) {
+      if (Array.isArray(v)) return v
+    }
+    return []
+  }
+
   async function analyze() {
     if (!file) return
     setAnalyzing(true)
     setError('')
-    setRows([])
+    setRows(null)
+    setToast('')
     try {
-      // FileReader로 base64 추출 (btoa 스택오버플로 방지)
       const b64 = await new Promise((resolve, reject) => {
         const reader = new FileReader()
         reader.onload  = e => resolve(e.target.result.split(',')[1])
         reader.onerror = reject
         reader.readAsDataURL(file)
       })
-      const res    = await fetch(WORKER_URL, {
+      const res = await fetch(WORKER_URL, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ imageBase64: b64, mimeType: file.type }),
       })
-      if (!res.ok) throw new Error(`Worker 오류: ${res.status}`)
-      const data = await res.json()
-      // Worker가 반환하는 rows: [{ date, showTitle, actorName, roleName }]
-      setRows(Array.isArray(data.rows) ? data.rows : [])
+      const text = await res.text()
+      if (!res.ok) throw new Error(`Worker 오류 ${res.status}: ${text.slice(0, 200)}`)
+      let data
+      try { data = JSON.parse(text) } catch { throw new Error(`응답 파싱 실패: ${text.slice(0, 200)}`) }
+      console.log('[Casting Worker 응답]', data)
+      const extracted = extractRows(data)
+      // 각 항목에 기본 필드 보장
+      const normalized = extracted.map(r => ({
+        date:       r.date       ?? '',
+        showTitle:  r.showTitle  ?? r.show_title  ?? r.title ?? '',
+        actorName:  r.actorName  ?? r.actor_name  ?? r.actor ?? '',
+        roleName:   r.roleName   ?? r.role_name   ?? r.role  ?? '',
+      }))
+      setRows(normalized)
     } catch (e) {
+      console.error('[Casting 분석 오류]', e)
       setError(e.message)
+      setRows([])
     } finally {
       setAnalyzing(false)
     }
@@ -3241,17 +3266,24 @@ function CastingUploadSection({ db }) {
     setRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: val } : r))
   }
 
+  function addRow() {
+    setRows(prev => [...prev, { date: '', showTitle: '', actorName: '', roleName: '' }])
+  }
+
+  function removeRow(i) {
+    setRows(prev => prev.filter((_, idx) => idx !== i))
+  }
+
   async function saveToFirestore() {
-    if (!rows.length || !db) return
+    if (!rows?.length || !db) return
     setSaving(true)
-    setSaveMsg('')
+    setToast('')
     try {
-      // date + showTitle 별로 그룹핑
       const grouped = {}
       rows.forEach(r => {
         const key = `${(r.showTitle || 'unknown').replace(/\s/g, '_')}_${r.date || 'nodate'}`
-        if (!grouped[key]) grouped[key] = { date: r.date, showTitle: r.showTitle, casts: [] }
-        grouped[key].casts.push({ actorName: r.actorName, roleName: r.roleName })
+        if (!grouped[key]) grouped[key] = { date: r.date, showTitle: r.showTitle, entries: [] }
+        grouped[key].entries.push({ actorName: r.actorName, role: r.roleName })
       })
       const batch = writeBatch(db)
       Object.entries(grouped).forEach(([docId, data]) => {
@@ -3259,9 +3291,10 @@ function CastingUploadSection({ db }) {
         batch.set(ref, { ...data, createdAt: serverTimestamp() }, { merge: true })
       })
       await batch.commit()
-      setSaveMsg(`✅ ${Object.keys(grouped).length}건 저장 완료`)
+      setToast(`캐스팅이 등록됐어요 🎭`)
+      setTimeout(() => setToast(''), 3000)
     } catch (e) {
-      setSaveMsg(`❌ 저장 실패: ${e.message}`)
+      setError(`저장 실패: ${e.message}`)
     } finally {
       setSaving(false)
     }
@@ -3271,7 +3304,7 @@ function CastingUploadSection({ db }) {
     <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 space-y-5">
       <h3 className="font-bold text-stone-700">🎬 캐스팅 사진 분석</h3>
 
-      {/* 드래그앤드롭 업로드 영역 */}
+      {/* 업로드 영역 */}
       <div
         ref={dropRef}
         onDragOver={e => e.preventDefault()}
@@ -3280,12 +3313,8 @@ function CastingUploadSection({ db }) {
         className="border-2 border-dashed border-stone-200 rounded-xl p-8 text-center cursor-pointer
                    hover:border-amber-300 hover:bg-amber-50/30 transition-colors"
       >
-        <input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={e => handleFile(e.target.files[0])}
-        />
+        <input type="file" accept="image/*" className="hidden"
+               onChange={e => handleFile(e.target.files[0])} />
         {preview ? (
           <img src={preview} alt="미리보기" className="max-h-48 mx-auto rounded-lg object-contain" />
         ) : (
@@ -3300,6 +3329,7 @@ function CastingUploadSection({ db }) {
         <p className="text-xs text-stone-400">{file.name} ({(file.size / 1024).toFixed(0)} KB)</p>
       )}
 
+      {/* 분석 버튼 */}
       <div className="flex items-center gap-3">
         <button
           onClick={analyze}
@@ -3313,57 +3343,77 @@ function CastingUploadSection({ db }) {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
             </svg>
           )}
-          {analyzing ? 'Gemini 분석 중...' : 'Gemini로 분석하기'}
+          {analyzing ? '분석 중...' : 'Gemini로 분석하기'}
         </button>
-        {analyzing && (
-          <span className="text-xs text-stone-400 animate-pulse">이미지를 분석하고 있어요</span>
-        )}
+        {analyzing && <span className="text-xs text-stone-400 animate-pulse">이미지를 분석하고 있어요</span>}
       </div>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {/* 에러 */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
 
       {/* 분석 결과 테이블 */}
-      {rows.length > 0 && (
+      {Array.isArray(rows) && (
         <div className="space-y-3">
-          <p className="text-xs text-stone-500 font-semibold">분석 결과 — 수정 후 저장하세요</p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-stone-100">
-                  {['날짜', '공연명', '배우명', '역할'].map(h => (
-                    <th key={h} className="text-left text-xs font-semibold text-stone-400 pb-2 pr-3">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, i) => (
-                  <tr key={i} className="border-b border-stone-50">
-                    {['date', 'showTitle', 'actorName', 'roleName'].map(field => (
-                      <td key={field} className="py-1.5 pr-3">
-                        <input
-                          value={row[field] ?? ''}
-                          onChange={e => updateRow(i, field, e.target.value)}
-                          className="w-full border border-stone-200 rounded-lg px-2 py-1 text-xs
-                                     focus:outline-none focus:ring-1 focus:ring-amber-300"
-                        />
-                      </td>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-stone-500 font-semibold">
+              분석 결과 {rows.length > 0 ? `— ${rows.length}행, 수정 후 저장하세요` : '— 결과가 없어요'}
+            </p>
+            <button onClick={addRow}
+                    className="text-xs text-amber-600 hover:text-amber-500 font-medium">
+              + 행 추가
+            </button>
+          </div>
+
+          {rows.length > 0 && (
+            <div className="overflow-x-auto rounded-xl border border-stone-100">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-stone-50 border-b border-stone-100">
+                    {['날짜', '공연명', '배우명', '역할', ''].map((h, i) => (
+                      <th key={i} className="text-left text-xs font-semibold text-stone-400 px-3 py-2">{h}</th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {rows.map((row, i) => (
+                    <tr key={i} className="border-b border-stone-50 last:border-0">
+                      {['date', 'showTitle', 'actorName', 'roleName'].map(field => (
+                        <td key={field} className="px-2 py-1.5">
+                          <input
+                            value={row[field] ?? ''}
+                            onChange={e => updateRow(i, field, e.target.value)}
+                            className="w-full border border-stone-200 rounded-lg px-2 py-1 text-xs
+                                       focus:outline-none focus:ring-1 focus:ring-amber-300 bg-white"
+                          />
+                        </td>
+                      ))}
+                      <td className="px-2 py-1.5">
+                        <button onClick={() => removeRow(i)}
+                                className="text-stone-300 hover:text-red-400 text-xs transition-colors">✕</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             <button
               onClick={saveToFirestore}
-              disabled={saving}
+              disabled={saving || !rows.length}
               className="px-5 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold
                          hover:bg-emerald-500 disabled:opacity-40 transition-colors"
             >
               {saving ? '저장 중...' : 'Firestore 저장'}
             </button>
-            {saveMsg && <span className="text-sm text-stone-600">{saveMsg}</span>}
+            {toast && (
+              <span className="text-sm font-medium text-emerald-600 animate-pulse">{toast}</span>
+            )}
           </div>
         </div>
       )}
