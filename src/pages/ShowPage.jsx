@@ -117,10 +117,10 @@ const TEMP_OPTIONS = [
 
 function VenueTemp({ showId }) {
   const { user } = useAuth()
-  const [data,    setData]    = useState(null)   // { cold, mild, hot }
-  const [myVote,  setMyVote]  = useState(null)   // 'cold' | 'mild' | 'hot' | null
-  const [saving,  setSaving]  = useState(false)
-  const [toast,   setToast]   = useState(false)
+  const [data,   setData]   = useState(null)
+  const [myVote, setMyVote] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [toast,  setToast]  = useState(false)
 
   useEffect(() => {
     if (!isFirebaseConfigured || !db) return
@@ -134,8 +134,7 @@ function VenueTemp({ showId }) {
           setMyVote(voted?.key ?? null)
         }
       } else {
-        setData(null)
-        setMyVote(null)
+        setData(null); setMyVote(null)
       }
     })
   }, [showId, user])
@@ -145,28 +144,20 @@ function VenueTemp({ showId }) {
     if (saving) return
     setSaving(true)
     try {
-      const ref = firestoreDoc(db, 'venueTemp', showId)
+      const ref  = firestoreDoc(db, 'venueTemp', showId)
       const snap = await getDoc(ref)
-
       if (!snap.exists()) {
-        // 문서 없으면 초기화 후 투표
-        const init = {
-          cold: { count: 0, voters: [] },
-          mild: { count: 0, voters: [] },
-          hot:  { count: 0, voters: [] },
-        }
+        const init = { cold: { count: 0, voters: [] }, mild: { count: 0, voters: [] }, hot: { count: 0, voters: [] } }
         init[key] = { count: 1, voters: [user.uid] }
         await setDoc(ref, init)
         setMyVote(key)
       } else if (myVote === key) {
-        // 재클릭 → 취소
         await updateDoc(ref, {
           [`${key}.count`]:  Math.max(0, (snap.data()[key]?.count ?? 1) - 1),
           [`${key}.voters`]: arrayRemove(user.uid),
         })
         setMyVote(null)
       } else {
-        // 기존 투표 취소 + 새 투표
         const updates = { [`${key}.count`]: (snap.data()[key]?.count ?? 0) + 1, [`${key}.voters`]: arrayUnion(user.uid) }
         if (myVote) {
           updates[`${myVote}.count`]  = Math.max(0, (snap.data()[myVote]?.count ?? 1) - 1)
@@ -182,68 +173,172 @@ function VenueTemp({ showId }) {
     }
   }
 
-  const total = TEMP_OPTIONS.reduce((s, o) => s + (data?.[o.key]?.count ?? 0), 0)
-
   return (
-    <section className="space-y-3">
-      <p className="text-sm text-stone-500 font-medium">공연장 온도</p>
-
-      {/* 버튼 3개 */}
+    <div className="space-y-2">
       <div className="flex gap-2">
         {TEMP_OPTIONS.map(o => {
-          const count   = data?.[o.key]?.count ?? 0
+          const count    = data?.[o.key]?.count ?? 0
           const isMyVote = myVote === o.key
           return (
             <button
               key={o.key}
               onClick={() => handleVote(o.key)}
               disabled={saving}
-              className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl border
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border
                           text-xs font-medium transition-all ${
                 isMyVote
                   ? 'bg-[#8FAF94]/20 border-[#8FAF94] text-[#2C1810]'
                   : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
               }`}
             >
-              <span className="text-lg">{o.emoji}</span>
+              <span>{o.emoji}</span>
               <span>{o.label}</span>
-              <span className={`text-xs ${isMyVote ? 'text-[#4A6B4F] font-semibold' : 'text-stone-400'}`}>
-                {count}
-              </span>
+              {count > 0 && (
+                <span className={`text-[10px] ${isMyVote ? 'text-[#4A6B4F] font-semibold' : 'text-stone-300'}`}>
+                  {count}
+                </span>
+              )}
             </button>
           )
         })}
       </div>
+      {toast && <p className="text-xs text-center text-[#8FAF94]">로그인 후 투표할 수 있어요</p>}
+    </div>
+  )
+}
 
-      {/* 결과 바 */}
-      {total > 0 && (
-        <div className="space-y-1.5">
-          {TEMP_OPTIONS.map(o => {
-            const count = data?.[o.key]?.count ?? 0
-            const pct   = Math.round((count / total) * 100)
+// ── 공연장 화장실 ─────────────────────────────────
+// Firestore: venueToilet/{showId}
+//   congestion: { very, normal, easy } — 혼잡도
+//   stalls:     { one, two, three, four, fivePlus } — 여성 칸 수
+const CONGESTION_OPTIONS = [
+  { key: 'very',   emoji: '😰', label: '매우 혼잡' },
+  { key: 'normal', emoji: '😅', label: '혼잡' },
+  { key: 'easy',   emoji: '😊', label: '여유' },
+]
+const STALL_OPTIONS = [
+  { key: 'one',     label: '1칸' },
+  { key: 'two',     label: '2칸' },
+  { key: 'three',   label: '3칸' },
+  { key: 'four',    label: '4칸' },
+  { key: 'fivePlus',label: '5칸+' },
+]
+
+function VenueToilet({ showId }) {
+  const { user } = useAuth()
+  const [data,   setData]   = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [toast,  setToast]  = useState(false)
+
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db) return
+    const ref = firestoreDoc(db, 'venueToilet', showId)
+    return onSnapshot(ref, snap => {
+      setData(snap.exists() ? snap.data() : null)
+    })
+  }, [showId])
+
+  function countFor(field, key) { return data?.[field]?.[key]?.count ?? 0 }
+
+  function myVoteFor(field, options) {
+    if (!user) return null
+    return options.find(o => data?.[field]?.[o.key]?.voters?.includes(user.uid))?.key ?? null
+  }
+
+  async function handleVote(field, key) {
+    if (!user) { setToast(true); setTimeout(() => setToast(false), 2000); return }
+    if (saving) return
+    setSaving(true)
+    try {
+      const ref      = firestoreDoc(db, 'venueToilet', showId)
+      const snap     = await getDoc(ref)
+      const cur      = snap.exists() ? snap.data() : {}
+      const fieldMap = cur[field] ?? {}
+      const myKey    = Object.keys(fieldMap).find(k => fieldMap[k]?.voters?.includes(user.uid))
+      const updates  = {}
+      if (myKey === key) {
+        updates[`${field}.${key}.count`]  = Math.max(0, (fieldMap[key]?.count ?? 1) - 1)
+        updates[`${field}.${key}.voters`] = arrayRemove(user.uid)
+      } else {
+        if (myKey) {
+          updates[`${field}.${myKey}.count`]  = Math.max(0, (fieldMap[myKey]?.count ?? 1) - 1)
+          updates[`${field}.${myKey}.voters`] = arrayRemove(user.uid)
+        }
+        updates[`${field}.${key}.count`]  = (fieldMap[key]?.count ?? 0) + 1
+        updates[`${field}.${key}.voters`] = arrayUnion(user.uid)
+      }
+      if (snap.exists()) await updateDoc(ref, updates)
+      else await setDoc(ref, updates)
+    } catch (err) {
+      console.error('화장실 투표 오류:', err)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function VoteGroup({ field, options, label }) {
+    const myVote = myVoteFor(field, options)
+    const total  = options.reduce((s, o) => s + countFor(field, o.key), 0)
+    return (
+      <div className="space-y-2">
+        <p className="text-xs text-stone-400">{label}</p>
+        <div className="flex gap-1.5">
+          {options.map(o => {
+            const count    = countFor(field, o.key)
+            const isMyVote = myVote === o.key
             return (
-              <div key={o.key} className="flex items-center gap-2 text-xs">
-                <span className="w-5 text-center">{o.emoji}</span>
-                <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      o.key === 'cold' ? 'bg-sky-300' : o.key === 'mild' ? 'bg-[#8FAF94]' : 'bg-orange-300'
-                    }`}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <span className="w-8 text-right text-stone-400">{pct}%</span>
-              </div>
+              <button
+                key={o.key}
+                onClick={() => handleVote(field, o.key)}
+                disabled={saving}
+                className={`flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl border
+                            text-xs font-medium transition-all ${
+                  isMyVote
+                    ? 'bg-[#8FAF94]/20 border-[#8FAF94] text-[#2C1810]'
+                    : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+                }`}
+              >
+                {o.emoji && <span className="text-base">{o.emoji}</span>}
+                <span>{o.label}</span>
+                {count > 0 && (
+                  <span className={`text-[10px] ${isMyVote ? 'text-[#4A6B4F] font-semibold' : 'text-stone-300'}`}>
+                    {count}
+                  </span>
+                )}
+              </button>
             )
           })}
         </div>
-      )}
+        {total > 0 && (
+          <div className="space-y-1 pt-0.5">
+            {options.map(o => {
+              const count = countFor(field, o.key)
+              const pct   = Math.round((count / total) * 100)
+              return (
+                <div key={o.key} className="flex items-center gap-2 text-xs">
+                  <span className="w-12 text-right text-stone-400 shrink-0">{o.label}</span>
+                  <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#8FAF94] rounded-full transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <span className="w-8 text-right text-stone-400 shrink-0">{pct}%</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+  }
 
-      {/* 비로그인 토스트 */}
-      {toast && (
-        <p className="text-xs text-center text-[#8FAF94]">로그인 후 투표할 수 있어요</p>
-      )}
-    </section>
+  return (
+    <div className="space-y-4">
+      <VoteGroup field="congestion" options={CONGESTION_OPTIONS} label="혼잡도" />
+      <VoteGroup field="stalls"     options={STALL_OPTIONS}      label="여성 칸 수" />
+      {toast && <p className="text-xs text-center text-[#8FAF94]">로그인 후 투표할 수 있어요</p>}
+    </div>
   )
 }
 
@@ -973,8 +1068,23 @@ export default function ShowPage() {
               )}
             </section>
 
-            {/* 공연장 온도 */}
-            <VenueTemp showId={show.id} />
+            {/* 공연장 정보 (팬들이 함께 채우는 곳) */}
+            <div className="bg-white border border-stone-100 rounded-2xl p-5 space-y-6">
+              <div>
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-4">
+                  공연장 정보 · 팬들이 함께 채워요
+                </p>
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-sm text-stone-500 font-medium mb-3">🌡️ 온도</p>
+                    <VenueTemp showId={show.id} />
+                  </div>
+                  <div className="border-t border-stone-50 pt-5">
+                    <VenueToilet showId={show.id} />
+                  </div>
+                </div>
+              </div>
+            </div>
 
           </div>
         )}

@@ -3300,14 +3300,25 @@ function CastingUploadSection({ db }) {
         <p className="text-xs text-stone-400">{file.name} ({(file.size / 1024).toFixed(0)} KB)</p>
       )}
 
-      <button
-        onClick={analyze}
-        disabled={!file || analyzing}
-        className="px-5 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-semibold
-                   hover:bg-amber-400 disabled:opacity-40 transition-colors"
-      >
-        {analyzing ? '분석 중...' : 'Gemini로 분석하기'}
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={analyze}
+          disabled={!file || analyzing}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-semibold
+                     hover:bg-amber-400 disabled:opacity-40 transition-colors"
+        >
+          {analyzing && (
+            <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+          )}
+          {analyzing ? 'Gemini 분석 중...' : 'Gemini로 분석하기'}
+        </button>
+        {analyzing && (
+          <span className="text-xs text-stone-400 animate-pulse">이미지를 분석하고 있어요</span>
+        )}
+      </div>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
