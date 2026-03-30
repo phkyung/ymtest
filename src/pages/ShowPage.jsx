@@ -110,9 +110,9 @@ function ActorAvatar({ name, imageUrl }) {
 
 // ── 공연장 온도 ───────────────────────────────────
 const TEMP_OPTIONS = [
-  { key: 'cold', emoji: '🥶', label: '추워요' },
-  { key: 'mild', emoji: '🌡️', label: '적당해요' },
   { key: 'hot',  emoji: '🥵', label: '더워요' },
+  { key: 'mild', emoji: '🌡️', label: '적당해요' },
+  { key: 'cold', emoji: '🥶', label: '추워요' },
 ]
 
 function VenueTemp({ showId }) {
@@ -209,19 +209,10 @@ function VenueTemp({ showId }) {
 
 // ── 공연장 화장실 ─────────────────────────────────
 // Firestore: venueToilet/{showId}
-//   congestion: { very, normal, easy } — 혼잡도
-//   stalls:     { one, two, three, four, fivePlus } — 여성 칸 수
-const CONGESTION_OPTIONS = [
-  { key: 'very',   emoji: '😰', label: '매우 혼잡' },
-  { key: 'normal', emoji: '😅', label: '혼잡' },
-  { key: 'easy',   emoji: '😊', label: '여유' },
-]
-const STALL_OPTIONS = [
-  { key: 'one',     label: '1칸' },
-  { key: 'two',     label: '2칸' },
-  { key: 'three',   label: '3칸' },
-  { key: 'four',    label: '4칸' },
-  { key: 'fivePlus',label: '5칸+' },
+//   { hard: {count, voters[]}, easy: {count, voters[]} }
+const TOILET_OPTIONS = [
+  { key: 'hard', emoji: '😰', label: '힘들어요' },
+  { key: 'easy', emoji: '😊', label: '괜찮아요' },
 ]
 
 function VenueToilet({ showId }) {
@@ -238,34 +229,31 @@ function VenueToilet({ showId }) {
     })
   }, [showId])
 
-  function countFor(field, key) { return data?.[field]?.[key]?.count ?? 0 }
+  const myVote = user
+    ? TOILET_OPTIONS.find(o => data?.[o.key]?.voters?.includes(user.uid))?.key ?? null
+    : null
 
-  function myVoteFor(field, options) {
-    if (!user) return null
-    return options.find(o => data?.[field]?.[o.key]?.voters?.includes(user.uid))?.key ?? null
-  }
+  function countFor(key) { return data?.[key]?.count ?? 0 }
 
-  async function handleVote(field, key) {
+  async function handleVote(key) {
     if (!user) { setToast(true); setTimeout(() => setToast(false), 2000); return }
     if (saving) return
     setSaving(true)
     try {
-      const ref      = firestoreDoc(db, 'venueToilet', showId)
-      const snap     = await getDoc(ref)
-      const cur      = snap.exists() ? snap.data() : {}
-      const fieldMap = cur[field] ?? {}
-      const myKey    = Object.keys(fieldMap).find(k => fieldMap[k]?.voters?.includes(user.uid))
-      const updates  = {}
-      if (myKey === key) {
-        updates[`${field}.${key}.count`]  = Math.max(0, (fieldMap[key]?.count ?? 1) - 1)
-        updates[`${field}.${key}.voters`] = arrayRemove(user.uid)
+      const ref  = firestoreDoc(db, 'venueToilet', showId)
+      const snap = await getDoc(ref)
+      const cur  = snap.exists() ? snap.data() : {}
+      const updates = {}
+      if (myVote === key) {
+        updates[`${key}.count`]  = Math.max(0, (cur[key]?.count ?? 1) - 1)
+        updates[`${key}.voters`] = arrayRemove(user.uid)
       } else {
-        if (myKey) {
-          updates[`${field}.${myKey}.count`]  = Math.max(0, (fieldMap[myKey]?.count ?? 1) - 1)
-          updates[`${field}.${myKey}.voters`] = arrayRemove(user.uid)
+        if (myVote) {
+          updates[`${myVote}.count`]  = Math.max(0, (cur[myVote]?.count ?? 1) - 1)
+          updates[`${myVote}.voters`] = arrayRemove(user.uid)
         }
-        updates[`${field}.${key}.count`]  = (fieldMap[key]?.count ?? 0) + 1
-        updates[`${field}.${key}.voters`] = arrayUnion(user.uid)
+        updates[`${key}.count`]  = (cur[key]?.count ?? 0) + 1
+        updates[`${key}.voters`] = arrayUnion(user.uid)
       }
       if (snap.exists()) await updateDoc(ref, updates)
       else await setDoc(ref, updates)
@@ -276,67 +264,55 @@ function VenueToilet({ showId }) {
     }
   }
 
-  function VoteGroup({ field, options, label }) {
-    const myVote = myVoteFor(field, options)
-    const total  = options.reduce((s, o) => s + countFor(field, o.key), 0)
-    return (
-      <div className="space-y-2">
-        <p className="text-xs text-stone-400">{label}</p>
-        <div className="flex gap-1.5">
-          {options.map(o => {
-            const count    = countFor(field, o.key)
-            const isMyVote = myVote === o.key
+  const total = TOILET_OPTIONS.reduce((s, o) => s + countFor(o.key), 0)
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        {TOILET_OPTIONS.map(o => {
+          const count    = countFor(o.key)
+          const isMyVote = myVote === o.key
+          return (
+            <button
+              key={o.key}
+              onClick={() => handleVote(o.key)}
+              disabled={saving}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border
+                          text-xs font-medium transition-all ${
+                isMyVote
+                  ? 'bg-[#8FAF94]/20 border-[#8FAF94] text-[#2C1810]'
+                  : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+              }`}
+            >
+              <span>{o.emoji}</span>
+              <span>{o.label}</span>
+              {count > 0 && (
+                <span className={`text-[10px] ${isMyVote ? 'text-[#4A6B4F] font-semibold' : 'text-stone-300'}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+      {total > 0 && (
+        <div className="space-y-1 pt-0.5">
+          {TOILET_OPTIONS.map(o => {
+            const count = countFor(o.key)
+            const pct   = Math.round((count / total) * 100)
             return (
-              <button
-                key={o.key}
-                onClick={() => handleVote(field, o.key)}
-                disabled={saving}
-                className={`flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl border
-                            text-xs font-medium transition-all ${
-                  isMyVote
-                    ? 'bg-[#8FAF94]/20 border-[#8FAF94] text-[#2C1810]'
-                    : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
-                }`}
-              >
-                {o.emoji && <span className="text-base">{o.emoji}</span>}
-                <span>{o.label}</span>
-                {count > 0 && (
-                  <span className={`text-[10px] ${isMyVote ? 'text-[#4A6B4F] font-semibold' : 'text-stone-300'}`}>
-                    {count}
-                  </span>
-                )}
-              </button>
+              <div key={o.key} className="flex items-center gap-2 text-xs">
+                <span className="w-14 text-right text-stone-400 shrink-0">{o.label}</span>
+                <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#8FAF94] rounded-full transition-all duration-500"
+                       style={{ width: `${pct}%` }} />
+                </div>
+                <span className="w-8 text-right text-stone-400 shrink-0">{pct}%</span>
+              </div>
             )
           })}
         </div>
-        {total > 0 && (
-          <div className="space-y-1 pt-0.5">
-            {options.map(o => {
-              const count = countFor(field, o.key)
-              const pct   = Math.round((count / total) * 100)
-              return (
-                <div key={o.key} className="flex items-center gap-2 text-xs">
-                  <span className="w-12 text-right text-stone-400 shrink-0">{o.label}</span>
-                  <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#8FAF94] rounded-full transition-all duration-500"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <span className="w-8 text-right text-stone-400 shrink-0">{pct}%</span>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-4">
-      <VoteGroup field="congestion" options={CONGESTION_OPTIONS} label="혼잡도" />
-      <VoteGroup field="stalls"     options={STALL_OPTIONS}      label="여성 칸 수" />
+      )}
       {toast && <p className="text-xs text-center text-[#8FAF94]">로그인 후 투표할 수 있어요</p>}
     </div>
   )
