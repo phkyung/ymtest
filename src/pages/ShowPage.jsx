@@ -209,10 +209,11 @@ function VenueTemp({ showId }) {
 
 // ── 공연장 화장실 ─────────────────────────────────
 // Firestore: venueToilet/{showId}
-//   { hard: {count, voters[]}, easy: {count, voters[]} }
+//   { very: {count, voters[]}, normal: {count, voters[]}, easy: {count, voters[]} }
 const TOILET_OPTIONS = [
-  { key: 'hard', emoji: '😰', label: '힘들어요' },
-  { key: 'easy', emoji: '😊', label: '괜찮아요' },
+  { key: 'very',   emoji: '😰', label: '매우혼잡' },
+  { key: 'normal', emoji: '😅', label: '혼잡' },
+  { key: 'easy',   emoji: '😊', label: '여유' },
 ]
 
 function VenueToilet({ showId }) {
@@ -268,6 +269,7 @@ function VenueToilet({ showId }) {
 
   return (
     <div className="space-y-2">
+      <p className="text-sm text-stone-500 font-medium">🚻 화장실</p>
       <div className="flex gap-2">
         {TOILET_OPTIONS.map(o => {
           const count    = countFor(o.key)
