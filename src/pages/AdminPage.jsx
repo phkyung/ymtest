@@ -594,8 +594,10 @@ function parseNamuWiki(text) {
   const seasonLinePrefixRe = new RegExp(`(?:공연\\s*예정\\s*)?(?:${SEASON_NAMES})\\s*[:：]`, 'i')
 
   // 시즌 이름 우선순위 (앞 = 낮음, 뒤 = 높음)
-  const SEASON_ORDER = ['초연','재연','삼연','사연','오연','육연','칠연','팔연','구연','십연','트라이아웃','앵콜']
+  // 트라이아웃/리딩은 정식 공연이 아니므로 목록에서 제외 → rank -1
+  const SEASON_ORDER = ['초연','재연','삼연','사연','오연','육연','칠연','팔연','구연','십연','앵콜']
   function seasonRank(line) {
+    if (/트라이아웃|리딩/.test(line)) return -1
     let best = -1
     for (let r = 0; r < SEASON_ORDER.length; r++) {
       if (line.includes(SEASON_ORDER[r])) best = r
