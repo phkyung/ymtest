@@ -524,12 +524,11 @@ function parseNamuWiki(text) {
 
   function sectionBlockSimple(headerIdx) {
     const collected = []
-    let emptyRun = 0
     for (let i = headerIdx + 1; i < lines.length; i++) {
       const noEdit = linesNoEdit[i]
+      // 다음 섹션 헤더([편집] 포함 줄 또는 숫자. 시작 줄)에서 종료
       if (lines[i].includes('[편집]')) break
       if (/^\d+\./.test(noEdit.trim())) break
-      if (noEdit.trim() === '') { emptyRun++; if (emptyRun >= 2) break } else emptyRun = 0
       collected.push(noEdit)
     }
     return collected.join('\n')
@@ -544,10 +543,6 @@ function parseNamuWiki(text) {
     if (withEdit >= 0) return withEdit
     return lines.reduce((last, l, i) => castKeywordRe.test(l) ? i : last, -1)
   })()
-  const castHeaderLine = castHeaderIdx >= 0 ? lines[castHeaderIdx] : null
-  console.log('[CAST2] 찾은 헤더:', JSON.stringify(castHeaderLine))
-  console.log('[CAST2] 헤더 idx:', castHeaderIdx)
-  console.log('[CAST2] 이후 10줄:', lines.slice(castHeaderIdx, castHeaderIdx + 10))
   let castText = ''
   if (castHeaderIdx >= 0) {
     const castNum = lines[castHeaderIdx].match(/^(\d+)\./)?.[1] ?? null
