@@ -503,25 +503,34 @@ function parseNamuWiki(text) {
       .replace(/^[\t ]+|[\t ]+$/g, '')
   }
 
+  // 추출된 시놉시스 블록 전체에 적용하는 필터
+  function cleanSynText(syn) {
+    syn = syn.replace(/이\s*문서에\s*스포일러[\s\S]*/i, '')
+    // 유튜브/영상/URL/제작사 홍보 줄 제거
+    syn = syn.replace(/^.*(?:링크픽|넘버\s*영상|공개|예고편|티저|구독자?|YouTube|youtu\.|다음에서\s*보기|TRAILER|http|www\.|콘텐츠합|CONTENTS\s*HAAP)[^\n]*$/gim, '')
+    // 영어 대문자로만 된 줄 제거 (VAL] SPECIAL TRAILER 류)
+    syn = syn.replace(/^[A-Z\s\[\]!?&|,.\-_'"]+$/gm, '')
+    syn = syn.replace(/\n{3,}/g, '\n\n').trim()
+    return syn
+  }
+
   function synopsisBlock(headerIdx) {
     const collected = []
 
-    // ① 헤더 줄 자체에 탭+내용 인용구 형태인 경우 포함
-    //    예: "2. 시놉시스[편집]\t1907년 봄..." 또는 헤더 아래 탭줄
+    // 헤더 줄 자체에 탭+내용 인용구가 있으면 포함
     const headerLineClean = cleanSynLine(lines[headerIdx])
-    // 섹션 번호·제목 제거 후 남은 내용
     const headerContent = headerLineClean.replace(/^\d+[\.\d]*\s*[가-힣a-zA-Z\s]*/, '').trim()
     if (headerContent.length > 5) collected.push(headerContent)
 
     for (let i = headerIdx + 1; i < lines.length; i++) {
       const raw    = lines[i]
       const noEdit = linesNoEdit[i]
-      // [편집] 포함 줄 → 종료 (다음 섹션 헤더)
+      // [편집] 포함 줄 → 다음 섹션 헤더이므로 종료
       if (raw.includes('[편집]')) break
       // "숫자." 으로 시작하는 섹션/하위섹션 헤더 → 종료
       if (/^\d+\./.test(noEdit.trim())) break
-      const cleaned = cleanSynLine(raw)
-      collected.push(cleaned)
+      // 빈 줄 포함 그대로 수집 (내용 중간의 단락 구분 보존)
+      collected.push(cleanSynLine(raw))
     }
     return collected.join('\n')
   }
@@ -545,9 +554,7 @@ function parseNamuWiki(text) {
       syn = preClean(synopsisBlock(synHeaderIdx))
     }
 
-    syn = syn.replace(/이\s*문서에\s*스포일러[\s\S]*/i, '')
-    syn = syn.replace(/^.*(?:링크픽|넘버\s*영상|공개|예고편|티저)[^\n]*$/gm, '')
-    syn = syn.replace(/\n{3,}/g, '\n\n').trim()
+    syn = cleanSynText(syn)
     if (syn.length > 10) result.synopsis = syn
   }
 
@@ -555,10 +562,7 @@ function parseNamuWiki(text) {
   if (!result.synopsis) {
     const overviewHeaderIdx = lines.findIndex(l => /개요/.test(l))
     if (overviewHeaderIdx >= 0) {
-      let ov = preClean(synopsisBlock(overviewHeaderIdx))
-      ov = ov.replace(/이\s*문서에\s*스포일러[\s\S]*/i, '')
-      ov = ov.replace(/^.*(?:링크픽|넘버\s*영상|공개|예고편|티저)[^\n]*$/gm, '')
-      ov = ov.replace(/\n{3,}/g, '\n\n').trim()
+      let ov = cleanSynText(preClean(synopsisBlock(overviewHeaderIdx)))
       if (ov.length > 10) result.synopsis = ov
     }
   }
@@ -618,34 +622,43 @@ function parseNamuWiki(text) {
 
   // ── 3. 공연장/기간: 가장 마지막 날짜 패턴 ──
   const seasonPrefixRe = /^(?:공연\s*예정\s*)?(?:초연|재연|삼연|사연|오연|트라이아웃|앵콜\s*공연?|앵콜|[0-9]+(?:st|nd|rd|th)\s*시즌)\s*[:：]?\s*/i
+
+  // 한글 날짜 형식 "YYYY년 M월 D일 ~ YYYY년 M월 D일" → 점 형식으로 정규화
+  const normalizeKoreanDates = s =>
+    s.replace(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/g, (_, y, m, d) => `${y}.${m}.${d}`)
+
   // 날짜: YYYY.MM.DD 또는 YYYY. MM. DD (공백 포함)
   const dateRegex = /(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?\s*[~～\-]\s*(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?/g
   // 공연장 키워드: 극장·홀·센터·아트·관·당·극 + 공연 장소
   const venueKeywords = /(?:극장|아트홀|아트센터|아트|씨어터|씨어타|theater|theatre|센터|공연\s*장소|공연장|NOL|유니플렉스|TOM(?!\s*\d)|KT&G|상상마당|자유극장|두산|연강홀|홍익대|예술의전당|CJ|토월|코엑스|아티움|국립|[가-힣]{1,10}[홀관당극])/i
   const removeDatePat  = /\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.?\s*[~～\-]\s*\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.?/g
 
-  const dateMatches = [...textNoEdit.matchAll(dateRegex)]
+  // 한글 날짜 정규화 후 매칭
+  const normalizedText = normalizeKoreanDates(textNoEdit)
+  const dateMatches = [...normalizedText.matchAll(dateRegex)]
   if (dateMatches.length > 0) {
     const last = dateMatches[dateMatches.length - 1]
     const pad = n => String(n).padStart(2, '0')
     const startDate = `${last[1]}-${pad(last[2])}-${pad(last[3])}`
     const endDate   = `${last[4]}-${pad(last[5])}-${pad(last[6])}`
 
-    // 날짜가 있는 줄 인덱스 찾기
+    // 날짜가 있는 줄 인덱스 찾기 (normalizedText 기준 offset)
+    const normLines = normalizedText.split('\n')
     let dateLine = ''
     let dateLineIdx = -1
     let charCount = 0
-    for (let i = 0; i < linesNoEdit.length; i++) {
-      if (charCount + linesNoEdit[i].length >= last.index) { dateLineIdx = i; dateLine = linesNoEdit[i]; break }
-      charCount += linesNoEdit[i].length + 1
+    for (let i = 0; i < normLines.length; i++) {
+      if (charCount + normLines[i].length >= last.index) { dateLineIdx = i; dateLine = normLines[i]; break }
+      charCount += normLines[i].length + 1
     }
 
     let venue = null
 
-    // 헬퍼: 줄에서 날짜·prefix·괄호 제거 후 공연장 후보 반환
+    // 헬퍼: 줄에서 날짜·각주·prefix·괄호 제거 후 공연장 후보 반환
     const extractVenue = line => {
-      const c = preClean(line)
+      const c = preClean(normalizeKoreanDates(line))
         .replace(removeDatePat, '')
+        .replace(/\[\d+\]/g, '')          // 각주 [1][2] 제거
         .replace(seasonPrefixRe, '')
         .replace(/[|\[\]]/g, '')
         .trim()
@@ -670,9 +683,9 @@ function parseNamuWiki(text) {
     // ③ 앞 3줄 내에서 탐색
     if (!venue && dateLineIdx >= 0) {
       for (let i = Math.max(0, dateLineIdx - 3); i <= dateLineIdx; i++) {
-        const v = extractVenue(linesNoEdit[i])
+        const v = extractVenue(normLines[i] ?? '')
         if (v) {
-          const nextLine = linesNoEdit[i + 1] ? preClean(linesNoEdit[i + 1]).trim() : ''
+          const nextLine = normLines[i + 1] ? preClean(normLines[i + 1]).trim() : ''
           const isHallLine = nextLine && !venueKeywords.test(nextLine) &&
                              /[관동홀층]$/.test(nextLine) && nextLine.length <= 20
           venue = isHallLine ? `${v} ${nextLine}`.replace(/\s+/g, ' ') : v
@@ -687,7 +700,7 @@ function parseNamuWiki(text) {
   // ── 4. 관람시간 ──
   // "관람 시간: " 뒤 내용이 없으면 추출하지 않음
   const runtimeMatch =
-    textNoEdit.match(/(?:관람\s*시간|러닝\s*타임|상연\s*시간)\s*[:：]\s*(?:총\s*)?(\d{2,3})\s*분/) ??
+    textNoEdit.match(/(?:관람\s*시간|관람시간|러닝\s*타임|러닝타임|상연\s*시간)\s*[:：]\s*(?:총\s*)?(\d{2,3})\s*분/) ??
     textNoEdit.match(/(\d{2,3})\s*분\s*(?:\[\d+\])?\s*\(?\s*인터미션/) ??
     textNoEdit.match(/총\s*(\d{2,3})\s*분/)
   if (runtimeMatch) result.runtime = parseInt(runtimeMatch[1])
