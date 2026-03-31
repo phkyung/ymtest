@@ -499,9 +499,11 @@ function parseNamuWiki(text) {
 
     const collected = []
     for (let i = synBodyStart + 1; i < lines.length; i++) {
-      const cl = cleanLine(lines[i])
+      const raw = lines[i]
+      if (/이\s*문서에\s*스포일러/i.test(raw)) break   // 스포일러 경고 줄 이전까지
+      const cl = cleanLine(raw).replace(/\[스포\]/g, '')
       if (/^\d+\./.test(cl)) break
-      if (/구독자?|YouTube|youtu\.|TRAILER|http|www\.|다음에서\s*보기|이\s*문서에\s*스포일러/i.test(cl)) continue
+      if (/구독자?|YouTube|youtu\.|TRAILER|http|www\.|다음에서\s*보기/i.test(cl)) continue
       if (/^[A-Z\s\[\]!?&|,.\-_'"]+$/.test(cl) && cl.trim().length > 0) continue
       collected.push(cl)
     }
@@ -515,9 +517,11 @@ function parseNamuWiki(text) {
     if (ovIdx >= 0) {
       const collected = []
       for (let i = ovIdx + 1; i < lines.length; i++) {
-        const cl = cleanLine(lines[i])
+        const raw = lines[i]
+        if (/이\s*문서에\s*스포일러/i.test(raw)) break
+        const cl = cleanLine(raw).replace(/\[스포\]/g, '')
         if (/^\d+\./.test(cl)) break
-        if (/구독자?|YouTube|youtu\.|TRAILER|http|www\.|이\s*문서에\s*스포일러/i.test(cl)) continue
+        if (/구독자?|YouTube|youtu\.|TRAILER|http|www\./i.test(cl)) continue
         collected.push(cl)
       }
       const ov = collected.join('\n').replace(/\n{3,}/g, '\n\n').trim()
@@ -571,7 +575,7 @@ function parseNamuWiki(text) {
   }
   if (castText) {
     const castItems = []
-    for (const m of castText.matchAll(/^[*\-\s]*([^:\|\n]{1,25}?)\s*(?::\s*|\s*\|\s*)(.+)$/gm)) {
+    for (const m of castText.matchAll(/^[*\s]*([^:\|\-\n]{1,25}?)\s*(?::\s*|\s*\|\s*|\s+-\s*)(.+)$/gm)) {
       const roleName = m[1].replace(/^\s*[-*]\s*/, '').trim()
       if (!roleName || /^\d+$/.test(roleName)) continue
       const actors = m[2].trim().split(/[,，/]/)
@@ -590,51 +594,24 @@ function parseNamuWiki(text) {
   const seasonPrefixRe = new RegExp(`(?:공연\\s*예정\\s*)?(?:${SEASON_NAMES})\\s*[:：]?\\s*`, 'gi')
   const seasonLinePrefixRe = new RegExp(`(?:공연\\s*예정\\s*)?(?:${SEASON_NAMES})\\s*[:：]`, 'i')
 
-  // 날짜 파싱 헬퍼: 줄에서 첫 번째 날짜(YYYY.M.D) 추출 → Date 객체
-  function extractDate(line) {
-    const norm = line.replace(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/g, '$1.$2.$3')
-    const m = norm.match(/(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/)
-    if (!m) return null
-    return new Date(+m[1], +m[2] - 1, +m[3])
-  }
-
-  // ① 시즌 prefix("초연:", "재연:", "육연:" 등) 있는 줄에서 공연장+날짜 수집
-  //    날짜 기준 가장 최근 항목 사용 (날짜 없으면 텍스트 순서 마지막)
+  // ① 시즌 prefix("초연:", "재연:", "육연:" 등) 있는 줄 중 가장 마지막 것 사용
   const seasonVenueLines = lines
     .map((l, i) => ({ l, i }))
     .filter(({ l }) => seasonLinePrefixRe.test(l))
 
   if (seasonVenueLines.length > 0) {
-    // 각 시즌라인에서 (venue, date) 쌍 수집
-    const candidates = []
-    for (const { l, i } of seasonVenueLines) {
-      let venue = null
+    // 시즌 prefix 줄 중 가장 마지막(텍스트 순서) 것부터 역순으로 탐색
+    for (let k = seasonVenueLines.length - 1; k >= 0; k--) {
+      const { i } = seasonVenueLines[k]
       for (let j = i; j <= Math.min(i + 2, lines.length - 1); j++) {
         const v = cleanLine(lines[j])
           .replace(seasonPrefixRe, '')
           .replace(/공연\s*장소|공연장/g, '')
           .replace(/\s+/g, ' ')
           .trim()
-        if (v && venueKeywords.test(v)) { venue = v; break }
+        if (v && venueKeywords.test(v)) { result._venue = v; break }
       }
-      if (!venue) continue
-      // 날짜: 해당 줄 + 다음 5줄 범위에서 탐색
-      let date = null
-      for (let j = i; j <= Math.min(i + 5, lines.length - 1); j++) {
-        date = extractDate(lines[j])
-        if (date) break
-      }
-      candidates.push({ venue, date, order: i })
-    }
-    if (candidates.length > 0) {
-      // 날짜 있는 항목 중 가장 최근 날짜 우선; 날짜 없으면 가장 뒤 순서
-      const withDate = candidates.filter(c => c.date)
-      if (withDate.length > 0) {
-        withDate.sort((a, b) => b.date - a.date)
-        result._venue = withDate[0].venue
-      } else {
-        result._venue = candidates[candidates.length - 1].venue
-      }
+      if (result._venue) break
     }
   }
 
