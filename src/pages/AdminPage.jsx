@@ -287,8 +287,8 @@ function CastEditSection({ cast, onChange }) {
         <div className="border border-stone-200 rounded-xl overflow-hidden divide-y divide-stone-100">
           {actorResults.map(actor => {
             const wikiImg = wikiImages[actor.id]
-            const imgSrc  = actor.imageUrl ||
-              (wikiImg && wikiImg !== 'loading' && wikiImg !== 'none' ? wikiImg : null)
+            const imgSrc  = toHttps(actor.imageUrl ||
+              (wikiImg && wikiImg !== 'loading' && wikiImg !== 'none' ? wikiImg : null))
             const dupLabel = getDuplicateLabel(actor, actorResults)
             return (
               <button
@@ -769,7 +769,7 @@ function PendingRow({ show, selected, onSelect, onEdit, onApprove, onReject, ris
                       flex items-center justify-center my-1.5">
         {show.imageUrl ? (
           <img
-            src={show.imageUrl}
+            src={toHttps(show.imageUrl)}
             alt={show.title}
             className="w-full h-full object-cover"
             onError={e => { e.target.style.display = 'none' }}
@@ -1462,7 +1462,7 @@ function PendingActorCard({ pending, onApprove, onReject }) {
         <div className="w-20 h-24 rounded-xl overflow-hidden bg-stone-100 shrink-0
                         flex items-center justify-center border border-stone-200">
           {displayUrl ? (
-            <img src={displayUrl} alt={pending.actorName}
+            <img src={toHttps(displayUrl)} alt={pending.actorName}
                  className="w-full h-full object-cover"
                  onError={e => { e.target.style.display = 'none' }} />
           ) : (
@@ -2940,7 +2940,7 @@ export default function AdminPage() {
                             title="클릭하면 URL 입력칸으로 이동"
                           >
                             {currentUrl ? (
-                              <img src={currentUrl} alt={actor.name}
+                              <img src={toHttps(currentUrl)} alt={actor.name}
                                    className="w-full h-full object-cover"
                                    onError={e => { e.target.style.display = 'none' }} />
                             ) : (
@@ -3192,6 +3192,7 @@ function CastingUploadSection({ db, showsList = [] }) {
   const [saving,         setSaving]         = useState(false)
   const [toast,          setToast]          = useState('')
   const [error,          setError]          = useState('')
+  const [rawResponse,    setRawResponse]    = useState('')   // Worker 원본 응답
   const [selectedShowId, setSelectedShowId] = useState('')
   const dropRef = useRef(null)
 
@@ -3232,6 +3233,7 @@ function CastingUploadSection({ db, showsList = [] }) {
     if (!file) return
     setAnalyzing(true)
     setError('')
+    setRawResponse('')
     setRows(null)
     setToast('')
     try {
@@ -3251,18 +3253,16 @@ function CastingUploadSection({ db, showsList = [] }) {
         body:    JSON.stringify(body),
       })
       const text = await res.text()
+      setRawResponse(text)
       if (!res.ok) throw new Error(`Worker 오류 ${res.status}: ${text.slice(0, 200)}`)
       let data
-      try { data = JSON.parse(text) } catch { throw new Error(`응답 파싱 실패: ${text.slice(0, 200)}`) }
-      console.log('[Casting Worker 응답]', data)
+      try { data = JSON.parse(text) } catch { throw new Error(`JSON 파싱 실패`) }
       const extracted = extractRows(data)
-      // 각 항목에 기본 필드 보장
       const normalized = extracted.map(r => ({
-        date:       r.date      ?? '',
-        // 공연 선택 시 공연명 자동 채움
-        showTitle:  r.showTitle ?? r.show_title ?? r.title ?? selectedShow?.title ?? '',
-        actorName:  r.actorName ?? r.actor_name ?? r.actor ?? '',
-        roleName:   r.roleName  ?? r.role_name  ?? r.role  ?? '',
+        date:      r.date      ?? '',
+        showTitle: r.showTitle ?? r.show_title ?? r.title ?? selectedShow?.title ?? '',
+        actorName: r.actorName ?? r.actor_name ?? r.actor ?? '',
+        roleName:  r.roleName  ?? r.role_name  ?? r.role  ?? '',
       }))
       setRows(normalized)
     } catch (e) {
@@ -3392,12 +3392,23 @@ function CastingUploadSection({ db, showsList = [] }) {
         </div>
       )}
 
+      {/* Worker 원본 응답 (rows가 비거나 에러 시 항상 표시) */}
+      {rawResponse && (Array.isArray(rows) && rows.length === 0 || error) && (
+        <div className="space-y-1">
+          <p className="text-xs font-semibold text-stone-400">Worker 원본 응답</p>
+          <pre className="bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-xs text-stone-600
+                          overflow-x-auto whitespace-pre-wrap break-all">
+            {rawResponse}
+          </pre>
+        </div>
+      )}
+
       {/* 분석 결과 테이블 */}
       {Array.isArray(rows) && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-xs text-stone-500 font-semibold">
-              분석 결과 {rows.length > 0 ? `— ${rows.length}행, 수정 후 저장하세요` : '— 결과가 없어요'}
+              분석 결과 — {rows.length}행{rows.length > 0 ? ', 수정 후 저장하세요' : ''}
             </p>
             <button onClick={addRow}
                     className="text-xs text-amber-600 hover:text-amber-500 font-medium">
