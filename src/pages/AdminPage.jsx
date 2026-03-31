@@ -727,8 +727,24 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
         <NamuWikiModal onClose={() => setNamuOpen(false)} onApply={handleNamuApply} />
       )}
 
-      {/* ── 나무위키 파싱 버튼 ── */}
-      <div className="flex justify-end">
+      {/* ── 나무위키 버튼들 ── */}
+      <div className="flex justify-end gap-2">
+        {draft.title && (() => {
+          const cleanTitle = (draft.title ?? '').replace(/\s*\[[^\]]*\]\s*/g, '').trim()
+          const suffix = draft.genre === '연극' ? '(연극)' : '(뮤지컬)'
+          const url = `https://namu.wiki/w/${encodeURIComponent(cleanTitle + suffix)}`
+          return (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700
+                         hover:bg-emerald-100 font-semibold transition-colors border border-emerald-200"
+            >
+              📋 나무위키에서 검색 →
+            </a>
+          )
+        })()}
         <button
           type="button"
           onClick={() => setNamuOpen(true)}
