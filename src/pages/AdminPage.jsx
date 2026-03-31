@@ -544,6 +544,10 @@ function parseNamuWiki(text) {
     if (withEdit >= 0) return withEdit
     return lines.reduce((last, l, i) => castKeywordRe.test(l) ? i : last, -1)
   })()
+  const castHeaderLine = castHeaderIdx >= 0 ? lines[castHeaderIdx] : null
+  console.log('[CAST2] 찾은 헤더:', JSON.stringify(castHeaderLine))
+  console.log('[CAST2] 헤더 idx:', castHeaderIdx)
+  console.log('[CAST2] 이후 10줄:', lines.slice(castHeaderIdx, castHeaderIdx + 10))
   let castText = ''
   if (castHeaderIdx >= 0) {
     const castNum = lines[castHeaderIdx].match(/^(\d+)\./)?.[1] ?? null
