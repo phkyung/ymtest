@@ -467,12 +467,15 @@ function parseNamuWiki(text) {
   }
 
   // ── 1. 시놉시스 ──
-  // [편집] 포함된 줄 우선 (본문 헤더), 없으면 마지막 "시놉시스" 줄 사용
-  const synHeaderIdx =
-    lines.findIndex(l => /시놉시스/.test(l) && l.includes('[편집]')) >= 0
-      ? lines.findIndex(l => /시놉시스/.test(l) && l.includes('[편집]'))
-      : lines.reduce((last, l, i) => /시놉시스/.test(l) ? i : last, -1)
-  const synStartIdx  = synHeaderIdx >= 0 ? synHeaderIdx : -1
+  // [편집] 포함된 줄 우선 (본문 헤더), 없으면 마지막 "시놉시스/줄거리" 줄 사용
+  function findSynHeader(keyword) {
+    const withEdit = lines.findIndex(l => l.includes(keyword) && l.includes('[편집]'))
+    if (withEdit >= 0) return withEdit
+    return lines.reduce((last, l, i) => l.includes(keyword) ? i : last, -1)
+  }
+  let synHeaderIdx = findSynHeader('시놉시스')
+  if (synHeaderIdx < 0) synHeaderIdx = findSynHeader('줄거리')
+  const synStartIdx = synHeaderIdx
 
   if (synStartIdx >= 0) {
     // 시놉시스 섹션 번호 파악 (예: "2. 시놉시스" → "2")
@@ -508,7 +511,7 @@ function parseNamuWiki(text) {
 
   // 시놉시스 실패 시 "개요" 섹션으로 fallback
   if (!result.synopsis) {
-    const ovIdx = lines.findIndex(l => /개요/.test(l))
+    const ovIdx = lines.findIndex(l => l.includes('개요'))
     if (ovIdx >= 0) {
       const collected = []
       for (let i = ovIdx + 1; i < lines.length; i++) {
@@ -543,7 +546,7 @@ function parseNamuWiki(text) {
   const stripLinks = s => s.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2').replace(/\[\[([^\]]+)\]\]/g, '$1')
   const preClean   = s => stripLinks(s).replace(/\[\d+\]/g, '').replace(/\{\{\{[^}]*\}\}\}/g, '').replace(/\{\{\{|\}\}\}/g, '')
 
-  const castHeaderIdx = lines.findIndex(l => /(?:캐스트|출연진)/.test(l))
+  const castHeaderIdx = lines.findIndex(l => /(?:캐스트|출연진|캐스팅)/.test(l))
   let castText = ''
   if (castHeaderIdx >= 0) {
     const castNum = lines[castHeaderIdx].match(/^(\d+)\./)?.[1] ?? null
@@ -559,7 +562,9 @@ function parseNamuWiki(text) {
       castText = preClean(sectionBlockSimple(castHeaderIdx))
     }
   } else if (allSubSections.length > 0) {
-    const last = allSubSections[allSubSections.length - 1]
+    // "YYYY년" 포함된 하위섹션 우선; 없으면 마지막 하위섹션
+    const yearSubs = allSubSections.filter(m => /\d{4}년/.test(m[0]))
+    const last = yearSubs.length > 0 ? yearSubs[yearSubs.length - 1] : allSubSections[allSubSections.length - 1]
     const startIdx = last.index + last[0].length
     const nextMatch = textNoEdit.slice(startIdx).match(/^\d+\.\d*\.?\s+\S/m)
     castText = preClean(textNoEdit.slice(startIdx, nextMatch ? startIdx + nextMatch.index : textNoEdit.length))
@@ -581,24 +586,56 @@ function parseNamuWiki(text) {
 
   // ── 3. 공연장 ──
   const venueKeywords = /(?:극장|아트홀|아트센터|아트|씨어터|씨어타|theater|theatre|센터|공연\s*장소|공연장|NOL|유니플렉스|TOM(?!\s*\d)|KT&G|상상마당|자유극장|두산|연강홀|홍익대|예술의전당|CJ|토월|코엑스|아티움|국립|[가-힣]{1,10}[홀관당극])/i
-  const seasonPrefixRe = /(?:공연\s*예정\s*)?(?:초연|재연|삼연|사연|오연|트라이아웃|앵콜\s*공연?|앵콜)\s*[:：]?\s*/gi
+  const SEASON_NAMES = '초연|재연|삼연|사연|오연|육연|칠연|팔연|구연|십연|트라이아웃|앵콜\\s*공연?|앵콜'
+  const seasonPrefixRe = new RegExp(`(?:공연\\s*예정\\s*)?(?:${SEASON_NAMES})\\s*[:：]?\\s*`, 'gi')
+  const seasonLinePrefixRe = new RegExp(`(?:공연\\s*예정\\s*)?(?:${SEASON_NAMES})\\s*[:：]`, 'i')
 
-  // ① 시즌 prefix("초연:", "재연:" 등) 있는 줄 중 가장 마지막에서 공연장 추출
-  const seasonLinePrefixRe = /(?:공연\s*예정\s*)?(?:초연|재연|삼연|사연|오연|트라이아웃|앵콜\s*공연?|앵콜)\s*[:：]/i
+  // 날짜 파싱 헬퍼: 줄에서 첫 번째 날짜(YYYY.M.D) 추출 → Date 객체
+  function extractDate(line) {
+    const norm = line.replace(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/g, '$1.$2.$3')
+    const m = norm.match(/(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/)
+    if (!m) return null
+    return new Date(+m[1], +m[2] - 1, +m[3])
+  }
+
+  // ① 시즌 prefix("초연:", "재연:", "육연:" 등) 있는 줄에서 공연장+날짜 수집
+  //    날짜 기준 가장 최근 항목 사용 (날짜 없으면 텍스트 순서 마지막)
   const seasonVenueLines = lines
     .map((l, i) => ({ l, i }))
     .filter(({ l }) => seasonLinePrefixRe.test(l))
-  for (let k = seasonVenueLines.length - 1; k >= 0; k--) {
-    const { l, i } = seasonVenueLines[k]
-    for (let j = i; j <= Math.min(i + 2, lines.length - 1); j++) {
-      const v = cleanLine(lines[j])
-        .replace(seasonPrefixRe, '')
-        .replace(/공연\s*장소|공연장/g, '')
-        .replace(/\s+/g, ' ')
-        .trim()
-      if (v && venueKeywords.test(v)) { result._venue = v; break }
+
+  if (seasonVenueLines.length > 0) {
+    // 각 시즌라인에서 (venue, date) 쌍 수집
+    const candidates = []
+    for (const { l, i } of seasonVenueLines) {
+      let venue = null
+      for (let j = i; j <= Math.min(i + 2, lines.length - 1); j++) {
+        const v = cleanLine(lines[j])
+          .replace(seasonPrefixRe, '')
+          .replace(/공연\s*장소|공연장/g, '')
+          .replace(/\s+/g, ' ')
+          .trim()
+        if (v && venueKeywords.test(v)) { venue = v; break }
+      }
+      if (!venue) continue
+      // 날짜: 해당 줄 + 다음 5줄 범위에서 탐색
+      let date = null
+      for (let j = i; j <= Math.min(i + 5, lines.length - 1); j++) {
+        date = extractDate(lines[j])
+        if (date) break
+      }
+      candidates.push({ venue, date, order: i })
     }
-    if (result._venue) break
+    if (candidates.length > 0) {
+      // 날짜 있는 항목 중 가장 최근 날짜 우선; 날짜 없으면 가장 뒤 순서
+      const withDate = candidates.filter(c => c.date)
+      if (withDate.length > 0) {
+        withDate.sort((a, b) => b.date - a.date)
+        result._venue = withDate[0].venue
+      } else {
+        result._venue = candidates[candidates.length - 1].venue
+      }
+    }
   }
 
   // ② prefix 없으면 "공연장"/"공연 장소" 포함 줄 + 다음 줄까지 탐색
