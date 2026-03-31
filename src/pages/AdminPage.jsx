@@ -3182,7 +3182,7 @@ function CastingTab({ db, showsList }) {
 
 
 // ── [섹션 1] 캐스팅 사진 분석 ──────────────────
-const WORKER_URL = 'https://playpick-ai.merhen08.workers.dev/casting'
+const WORKER_URL = 'https://playpick-ai-v2.merhen08.workers.dev/casting'
 
 function CastingUploadSection({ db, showsList = [] }) {
   const [file,           setFile]           = useState(null)
