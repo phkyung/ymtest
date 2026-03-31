@@ -402,6 +402,68 @@ function CastSection({ cast, showId, actorIdMap }) {
   )
 }
 
+// ── 정보 탭 출연진 그리드 ────────────────────────────
+function CastGrid({ cast, actorIdMap }) {
+  const enriched = cast.map(m => ({
+    ...m,
+    resolvedId: actorIdMap[m.actorName] || m.actorId || null,
+  }))
+
+  // 역할별 그룹핑
+  const groups = []
+  const groupMap = {}
+  enriched.forEach(m => {
+    const role = m.roleName?.trim() || '출연'
+    if (!groupMap[role]) { groupMap[role] = []; groups.push(role) }
+    groupMap[role].push(m)
+  })
+
+  return (
+    <div className="space-y-4">
+      {groups.map(role => (
+        <div key={role}>
+          <p className="text-xs font-semibold text-stone-400 mb-2">{role}</p>
+          <div className="flex flex-wrap gap-3">
+            {groupMap[role].map((m, idx) => {
+              const card = (
+                <div className="flex flex-col items-center gap-1 w-14">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-[#2C1810]
+                                  flex items-center justify-center shrink-0">
+                    {m.imageUrl ? (
+                      <img
+                        src={toHttps(m.imageUrl)}
+                        alt={m.actorName}
+                        className="w-full h-full object-cover"
+                        onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }}
+                      />
+                    ) : null}
+                    <span className={`text-white text-sm font-semibold ${m.imageUrl ? 'hidden' : 'flex'} items-center justify-center w-full h-full`}>
+                      {m.actorName?.[0] ?? '?'}
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-stone-600 text-center leading-tight line-clamp-1 w-full text-center">
+                    {m.actorName}
+                  </span>
+                  {m.isDouble && (
+                    <span className="text-[9px] text-stone-400 -mt-0.5">더블</span>
+                  )}
+                </div>
+              )
+              return m.resolvedId ? (
+                <Link key={idx} to={`/actors/${m.resolvedId}`}>
+                  {card}
+                </Link>
+              ) : (
+                <div key={idx}>{card}</div>
+              )
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── 날짜별 후기 탭 ────────────────────────────────
 function ReviewTab({ show, actorIdMap }) {
   const { user, signIn } = useAuth()
@@ -940,7 +1002,6 @@ export default function ShowPage() {
         <div className="flex min-w-max">
           {[
             { key: 'info',    label: '정보' },
-            { key: 'cast',    label: `출연진${show.cast?.length ? ` ${show.cast.length}` : ''}` },
             { key: 'archive', label: '노선' },
             { key: 'review',  label: '날짜별 후기' },
           ].map(t => (
@@ -965,6 +1026,8 @@ export default function ShowPage() {
         {/* 정보 탭 */}
         {tab === 'info' && (
           <div className="space-y-6">
+
+            {/* 1. 시놉시스 */}
             <section>
               <h2 className="font-display text-lg text-[#2C1810] mb-3">작품 소개</h2>
               {show.synopsis ? (
@@ -984,6 +1047,14 @@ export default function ShowPage() {
                 <p className="text-stone-400 text-sm">작품 소개가 준비 중입니다.</p>
               )}
             </section>
+
+            {/* 2. 출연진 */}
+            {show.cast?.length > 0 && (
+              <section>
+                <h2 className="font-display text-lg text-[#2C1810] mb-3">출연진</h2>
+                <CastGrid cast={show.cast} actorIdMap={actorIdMap} />
+              </section>
+            )}
 
             {/* 이 공연의 성격 (showTags) */}
             {(show.showTags?.length > 0 || show.topKeywords?.length > 0) && (
@@ -1035,6 +1106,7 @@ export default function ShowPage() {
               </section>
             )}
 
+            {/* 3. 공연장/기간/상연시간 */}
             <section className="bg-[#FAF8F5] rounded-2xl p-5 space-y-3 text-sm">
               {show.venue && (
                 <div className="flex gap-3">
@@ -1059,7 +1131,7 @@ export default function ShowPage() {
               )}
             </section>
 
-            {/* 공연장 정보 (팬들이 함께 채우는 곳) */}
+            {/* 4. 공연장 정보 (온도/화장실) */}
             <div className="bg-white border border-stone-100 rounded-2xl p-5 space-y-6">
               <div>
                 <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-4">
@@ -1077,23 +1149,12 @@ export default function ShowPage() {
               </div>
             </div>
 
-          </div>
-        )}
+            {/* 5. 댓글 */}
+            <section className="bg-white border border-stone-100 rounded-2xl p-5">
+              <CommentSection targetId={show.id} targetType="show" />
+            </section>
 
-        {/* 출연진 탭 */}
-        {tab === 'cast' && (
-          show.cast?.length > 0 ? (
-            <CastSection
-              cast={show.cast}
-              showId={show.id}
-              actorIdMap={actorIdMap}
-            />
-          ) : (
-            <div className="text-center py-16 text-stone-300">
-              <p className="text-3xl mb-2">👥</p>
-              <p className="text-sm text-stone-400">등록된 출연진 정보가 없습니다</p>
-            </div>
-          )
+          </div>
         )}
 
         {/* 노선 아카이브 탭 */}
@@ -1157,15 +1218,6 @@ export default function ShowPage() {
         </div>
       )}
 
-      {/* ── 댓글 (정보·출연진 탭에서만 표시) ── */}
-      {tab !== 'review' && tab !== 'archive' && (
-        <>
-          <hr className="border-[#E8E4DF]" />
-          <section className="bg-white border border-stone-100 rounded-2xl p-5">
-            <CommentSection targetId={show.id} targetType="show" />
-          </section>
-        </>
-      )}
 
     </div>
   )
