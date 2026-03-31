@@ -1819,6 +1819,8 @@ export default function AdminPage() {
   // 배우 이름 검색 + 정렬
   const [actorSearch, setActorSearch] = useState('')
   const [actorSort,   setActorSort]   = useState('name') // 'name' | 'shows'
+  const [actorPage,   setActorPage]   = useState(1)
+  const ACTORS_PER_PAGE = 20
 
   // ── Firestore 실시간 구독 ────────────────────
   useEffect(() => {
@@ -3031,7 +3033,7 @@ export default function AdminPage() {
               ].map(({ key, icon, label, count }) => (
                 <button
                   key={key}
-                  onClick={() => { setActorSubTab(key); setActorSearch('') }}
+                  onClick={() => { setActorSubTab(key); setActorSearch(''); setActorPage(1) }}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl
                               text-sm font-semibold transition-all ${
                     actorSubTab === key
@@ -3060,14 +3062,14 @@ export default function AdminPage() {
                   <input
                     type="text"
                     value={actorSearch}
-                    onChange={e => setActorSearch(e.target.value)}
+                    onChange={e => { setActorSearch(e.target.value); setActorPage(1) }}
                     placeholder="배우 이름 검색..."
                     className="w-full px-4 py-2.5 pr-9 rounded-xl border border-stone-200
                                text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-300"
                   />
                   {actorSearch && (
                     <button
-                      onClick={() => setActorSearch('')}
+                      onClick={() => { setActorSearch(''); setActorPage(1) }}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400
                                  hover:text-stone-600 text-lg leading-none"
                     >
@@ -3077,7 +3079,7 @@ export default function AdminPage() {
                 </div>
                 <select
                   value={actorSort}
-                  onChange={e => setActorSort(e.target.value)}
+                  onChange={e => { setActorSort(e.target.value); setActorPage(1) }}
                   className="shrink-0 border border-stone-200 rounded-xl px-3 py-2 text-sm
                              bg-white focus:outline-none focus:ring-2 focus:ring-stone-300 text-stone-600"
                 >
@@ -3122,21 +3124,47 @@ export default function AdminPage() {
                           : (a.actorName ?? '').localeCompare(b.actorName ?? '', 'ko'))
                       if (filtered.length === 0)
                         return <p className="text-center text-stone-400 text-sm py-8">검색 결과가 없어요</p>
-                      return filtered.map(pending => (
-                        <div key={pending.id}>
-                          {actorSort === 'shows' && actorShowCountMap[pending.actorName] > 0 && (
-                            <p className="text-xs text-stone-400 mb-1 pl-1">
-                              {actorShowCountMap[pending.actorName]}개 공연 출연
-                            </p>
+                      const totalPages = Math.ceil(filtered.length / ACTORS_PER_PAGE)
+                      const page = Math.min(actorPage, totalPages)
+                      const paged = filtered.slice((page - 1) * ACTORS_PER_PAGE, page * ACTORS_PER_PAGE)
+                      return (
+                        <>
+                          {paged.map(pending => (
+                            <div key={pending.id}>
+                              {actorSort === 'shows' && actorShowCountMap[pending.actorName] > 0 && (
+                                <p className="text-xs text-stone-400 mb-1 pl-1">
+                                  {actorShowCountMap[pending.actorName]}개 공연 출연
+                                </p>
+                              )}
+                              <PendingActorCard
+                                pending={pending}
+                                currentShows={actorShowsMap[pending.actorName] ?? []}
+                                onApprove={handleApprovePendingActor}
+                                onReject={handleRejectPendingActor}
+                              />
+                            </div>
+                          ))}
+                          {totalPages > 1 && (
+                            <div className="flex items-center justify-center gap-2 pt-2">
+                              <button
+                                onClick={() => setActorPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className="px-3 py-1.5 text-sm rounded-lg border border-stone-200
+                                           disabled:opacity-30 hover:bg-stone-50"
+                              >←</button>
+                              <span className="text-sm text-stone-500">
+                                {page} / {totalPages}
+                              </span>
+                              <button
+                                onClick={() => setActorPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages}
+                                className="px-3 py-1.5 text-sm rounded-lg border border-stone-200
+                                           disabled:opacity-30 hover:bg-stone-50"
+                              >→</button>
+                            </div>
                           )}
-                          <PendingActorCard
-                            pending={pending}
-                            currentShows={actorShowsMap[pending.actorName] ?? []}
-                            onApprove={handleApprovePendingActor}
-                            onReject={handleRejectPendingActor}
-                          />
-                        </div>
-                      ))
+                        </>
+                      )
                     })()}
                   </div>
                 )}
@@ -3174,20 +3202,20 @@ export default function AdminPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {actorsList
-                      .filter(a => !actorSearch.trim() || a.name?.includes(actorSearch.trim()))
-                      .sort((a, b) => actorSort === 'shows'
-                        ? (actorShowCountMap[b.name] ?? 0) - (actorShowCountMap[a.name] ?? 0)
-                        : (a.name ?? '').localeCompare(b.name ?? '', 'ko'))
-                      .length === 0 ? (
-                      <p className="text-center text-stone-400 text-sm py-8">검색 결과가 없어요</p>
-                    ) : null}
-                    {actorsList
-                      .filter(a => !actorSearch.trim() || a.name?.includes(actorSearch.trim()))
-                      .sort((a, b) => actorSort === 'shows'
-                        ? (actorShowCountMap[b.name] ?? 0) - (actorShowCountMap[a.name] ?? 0)
-                        : (a.name ?? '').localeCompare(b.name ?? '', 'ko'))
-                      .map(actor => {
+                    {(() => {
+                      const filtered = actorsList
+                        .filter(a => !actorSearch.trim() || a.name?.includes(actorSearch.trim()))
+                        .sort((a, b) => actorSort === 'shows'
+                          ? (actorShowCountMap[b.name] ?? 0) - (actorShowCountMap[a.name] ?? 0)
+                          : (a.name ?? '').localeCompare(b.name ?? '', 'ko'))
+                      if (filtered.length === 0)
+                        return <p className="text-center text-stone-400 text-sm py-8">검색 결과가 없어요</p>
+                      const totalPages = Math.ceil(filtered.length / ACTORS_PER_PAGE)
+                      const page = Math.min(actorPage, totalPages)
+                      const paged = filtered.slice((page - 1) * ACTORS_PER_PAGE, page * ACTORS_PER_PAGE)
+                      return (
+                        <>
+                          {paged.map(actor => {
                       const edit       = actorEdits[actor.id] ?? {}
                       const currentUrl = edit.imageUrl !== undefined ? edit.imageUrl : (actor.imageUrl ?? '')
                       const saving     = edit._saving  ?? false
@@ -3308,8 +3336,30 @@ export default function AdminPage() {
                             </div>
                           </div>
                         </div>
+                          )
+                          })}
+                          {totalPages > 1 && (
+                            <div className="flex items-center justify-center gap-2 pt-2">
+                              <button
+                                onClick={() => setActorPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className="px-3 py-1.5 text-sm rounded-lg border border-stone-200
+                                           disabled:opacity-30 hover:bg-stone-50"
+                              >←</button>
+                              <span className="text-sm text-stone-500">
+                                {page} / {totalPages}
+                              </span>
+                              <button
+                                onClick={() => setActorPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages}
+                                className="px-3 py-1.5 text-sm rounded-lg border border-stone-200
+                                           disabled:opacity-30 hover:bg-stone-50"
+                              >→</button>
+                            </div>
+                          )}
+                        </>
                       )
-                    })}
+                    })()}
                   </div>
                 )}
               </div>
