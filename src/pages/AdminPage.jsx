@@ -503,10 +503,11 @@ function parseNamuWiki(text) {
       if (raw.includes('[편집]')) break
       // "숫자." 으로 시작하는 섹션/하위섹션 헤더 → 종료
       if (/^\d+\./.test(noEdit.trim())) break
-      // 나무위키 접기 태그 제거 후 추가
+      // 나무위키 접기 태그 제거, 탭 포함 앞뒤 공백 정리 후 추가
       const cleaned = noEdit
         .replace(/【[^】]*】/g, '')          // 【 가사/접기 】
         .replace(/\{\{[^}]*\}\}/g, '')        // {{접기}} 등
+        .replace(/^[\t ]+|[\t ]+$/g, '')      // 탭·공백 앞뒤 제거
       collected.push(cleaned)
     }
     return collected.join('\n')
@@ -593,11 +594,12 @@ function parseNamuWiki(text) {
   }
 
   // ── 3. 공연장/기간: 가장 마지막 날짜 패턴 ──
-  const seasonPrefixRe = /^(?:초연|재연|삼연|사연|오연|트라이아웃|앵콜\s*공연?|앵콜|[0-9]+(?:st|nd|rd|th)\s*시즌)\s*[:：]?\s*/i
-  const dateRegex = /(\d{4})\.(\d{1,2})\.(\d{1,2})\s*[~～\-]\s*(\d{4})\.(\d{1,2})\.(\d{1,2})/g
-  // 공연장 키워드: 극장·홀·센터·아트·관·당·극 포함
-  const venueKeywords = /(?:극장|아트홀|아트센터|아트|씨어터|씨어타|theater|theatre|센터|공연장|[가-힣]{1,10}[홀관당극])/i
-  const removeDatePat  = /\d{4}\.\d{1,2}\.\d{1,2}\s*[~～\-]\s*\d{4}\.\d{1,2}\.\d{1,2}/g
+  const seasonPrefixRe = /^(?:공연\s*예정\s*)?(?:초연|재연|삼연|사연|오연|트라이아웃|앵콜\s*공연?|앵콜|[0-9]+(?:st|nd|rd|th)\s*시즌)\s*[:：]?\s*/i
+  // 날짜: YYYY.MM.DD 또는 YYYY. MM. DD (공백 포함)
+  const dateRegex = /(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?\s*[~～\-]\s*(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?/g
+  // 공연장 키워드: 극장·홀·센터·아트·관·당·극 + 공연 장소
+  const venueKeywords = /(?:극장|아트홀|아트센터|아트|씨어터|씨어타|theater|theatre|센터|공연\s*장소|공연장|[가-힣]{1,10}[홀관당극])/i
+  const removeDatePat  = /\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.?\s*[~～\-]\s*\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.?/g
 
   const dateMatches = [...textNoEdit.matchAll(dateRegex)]
   if (dateMatches.length > 0) {
@@ -662,8 +664,9 @@ function parseNamuWiki(text) {
   }
 
   // ── 4. 관람시간 ──
+  // "관람 시간: " 뒤 내용이 없으면 추출하지 않음
   const runtimeMatch =
-    textNoEdit.match(/(?:관람\s*시간|러닝\s*타임|상연\s*시간)\s*[:：]?\s*(?:총\s*)?(\d{2,3})\s*분/) ??
+    textNoEdit.match(/(?:관람\s*시간|러닝\s*타임|상연\s*시간)\s*[:：]\s*(?:총\s*)?(\d{2,3})\s*분/) ??
     textNoEdit.match(/(\d{2,3})\s*분\s*(?:\[\d+\])?\s*\(?\s*인터미션/) ??
     textNoEdit.match(/총\s*(\d{2,3})\s*분/)
   if (runtimeMatch) result.runtime = parseInt(runtimeMatch[1])
