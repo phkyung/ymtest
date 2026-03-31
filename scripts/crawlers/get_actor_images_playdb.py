@@ -505,20 +505,25 @@ def main(
             if len(exact_matches) > 1:
                 print(f"⚠️  검토대기 (동명이인 {len(exact_matches)}명)")
                 if actor_id not in pending_actor_ids:
+                    # 각 후보의 플레이DB 출연작 최대 5개 수집 (판별용)
+                    candidates_with_shows = []
+                    for r in exact_matches[:5]:
+                        r_shows = fetch_actor_shows(r["actor_id"], client)
+                        time.sleep(REQUEST_DELAY)
+                        show_titles = [t for t, g, y in sorted(r_shows, key=lambda x: x[2] or "0", reverse=True) if t][:5]
+                        candidates_with_shows.append({
+                            "name":       r["name"],
+                            "imageUrl":   r["image_url"],
+                            "profileUrl": r["profile_url"],
+                            "shows":      show_titles,
+                        })
                     pending_list.append({
                         "actorId":    actor_id,
                         "actorName":  search_name,
                         "imageUrl":   exact_matches[0]["image_url"],
                         "profileUrl": exact_matches[0]["profile_url"],
                         "reason":     f"동명이인 {len(exact_matches)}명",
-                        "candidates": [
-                            {
-                                "name":       r["name"],
-                                "imageUrl":   r["image_url"],
-                                "profileUrl": r["profile_url"],
-                            }
-                            for r in exact_matches[:5]
-                        ],
+                        "candidates": candidates_with_shows,
                     })
                     pending_actor_ids.add(actor_id)
                     pending_added += 1
@@ -577,6 +582,7 @@ def main(
                 # ── ⚠️ 이름 일치하지만 출연작 미매칭 → 검토 대기 ──
                 print("⚠️  검토대기 (출연작 미매칭)")
                 if actor_id not in pending_actor_ids:
+                    show_titles = [t for t, g, y in sorted(actor_shows, key=lambda x: x[2] or "0", reverse=True) if t][:5]
                     pending_list.append({
                         "actorId":    actor_id,
                         "actorName":  search_name,
@@ -588,6 +594,7 @@ def main(
                                 "name":       match["name"],
                                 "imageUrl":   match["image_url"],
                                 "profileUrl": match["profile_url"],
+                                "shows":      show_titles,
                             }
                         ],
                     })

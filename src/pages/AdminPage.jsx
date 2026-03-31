@@ -496,44 +496,53 @@ function parseNamuWiki(text) {
   // "숫자." 시작 줄 또는 [편집] 줄(헤더 자체 제외)에서 종료
   function synopsisBlock(headerIdx) {
     const collected = []
+    console.log('[SYN] synopsisBlock 시작, headerIdx=', headerIdx, '줄:', lines[headerIdx])
     for (let i = headerIdx + 1; i < lines.length; i++) {
       const raw    = lines[i]
       const noEdit = linesNoEdit[i]
-      // [편집] 포함 줄 → 종료 (다음 섹션 헤더)
-      if (raw.includes('[편집]')) break
-      // "숫자." 으로 시작하는 섹션/하위섹션 헤더 → 종료
-      if (/^\d+\./.test(noEdit.trim())) break
-      // 나무위키 접기 태그 제거, 탭 포함 앞뒤 공백 정리 후 추가
+      const charCodes = [...noEdit.slice(0,4)].map(c => c.charCodeAt(0))
+      if (raw.includes('[편집]')) {
+        console.log('[SYN] 종료([편집]) i=', i, '줄:', raw.slice(0,60))
+        break
+      }
+      if (/^\d+\./.test(noEdit.trim())) {
+        console.log('[SYN] 종료(섹션헤더) i=', i, '줄:', noEdit.slice(0,60))
+        break
+      }
+      console.log(`[SYN] i=${i} charCodes=${charCodes} | "${noEdit.slice(0,80)}"`)
       const cleaned = noEdit
-        .replace(/【[^】]*】/g, '')          // 【 가사/접기 】
-        .replace(/\{\{[^}]*\}\}/g, '')        // {{접기}} 등
-        .replace(/^[\t ]+|[\t ]+$/g, '')      // 탭·공백 앞뒤 제거
+        .replace(/【[^】]*】/g, '')
+        .replace(/\{\{[^}]*\}\}/g, '')
+        .replace(/^[\t ]+|[\t ]+$/g, '')
       collected.push(cleaned)
     }
     return collected.join('\n')
   }
 
   const synHeaderIdx = lines.findIndex(l => /시놉시스/.test(l))
+  console.log('[SYN] synHeaderIdx=', synHeaderIdx, synHeaderIdx >= 0 ? lines[synHeaderIdx] : '없음')
   if (synHeaderIdx >= 0) {
     const synNumMatch = lines[synHeaderIdx].match(/^(\d+)\./)
     const synNum = synNumMatch?.[1] ?? null
     const synSubSecs = synNum ? allSubSections.filter(m => m[1] === synNum) : []
+    console.log('[SYN] synNum=', synNum, 'subSecs수=', synSubSecs.length)
 
     let syn = ''
     if (synSubSecs.length > 0) {
-      // 가장 마지막 하위 섹션 내용 — 하위섹션도 동일 종료 조건 적용
       const lastSub = synSubSecs[synSubSecs.length - 1]
-      // lastSub가 있는 줄 인덱스 계산
+      console.log('[SYN] 마지막 하위섹션:', lastSub[0])
       const subLineIdx = linesNoEdit.findIndex((_, idx) => {
         let pos = 0
         for (let j = 0; j < idx; j++) pos += linesNoEdit[j].length + 1
         return pos >= lastSub.index
       })
+      console.log('[SYN] subLineIdx=', subLineIdx)
       syn = preClean(synopsisBlock(subLineIdx >= 0 ? subLineIdx : synHeaderIdx))
     } else {
       syn = preClean(synopsisBlock(synHeaderIdx))
     }
 
+    console.log('[SYN] 최종 syn(200자):', syn.slice(0, 200))
     syn = syn.replace(/이\s*문서에\s*스포일러[\s\S]*/i, '')
     syn = syn.replace(/^.*(?:링크픽|넘버\s*영상|공개|예고편|티저)[^\n]*$/gm, '')
     syn = syn.replace(/\n{3,}/g, '\n\n').trim()
@@ -626,40 +635,46 @@ function parseNamuWiki(text) {
         .replace(seasonPrefixRe, '')
         .replace(/[|\[\]]/g, '')
         .trim()
-      return (c && venueKeywords.test(c)) ? c.replace(/\s+/g, ' ') : null
+      const matched = c && venueKeywords.test(c)
+      console.log('[VENUE] extractVenue:', JSON.stringify(line.slice(0,80)), '→ cleaned:', JSON.stringify(c), '/ keywordMatch:', matched)
+      return matched ? c.replace(/\s+/g, ' ') : null
     }
 
     // ① "시즌prefix: 공연장" 형식 줄을 전체에서 모아 가장 마지막 사용
     const prefixVenueLines = linesNoEdit.filter(l =>
       seasonPrefixRe.test(preClean(l).trim()) && !dateRegex.test(l)
     )
-    // dateRegex 전역 플래그 리셋
     dateRegex.lastIndex = 0
+    console.log('[VENUE] prefixVenueLines:', prefixVenueLines)
     for (let i = prefixVenueLines.length - 1; i >= 0; i--) {
       const v = extractVenue(prefixVenueLines[i])
-      if (v) { venue = v; break }
+      if (v) { venue = v; console.log('[VENUE] ①에서 결정:', v); break }
     }
 
     // ② prefix 줄에 없으면 날짜 같은 줄에서 추출
     if (!venue && dateLineIdx >= 0) {
+      console.log('[VENUE] ② dateLine:', JSON.stringify(dateLine))
       venue = extractVenue(dateLine)
+      if (venue) console.log('[VENUE] ②에서 결정:', venue)
     }
 
     // ③ 앞 3줄 내에서 탐색
     if (!venue && dateLineIdx >= 0) {
+      console.log('[VENUE] ③ 앞3줄 탐색, dateLineIdx=', dateLineIdx)
       for (let i = Math.max(0, dateLineIdx - 3); i <= dateLineIdx; i++) {
         const v = extractVenue(linesNoEdit[i])
         if (v) {
-          // 다음 줄에 홀명이 있으면 합치기
           const nextLine = linesNoEdit[i + 1] ? preClean(linesNoEdit[i + 1]).trim() : ''
           const isHallLine = nextLine && !venueKeywords.test(nextLine) &&
                              /[관동홀층]$/.test(nextLine) && nextLine.length <= 20
           venue = isHallLine ? `${v} ${nextLine}`.replace(/\s+/g, ' ') : v
+          console.log('[VENUE] ③에서 결정:', venue)
           break
         }
       }
     }
 
+    console.log('[VENUE] 최종 venue=', venue)
     result.dates = { startDate, endDate, venue }
   }
 
