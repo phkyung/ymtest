@@ -471,6 +471,12 @@ function parseNamuWiki(text) {
   const synStartIdx  = synHeaderIdx >= 0 ? synHeaderIdx : -1
 
   if (synStartIdx >= 0) {
+    for (let i = synHeaderIdx; i < Math.min(synHeaderIdx + 10, lines.length); i++) {
+      console.log(`[SYN3] ${i}:`, JSON.stringify(lines[i]))
+    }
+  }
+
+  if (synStartIdx >= 0) {
     const collected = []
     for (let i = synStartIdx + 1; i < lines.length; i++) {
       const cl = cleanLine(lines[i])
@@ -590,6 +596,7 @@ function parseNamuWiki(text) {
   delete result._venue
 
   // ── 5. 관람시간 ──
+  console.log('[TIME] 관람시간 줄:', lines.filter(l => l.includes('관람')))
   const runtimeMatch =
     textNoEdit.match(/(?:관람\s*시간|관람시간|러닝\s*타임|러닝타임|상연\s*시간)\s*[:：]\s*(?:총\s*)?(\d{2,3})\s*분/) ??
     textNoEdit.match(/(\d{2,3})\s*분\s*(?:\[\d+\])?\s*\(?\s*인터미션/) ??
