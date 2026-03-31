@@ -1630,7 +1630,7 @@ const RISK_BADGE = {
 // pending: { id, actorId, actorName, imageUrl, profileUrl, reason, candidates }
 // onApprove: (pending, imageUrl) => Promise
 // onReject:  (pendingId) => Promise
-function PendingActorCard({ pending, onApprove, onReject }) {
+function PendingActorCard({ pending, currentShows = [], onApprove, onReject }) {
   // 현재 선택된 사진 URL (candidates 중 선택 또는 직접 입력)
   const [selectedUrl, setSelectedUrl] = useState(pending.imageUrl ?? '')
   // 직접 URL 입력 모드 여부
@@ -1678,6 +1678,11 @@ function PendingActorCard({ pending, onApprove, onReject }) {
           {/* 배우 이름 + 검토 사유 + 플레이DB 링크 */}
           <div>
             <p className="font-semibold text-stone-900">{pending.actorName}</p>
+            {currentShows.length > 0 && (
+              <p className="text-xs text-stone-400 mt-0.5">
+                {currentShows.join(' · ')}
+              </p>
+            )}
             <p className="text-xs text-amber-600 mt-0.5">⚠️ {pending.reason}</p>
             {pending.profileUrl && (
               <a href={pending.profileUrl} target="_blank" rel="noopener noreferrer"
@@ -1691,17 +1696,23 @@ function PendingActorCard({ pending, onApprove, onReject }) {
           {(pending.candidates?.length ?? 0) > 1 && (
             <div className="flex gap-2 flex-wrap">
               {pending.candidates.map((c, i) => (
-                <button
-                  key={i}
-                  onClick={() => { setSelectedUrl(c.imageUrl); setCustomMode(false) }}
-                  className={`text-xs px-2 py-1 rounded-lg border transition-colors ${
-                    !customMode && selectedUrl === c.imageUrl
-                      ? 'bg-amber-500 text-white border-amber-500'
-                      : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
-                  }`}
-                >
-                  {c.name} ({i + 1}순위)
-                </button>
+                <div key={i} className="flex flex-col items-start">
+                  <button
+                    onClick={() => { setSelectedUrl(c.imageUrl); setCustomMode(false) }}
+                    className={`text-xs px-2 py-1 rounded-lg border transition-colors ${
+                      !customMode && selectedUrl === c.imageUrl
+                        ? 'bg-amber-500 text-white border-amber-500'
+                        : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
+                    }`}
+                  >
+                    {c.name} ({i + 1}순위)
+                  </button>
+                  {c.shows?.length > 0 && (
+                    <p className="text-xs text-stone-400 mt-0.5 pl-1">
+                      {c.shows.slice(0, 2).join(', ')}
+                    </p>
+                  )}
+                </div>
               ))}
             </div>
           )}
@@ -1882,7 +1893,7 @@ export default function AdminPage() {
       .catch(err => { console.error('pending_actors 로드 오류:', err); setPendingActorsLoading(false) })
   }, [tab, actorSubTab, authed])
 
-  // ── 배우별 출연 공연 수 집계 (shows + pending 전체 cast 스캔) ──
+  // ── 배우별 출연 공연 수 + 공연 제목 집계 (shows + pending 전체 cast 스캔) ──
   const actorShowCountMap = useMemo(() => {
     const map = {}
     for (const show of [...showsList, ...pendingList]) {
@@ -1891,6 +1902,23 @@ export default function AdminPage() {
       for (const m of show.cast) {
         const name = m.actorName?.trim()
         if (name && !seen.has(name)) { seen.add(name); map[name] = (map[name] ?? 0) + 1 }
+      }
+    }
+    return map
+  }, [showsList, pendingList])
+
+  // 배우 이름 → 출연 중인 공연 제목 배열
+  const actorShowsMap = useMemo(() => {
+    const map = {}
+    for (const show of [...showsList, ...pendingList]) {
+      if (!Array.isArray(show.cast)) continue
+      const title = show.title?.trim()
+      if (!title) continue
+      for (const m of show.cast) {
+        const name = m.actorName?.trim()
+        if (!name) continue
+        if (!map[name]) map[name] = []
+        if (!map[name].includes(title)) map[name].push(title)
       }
     }
     return map
@@ -3103,6 +3131,7 @@ export default function AdminPage() {
                           )}
                           <PendingActorCard
                             pending={pending}
+                            currentShows={actorShowsMap[pending.actorName] ?? []}
                             onApprove={handleApprovePendingActor}
                             onReject={handleRejectPendingActor}
                           />
