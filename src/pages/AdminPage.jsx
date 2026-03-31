@@ -467,14 +467,12 @@ function parseNamuWiki(text) {
   }
 
   // ── 1. 시놉시스 ──
-  const synHeaderIdx = lines.findIndex(l => /시놉시스/.test(l))
+  // [편집] 포함된 줄 우선 (본문 헤더), 없으면 마지막 "시놉시스" 줄 사용
+  const synHeaderIdx =
+    lines.findIndex(l => /시놉시스/.test(l) && l.includes('[편집]')) >= 0
+      ? lines.findIndex(l => /시놉시스/.test(l) && l.includes('[편집]'))
+      : lines.reduce((last, l, i) => /시놉시스/.test(l) ? i : last, -1)
   const synStartIdx  = synHeaderIdx >= 0 ? synHeaderIdx : -1
-
-  if (synStartIdx >= 0) {
-    for (let i = synHeaderIdx; i < Math.min(synHeaderIdx + 10, lines.length); i++) {
-      console.log(`[SYN3] ${i}:`, JSON.stringify(lines[i]))
-    }
-  }
 
   if (synStartIdx >= 0) {
     const collected = []
@@ -596,7 +594,8 @@ function parseNamuWiki(text) {
   delete result._venue
 
   // ── 5. 관람시간 ──
-  console.log('[TIME] 관람시간 줄:', lines.filter(l => l.includes('관람')))
+  const timeLine = lines.find(l => /관람\s*시간|관람시간|러닝\s*타임|러닝타임/.test(l))
+  console.log('[TIME2]', JSON.stringify(timeLine))
   const runtimeMatch =
     textNoEdit.match(/(?:관람\s*시간|관람시간|러닝\s*타임|러닝타임|상연\s*시간)\s*[:：]\s*(?:총\s*)?(\d{2,3})\s*분/) ??
     textNoEdit.match(/(\d{2,3})\s*분\s*(?:\[\d+\])?\s*\(?\s*인터미션/) ??
