@@ -555,8 +555,8 @@ function parseNamuWiki(text) {
       const endOff  = Math.min(nextSub?.index ?? Infinity, nextTop?.index ?? Infinity)
       castText = preClean(textNoEdit.slice(startIdx, endOff === Infinity ? undefined : startIdx + endOff))
     } else {
-      // 하위섹션 없으면 섹션 헤더 바로 다음부터 다음 섹션까지 수집
-      castText = preClean(sectionBlockSimple(castHeaderIdx))
+      // 하위섹션 없으면 섹션 헤더 바로 다음부터 다음 섹션까지 수집 (preClean 적용 안 함)
+      castText = sectionBlockSimple(castHeaderIdx)
     }
   } else if (allSubSections.length > 0) {
     // "YYYY년" 포함된 하위섹션 우선; 없으면 마지막 하위섹션
@@ -571,7 +571,9 @@ function parseNamuWiki(text) {
     for (const line of castText.split('\n')) {
       // 날짜/공연 기간 줄 스킵 ("YYYY.MM.DD" 또는 "YYYY년" 포함)
       if (/\d{4}\.\d{1,2}\.\d{1,2}/.test(line) || /\d{4}년/.test(line)) continue
-      const m = line.match(/^[*\s]*([^:\|\-\n]{1,25}?)\s*(?::\s*|\s*\|\s*|\s+-\s*)(.+)$/)
+      // [[링크]] 형식 정리 후 파싱
+      const cleaned = stripLinks(line).replace(/\[\d+\]/g, '')
+      const m = cleaned.match(/^[*\s]*([^:\|\-\n]{1,25}?)\s*(?::\s*|\s*\|\s*|\s+-\s*)(.+)$/)
       if (!m) continue
       const roleName = m[1].replace(/^\s*[-*]\s*/, '').trim()
       if (!roleName || /^\d+$/.test(roleName)) continue
