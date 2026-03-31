@@ -441,6 +441,199 @@ function TicketLinksSection({ links, onChange }) {
 }
 
 
+// ── 나무위키 텍스트 파싱 ────────────────────────────
+function parseNamuWiki(text) {
+  const result = { synopsis: null, cast: null, dates: null, numbers: null, runtime: null }
+
+  // [편집] 태그 제거
+  const clean = text.replace(/\[편집\]/g, '').replace(/\[각주\]/g, '')
+
+  // 1. 시놉시스: "시놉시스" ~ "등장인물" 또는 "캐릭터" 사이
+  const synMatch = clean.match(/시놉시스\s*\n([\s\S]*?)(?=\n\s*(?:등장인물|캐릭터|줄거리|##|[1-9]\.)\s*\n)/)
+  if (synMatch) {
+    result.synopsis = synMatch[1].replace(/^\s*=+[^=]+=+\s*$/gm, '').trim()
+  }
+
+  // 2. 캐스트: "4.숫자." 형태의 마지막 섹션
+  //    "역할명: 배우1, 배우2" 형태 파싱
+  const sectionMatches = [...clean.matchAll(/^(?:={2,3}|\d+\.\d+\.?\s+)\S[^\n]*(?:시즌|년|회차|캐스팅|cast|배우|출연)[^\n]*/gim)]
+  // 대안: 숫자.숫자. 패턴으로 섹션 분리
+  const castSections = [...clean.matchAll(/^\d+\.\d+\.?\s+(.+)$/gm)]
+  let castText = ''
+  if (castSections.length > 0) {
+    const lastSection = castSections[castSections.length - 1]
+    const startIdx = lastSection.index + lastSection[0].length
+    const nextSectionMatch = clean.slice(startIdx).match(/^\d+\.\d+\.?\s+/m)
+    const endIdx = nextSectionMatch ? startIdx + nextSectionMatch.index : clean.length
+    castText = clean.slice(startIdx, endIdx)
+  }
+  if (castText) {
+    const castItems = []
+    // "역할명: 배우1, 배우2" 또는 "역할명 - 배우1/배우2"
+    const castLineRegex = /^[*\s]*([^:\-\n]+?)\s*[:\-]\s*(.+)$/gm
+    for (const m of castText.matchAll(castLineRegex)) {
+      const roleName = m[1].trim()
+      const actorsPart = m[2].trim()
+      if (!roleName || roleName.length > 30) continue
+      // 배우 이름 분리 (쉼표, 슬래시, →, / 구분)
+      const actors = actorsPart.split(/[,，/→]/).map(a => a.trim()).filter(a => a && a.length <= 15 && a.length >= 2)
+      for (const actorName of actors) {
+        if (/^[가-힣a-zA-Z\s]+$/.test(actorName)) {
+          castItems.push({ actorName, roleName })
+        }
+      }
+    }
+    if (castItems.length > 0) result.cast = castItems
+  }
+
+  // 3. 날짜/공연장: YYYY.MM.DD ~ YYYY.MM.DD 패턴
+  const dateRegex = /(\d{4})\.(\d{1,2})\.(\d{1,2})\s*[~～\-]\s*(\d{4})\.(\d{1,2})\.(\d{1,2})/g
+  const dateMatches = [...clean.matchAll(dateRegex)]
+  if (dateMatches.length > 0) {
+    const last = dateMatches[dateMatches.length - 1]
+    const pad = n => String(n).padStart(2, '0')
+    const startDate = `${last[1]}-${pad(last[2])}-${pad(last[3])}`
+    const endDate   = `${last[4]}-${pad(last[5])}-${pad(last[6])}`
+    // 날짜 앞뒤 줄에서 공연장 추출
+    const around = clean.slice(Math.max(0, last.index - 80), last.index + last[0].length + 80)
+    const venueMatch = around.match(/([가-힣a-zA-Z0-9\s]{2,20}(?:극장|홀|센터|아트|씨어터|theater|theatre|hall)[가-힣a-zA-Z0-9\s()（）]*)/i)
+    result.dates = { startDate, endDate, venue: venueMatch?.[1]?.trim() ?? null }
+  }
+
+  // 4. 넘버 목록: "넘버" 섹션에서 "01. 제목" 형태
+  const numSectionMatch = clean.match(/넘버\s*\n([\s\S]*?)(?=\n\s*(?:\d+\.|={2,}|##)\s*\S)/)
+  if (numSectionMatch) {
+    const numbers = []
+    for (const m of numSectionMatch[1].matchAll(/^\s*\d+[.\)]\s+(.+)$/gm)) {
+      const title = m[1].replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim()
+      if (title && title.length < 60) numbers.push(title)
+    }
+    if (numbers.length > 0) result.numbers = numbers
+  }
+
+  // 5. 관람시간: "XX분" 패턴
+  const runtimeMatch = clean.match(/(?:관람\s*시간|러닝\s*타임|상연\s*시간)[^\n]*?(\d+)\s*분/)
+    ?? clean.match(/(\d{2,3})\s*분\s*(?:인터미션|\(|（)/)
+    ?? clean.match(/총\s*(\d{2,3})\s*분/)
+  if (runtimeMatch) result.runtime = parseInt(runtimeMatch[1])
+
+  return result
+}
+
+function NamuWikiModal({ onClose, onApply }) {
+  const [text,    setText]    = useState('')
+  const [parsed,  setParsed]  = useState(null)
+  const [checked, setChecked] = useState({})
+
+  function handleParse() {
+    const result = parseNamuWiki(text)
+    setParsed(result)
+    // 값이 있는 항목만 기본 체크
+    setChecked({
+      synopsis: !!result.synopsis,
+      cast:     !!result.cast,
+      dates:    !!result.dates,
+      numbers:  !!result.numbers,
+      runtime:  !!result.runtime,
+    })
+  }
+
+  function handleApply() {
+    const apply = {}
+    if (checked.synopsis && parsed.synopsis) apply.synopsis = parsed.synopsis
+    if (checked.cast     && parsed.cast)     apply.cast     = parsed.cast
+    if (checked.dates    && parsed.dates)    apply.dates    = parsed.dates
+    if (checked.numbers  && parsed.numbers)  apply.numbers  = parsed.numbers
+    if (checked.runtime  && parsed.runtime)  apply.runtime  = parsed.runtime
+    onApply(apply)
+    onClose()
+  }
+
+  const toggle = key => setChecked(prev => ({ ...prev, [key]: !prev[key] }))
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-8">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100">
+          <h3 className="font-bold text-stone-800">📋 나무위키 붙여넣기 파싱</h3>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 text-xl leading-none">×</button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* 입력 영역 */}
+          <div>
+            <label className="text-xs font-semibold text-stone-500 mb-1 block">나무위키 문서 텍스트를 붙여넣으세요</label>
+            <textarea
+              value={text}
+              onChange={e => setText(e.target.value)}
+              rows={10}
+              placeholder="나무위키 페이지에서 전체 텍스트를 복사해서 붙여넣으세요..."
+              className="w-full px-3 py-2 border border-stone-200 rounded-xl text-xs
+                         font-mono focus:outline-none focus:ring-2 focus:ring-stone-300 resize-y"
+            />
+          </div>
+
+          <button
+            onClick={handleParse}
+            disabled={!text.trim()}
+            className="w-full py-2.5 bg-stone-800 text-white text-sm font-semibold
+                       rounded-xl hover:bg-stone-700 disabled:opacity-40 transition-colors"
+          >
+            분석하기
+          </button>
+
+          {/* 파싱 결과 미리보기 */}
+          {parsed && (
+            <div className="space-y-2 border border-stone-100 rounded-xl p-4">
+              <p className="text-xs font-bold text-stone-500 mb-3">파싱 결과 — 적용할 항목을 선택하세요</p>
+
+              {[
+                { key: 'synopsis', label: '시놉시스',
+                  preview: parsed.synopsis ? `${parsed.synopsis.slice(0, 100)}${parsed.synopsis.length > 100 ? '…' : ''}` : null },
+                { key: 'cast', label: '캐스트',
+                  preview: parsed.cast ? `${parsed.cast.length}명 발견 (${parsed.cast.slice(0, 3).map(c => c.actorName).join(', ')}${parsed.cast.length > 3 ? ' 외' : ''})` : null },
+                { key: 'dates', label: '공연장/기간',
+                  preview: parsed.dates ? `${parsed.dates.venue ?? '공연장 미확인'} / ${parsed.dates.startDate} ~ ${parsed.dates.endDate}` : null },
+                { key: 'numbers', label: '넘버 목록',
+                  preview: parsed.numbers ? `${parsed.numbers.length}개 발견 (${parsed.numbers.slice(0, 2).join(', ')}${parsed.numbers.length > 2 ? ' 외' : ''})` : null },
+                { key: 'runtime', label: '관람시간',
+                  preview: parsed.runtime ? `${parsed.runtime}분` : null },
+              ].map(({ key, label, preview }) => (
+                <label key={key} className={`flex items-start gap-3 p-2.5 rounded-lg cursor-pointer transition-colors
+                                             ${preview ? 'hover:bg-stone-50' : 'opacity-40 cursor-default'}`}>
+                  <input
+                    type="checkbox"
+                    checked={!!checked[key]}
+                    disabled={!preview}
+                    onChange={() => toggle(key)}
+                    className="mt-0.5 accent-stone-700"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-semibold text-stone-700">{preview ? '✅' : '❌'} {label}</span>
+                    {preview
+                      ? <p className="text-xs text-stone-500 mt-0.5 break-words">{preview}</p>
+                      : <p className="text-xs text-stone-400 mt-0.5">추출되지 않음</p>}
+                  </div>
+                </label>
+              ))}
+
+              <button
+                onClick={handleApply}
+                disabled={!Object.values(checked).some(Boolean)}
+                className="w-full mt-2 py-2.5 bg-amber-600 text-white text-sm font-semibold
+                           rounded-xl hover:bg-amber-500 disabled:opacity-40 transition-colors"
+              >
+                선택 항목 폼에 적용
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── 공연 정보 편집 폼 (대기 중 · 등록 완료 공통) ──
 function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
   // sourceUrl에서 mt20id 파싱 (예: ...?pc=02&mt20id=PF12345)
@@ -450,6 +643,21 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
 
   function handleFetchSynopsis() {
     alert('시놉시스는 Python 스크립트로 수집하세요.\npython kopis.py --synopsis-only')
+  }
+
+  // 나무위키 파싱 모달
+  const [namuOpen, setNamuOpen] = useState(false)
+
+  function handleNamuApply({ synopsis, cast, dates, numbers, runtime }) {
+    if (synopsis) onChangeDraft('synopsis', synopsis)
+    if (cast)     setCast(cast.map(c => ({ actorId: '', actorName: c.actorName, roleName: c.roleName, isDouble: false, imageUrl: null })))
+    if (dates) {
+      if (dates.startDate) onChangeDraft('startDate', dates.startDate)
+      if (dates.endDate)   onChangeDraft('endDate',   dates.endDate)
+      if (dates.venue)     onChangeDraft('venue',     dates.venue)
+    }
+    if (numbers) onChangeDraft('numbers', numbers)
+    if (runtime) onChangeDraft('runtime', runtime)
   }
 
   // tags 배열 → 쉼표 문자열로 편집
@@ -511,6 +719,22 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
 
   return (
     <div className="space-y-4">
+      {namuOpen && (
+        <NamuWikiModal onClose={() => setNamuOpen(false)} onApply={handleNamuApply} />
+      )}
+
+      {/* ── 나무위키 파싱 버튼 ── */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setNamuOpen(true)}
+          className="text-xs px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700
+                     hover:bg-sky-100 font-semibold transition-colors border border-sky-200"
+        >
+          📋 나무위키 붙여넣기
+        </button>
+      </div>
+
       {/* ── 기본 정보 그리드 ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="sm:col-span-2">
