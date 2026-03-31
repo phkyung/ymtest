@@ -1577,6 +1577,8 @@ export default function AdminPage() {
   // pending_actors 컬렉션 (플레이DB 수집 검토 대기 사진)
   const [pendingActors,        setPendingActors]        = useState([])
   const [pendingActorsLoading, setPendingActorsLoading] = useState(false)
+  // 배우 이름 검색
+  const [actorSearch, setActorSearch] = useState('')
 
   // ── Firestore 실시간 구독 ────────────────────
   useEffect(() => {
@@ -2758,7 +2760,7 @@ export default function AdminPage() {
               ].map(({ key, icon, label, count }) => (
                 <button
                   key={key}
-                  onClick={() => setActorSubTab(key)}
+                  onClick={() => { setActorSubTab(key); setActorSearch('') }}
                   className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl
                               text-sm font-semibold transition-all ${
                     actorSubTab === key
@@ -2779,6 +2781,29 @@ export default function AdminPage() {
               ))}
             </div>
 
+
+            {/* ── 배우 이름 검색 (사진 검토 / 배우 전체 목록 탭에서만 표시) ── */}
+            {(actorSubTab === 'review' || actorSubTab === 'list') && (
+              <div className="relative">
+                <input
+                  type="text"
+                  value={actorSearch}
+                  onChange={e => setActorSearch(e.target.value)}
+                  placeholder="배우 이름 검색..."
+                  className="w-full px-4 py-2.5 pr-9 rounded-xl border border-stone-200
+                             text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-300"
+                />
+                {actorSearch && (
+                  <button
+                    onClick={() => setActorSearch('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400
+                               hover:text-stone-600 text-lg leading-none"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* ── 사진 검토 서브탭 ── */}
             {/* pending_actors 컬렉션에서 검토 대기 항목을 표시 */}
@@ -2807,14 +2832,22 @@ export default function AdminPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {pendingActors.map(pending => (
-                      <PendingActorCard
-                        key={pending.id}
-                        pending={pending}
-                        onApprove={handleApprovePendingActor}
-                        onReject={handleRejectPendingActor}
-                      />
-                    ))}
+                    {pendingActors
+                      .filter(p => !actorSearch.trim() || p.actorName?.includes(actorSearch.trim()))
+                      .length === 0 ? (
+                      <p className="text-center text-stone-400 text-sm py-8">검색 결과가 없어요</p>
+                    ) : (
+                      pendingActors
+                        .filter(p => !actorSearch.trim() || p.actorName?.includes(actorSearch.trim()))
+                        .map(pending => (
+                          <PendingActorCard
+                            key={pending.id}
+                            pending={pending}
+                            onApprove={handleApprovePendingActor}
+                            onReject={handleRejectPendingActor}
+                          />
+                        ))
+                    )}
                   </div>
                 )}
               </div>
@@ -2851,7 +2884,10 @@ export default function AdminPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {actorsList.map(actor => {
+                    {actorsList.filter(a => !actorSearch.trim() || a.name?.includes(actorSearch.trim())).length === 0 ? (
+                      <p className="text-center text-stone-400 text-sm py-8">검색 결과가 없어요</p>
+                    ) : null}
+                    {actorsList.filter(a => !actorSearch.trim() || a.name?.includes(actorSearch.trim())).map(actor => {
                       const edit       = actorEdits[actor.id] ?? {}
                       const currentUrl = edit.imageUrl !== undefined ? edit.imageUrl : (actor.imageUrl ?? '')
                       const saving     = edit._saving  ?? false
