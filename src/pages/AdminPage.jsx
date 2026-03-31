@@ -1819,8 +1819,14 @@ export default function AdminPage() {
   // 배우 이름 검색 + 정렬
   const [actorSearch, setActorSearch] = useState('')
   const [actorSort,   setActorSort]   = useState('name') // 'name' | 'shows'
-  const [actorPage,   setActorPage]   = useState(1)
+  const [actorPage,      setActorPage]      = useState(1)
   const ACTORS_PER_PAGE = 20
+  const [actorEditOpen,  setActorEditOpen]  = useState(null) // 열린 카드의 actor.id
+  const [actorListToast, setActorListToast] = useState('')
+  function showActorListToast(msg) {
+    setActorListToast(msg)
+    setTimeout(() => setActorListToast(''), 2500)
+  }
 
   // ── Firestore 실시간 구독 ────────────────────
   useEffect(() => {
@@ -3181,10 +3187,16 @@ export default function AdminPage() {
             {/* actors 컬렉션 전체 목록, 사진 없는 배우는 흐릿하게 표시 */}
             {actorSubTab === 'list' && (
               <div className="space-y-3">
-                {/* 안내 문구 */}
-                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
-                  <strong>배우 전체 목록</strong> — actors 컬렉션에 등록된 배우 사진을 수정합니다.
-                  사진 없는 배우는 흐릿하게 표시됩니다. 사진을 클릭하면 URL 입력칸으로 이동합니다.
+                {/* 안내 문구 + 토스트 */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 flex-1">
+                    <strong>배우 전체 목록</strong> — 사진 없는 배우는 흐릿하게 표시됩니다.
+                  </div>
+                  {actorListToast && (
+                    <span className="text-sm font-semibold text-emerald-600 shrink-0 animate-pulse">
+                      {actorListToast}
+                    </span>
+                  )}
                 </div>
 
                 {actorsLoading ? (
@@ -3219,77 +3231,77 @@ export default function AdminPage() {
                       const edit       = actorEdits[actor.id] ?? {}
                       const currentUrl = edit.imageUrl !== undefined ? edit.imageUrl : (actor.imageUrl ?? '')
                       const saving     = edit._saving  ?? false
-                      const wikiing    = edit._wikiing ?? false
-                      const saved      = edit._saved   ?? false
-                      // 사진 없는 배우 여부 (흐릿하게 표시하기 위한 판별)
                       const hasImage   = !!currentUrl.trim()
+                      const isOpen     = actorEditOpen === actor.id
+                      // pendingActors에서 이 배우와 일치하는 항목 찾기
+                      const pendingMatch = pendingActors.find(p => p.actorName === actor.name)
 
-                      async function handleSaveImage() {
-                        if (!currentUrl.trim()) return
-                        setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], _saving: true, _saved: false } }))
+                      async function handleSaveUrl() {
+                        const url = currentUrl.trim()
+                        if (!url) return
+                        setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], _saving: true } }))
                         try {
-                          await updateDoc(doc(db, 'actors', actor.id), { imageUrl: currentUrl.trim() })
-                          setActorsList(prev => prev.map(a => a.id === actor.id ? { ...a, imageUrl: currentUrl.trim() } : a))
-                          setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], _saving: false, _saved: true } }))
-                          setTimeout(() => setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], _saved: false } })), 2000)
+                          await updateDoc(doc(db, 'actors', actor.id), { imageUrl: url })
+                          setActorsList(prev => prev.map(a => a.id === actor.id ? { ...a, imageUrl: url } : a))
+                          setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], _saving: false } }))
+                          setActorEditOpen(null)
+                          showActorListToast('사진이 변경됐어요 🙌')
                         } catch (err) {
-                          console.error('배우 사진 저장 오류:', err)
+                          console.error(err)
                           alert('저장 중 오류가 발생했습니다.')
                           setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], _saving: false } }))
                         }
                       }
 
-                      async function handleWikiSearch() {
-                        setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], _wikiing: true } }))
+                      async function handleSelectCandidate(imgUrl) {
+                        setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], _saving: true } }))
                         try {
-                          const r = await fetch(
-                            `https://ko.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(actor.name)}`
-                          )
-                          if (r.ok) {
-                            const data = await r.json()
-                            const imgUrl = data?.thumbnail?.source?.replace(/\/\d+px-/, '/800px-') ?? ''
-                            if (imgUrl) {
-                              setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], imageUrl: imgUrl, _wikiing: false } }))
-                            } else {
-                              alert(`「${actor.name}」위키백과에 사진이 없습니다.`)
-                              setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], _wikiing: false } }))
-                            }
-                          } else {
-                            alert(`「${actor.name}」위키백과 문서를 찾을 수 없습니다.`)
-                            setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], _wikiing: false } }))
-                          }
+                          await updateDoc(doc(db, 'actors', actor.id), { imageUrl: imgUrl })
+                          setActorsList(prev => prev.map(a => a.id === actor.id ? { ...a, imageUrl: imgUrl } : a))
+                          setActorEdits(prev => ({ ...prev, [actor.id]: { imageUrl: imgUrl, _saving: false } }))
+                          setActorEditOpen(null)
+                          showActorListToast('사진이 변경됐어요 🙌')
                         } catch (err) {
-                          console.error('위키백과 검색 오류:', err)
-                          alert('위키백과 검색 중 오류가 발생했습니다.')
-                          setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], _wikiing: false } }))
+                          console.error(err)
+                          alert('저장 중 오류가 발생했습니다.')
+                          setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], _saving: false } }))
+                        }
+                      }
+
+                      async function handleDeleteImage() {
+                        if (!window.confirm(`「${actor.name}」의 사진을 삭제할까요?`)) return
+                        setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], _saving: true } }))
+                        try {
+                          await updateDoc(doc(db, 'actors', actor.id), { imageUrl: '' })
+                          setActorsList(prev => prev.map(a => a.id === actor.id ? { ...a, imageUrl: '' } : a))
+                          setActorEdits(prev => ({ ...prev, [actor.id]: { imageUrl: '', _saving: false } }))
+                          setActorEditOpen(null)
+                          showActorListToast('사진을 삭제했어요')
+                        } catch (err) {
+                          console.error(err)
+                          alert('삭제 중 오류가 발생했습니다.')
+                          setActorEdits(prev => ({ ...prev, [actor.id]: { ...prev[actor.id], _saving: false } }))
                         }
                       }
 
                       return (
-                        // 사진 없는 배우는 opacity-50으로 흐릿하게 표시, hover 시 복원
                         <div key={actor.id}
                              className={`bg-white rounded-2xl border border-stone-100 shadow-sm p-4
-                                         flex items-start gap-4 transition-opacity
+                                         transition-opacity
                                          ${!hasImage ? 'opacity-50 hover:opacity-90' : ''}`}>
-                          {/* 사진 미리보기 — 클릭하면 URL 입력칸으로 포커스 이동 */}
-                          <div
-                            className="w-16 h-16 rounded-xl overflow-hidden bg-stone-100 shrink-0
-                                       flex items-center justify-center cursor-pointer"
-                            onClick={() => document.getElementById(`actor-url-${actor.id}`)?.focus()}
-                            title="클릭하면 URL 입력칸으로 이동"
-                          >
-                            {currentUrl ? (
-                              <img src={toHttps(currentUrl)} alt={actor.name}
-                                   className="w-full h-full object-cover"
-                                   onError={e => { e.target.style.display = 'none' }} />
-                            ) : (
-                              <span className="text-2xl text-stone-400">{actor.name?.[0] ?? '?'}</span>
-                            )}
-                          </div>
-
-                          {/* 배우 정보 + 편집 */}
-                          <div className="flex-1 min-w-0 space-y-2">
-                            <div className="flex items-center gap-2">
+                          {/* 기본 행: 사진 + 이름 + 사진 변경 버튼 */}
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl overflow-hidden bg-stone-100 shrink-0
+                                            flex items-center justify-center">
+                              {currentUrl ? (
+                                <img src={toHttps(currentUrl)} alt={actor.name}
+                                     className="w-full h-full object-cover"
+                                     onError={e => { e.target.style.display = 'none' }} />
+                              ) : (
+                                <span className="text-xl text-stone-400">{actor.name?.[0] ?? '?'}</span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
                               <p className="font-semibold text-stone-800 text-sm">{actor.name}</p>
                               {actorShowCountMap[actor.name] > 0 && (
                                 <span className="text-[11px] text-stone-400">
@@ -3297,44 +3309,120 @@ export default function AdminPage() {
                                 </span>
                               )}
                             </div>
-
-                            {/* URL 직접 입력 */}
-                            <div className="flex gap-2">
-                              <input
-                                id={`actor-url-${actor.id}`}
-                                type="url"
-                                value={currentUrl}
-                                onChange={e => setActorEdits(prev => ({
-                                  ...prev,
-                                  [actor.id]: { ...prev[actor.id], imageUrl: e.target.value },
-                                }))}
-                                placeholder="이미지 URL 입력..."
-                                className={`${INPUT} flex-1 text-xs`}
-                              />
-                            </div>
-
-                            {/* 버튼 행: 위키백과 자동 검색 / 저장 */}
-                            <div className="flex gap-2 flex-wrap">
-                              <button
-                                onClick={handleWikiSearch}
-                                disabled={wikiing}
-                                className="px-3 py-1.5 text-xs font-semibold rounded-lg
-                                           bg-blue-50 text-blue-700 hover:bg-blue-100
-                                           disabled:opacity-50 transition-colors"
-                              >
-                                {wikiing ? '검색 중...' : '🔍 위키백과 자동'}
-                              </button>
-                              <button
-                                onClick={handleSaveImage}
-                                disabled={saving || !currentUrl.trim()}
-                                className="px-3 py-1.5 text-xs font-semibold rounded-lg
-                                           bg-emerald-600 text-white hover:bg-emerald-500
-                                           disabled:opacity-50 transition-colors"
-                              >
-                                {saving ? '저장 중...' : saved ? '✅ 저장됨' : '저장'}
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => setActorEditOpen(isOpen ? null : actor.id)}
+                              className={`shrink-0 text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                                isOpen
+                                  ? 'bg-stone-900 text-white border-stone-900'
+                                  : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                              }`}
+                            >
+                              {isOpen ? '닫기' : '사진 변경'}
+                            </button>
                           </div>
+
+                          {/* 펼쳐진 옵션 패널 */}
+                          {isOpen && (
+                            <div className="mt-3 pt-3 border-t border-stone-100 space-y-3">
+
+                              {/* 옵션 1: URL 직접 입력 */}
+                              <div>
+                                <p className="text-xs font-semibold text-stone-500 mb-1.5">1. URL 직접 입력</p>
+                                <div className="flex gap-2">
+                                  <input
+                                    type="url"
+                                    value={currentUrl}
+                                    onChange={e => setActorEdits(prev => ({
+                                      ...prev,
+                                      [actor.id]: { ...prev[actor.id], imageUrl: e.target.value },
+                                    }))}
+                                    placeholder="이미지 URL 입력..."
+                                    className={`${INPUT} flex-1 text-xs`}
+                                  />
+                                  <button
+                                    onClick={handleSaveUrl}
+                                    disabled={saving || !currentUrl.trim()}
+                                    className="shrink-0 px-3 py-1.5 text-xs font-semibold rounded-lg
+                                               bg-emerald-600 text-white hover:bg-emerald-500
+                                               disabled:opacity-40 transition-colors"
+                                  >
+                                    {saving ? '저장 중...' : '저장'}
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* 옵션 2: 플레이DB 후보 */}
+                              <div>
+                                <p className="text-xs font-semibold text-stone-500 mb-1.5">2. 플레이DB 후보</p>
+                                {pendingMatch ? (
+                                  <div className="space-y-2">
+                                    {/* 후보 버튼들 */}
+                                    {(pendingMatch.candidates?.length ?? 0) > 0 ? (
+                                      <div className="flex gap-2 flex-wrap">
+                                        {pendingMatch.candidates.map((c, i) => (
+                                          <div key={i} className="flex flex-col items-start">
+                                            <button
+                                              onClick={() => handleSelectCandidate(c.imageUrl)}
+                                              disabled={saving}
+                                              className="flex items-center gap-2 text-xs px-2 py-1.5 rounded-lg
+                                                         border border-stone-200 bg-stone-50 hover:bg-amber-50
+                                                         hover:border-amber-300 transition-colors disabled:opacity-40"
+                                            >
+                                              {c.imageUrl && (
+                                                <img src={toHttps(c.imageUrl)} alt={c.name}
+                                                     className="w-8 h-8 rounded-lg object-cover"
+                                                     onError={e => { e.target.style.display = 'none' }} />
+                                              )}
+                                              <span>{c.name} ({i + 1}순위)</span>
+                                            </button>
+                                            {c.shows?.length > 0 && (
+                                              <p className="text-[11px] text-stone-400 mt-0.5 pl-1">
+                                                {c.shows.slice(0, 2).join(', ')}
+                                              </p>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : pendingMatch.imageUrl ? (
+                                      <button
+                                        onClick={() => handleSelectCandidate(pendingMatch.imageUrl)}
+                                        disabled={saving}
+                                        className="flex items-center gap-2 text-xs px-2 py-1.5 rounded-lg
+                                                   border border-stone-200 bg-stone-50 hover:bg-amber-50
+                                                   hover:border-amber-300 transition-colors disabled:opacity-40"
+                                      >
+                                        <img src={toHttps(pendingMatch.imageUrl)} alt={actor.name}
+                                             className="w-8 h-8 rounded-lg object-cover"
+                                             onError={e => { e.target.style.display = 'none' }} />
+                                        <span>플레이DB 수집 사진 사용</span>
+                                      </button>
+                                    ) : (
+                                      <p className="text-xs text-stone-400">수집된 후보 사진이 없습니다.</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-stone-400">
+                                    사진 검토 탭에서 검색하세요.
+                                    (get_actor_images_playdb.py 실행 후 pending_actors에 저장된 경우 여기에 표시됩니다)
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* 옵션 3: 사진 삭제 */}
+                              <div className="pt-1">
+                                <button
+                                  onClick={handleDeleteImage}
+                                  disabled={saving || !hasImage}
+                                  className="text-xs px-3 py-1.5 rounded-lg border border-red-200
+                                             text-red-500 hover:bg-red-50 transition-colors
+                                             disabled:opacity-30"
+                                >
+                                  🗑 사진 삭제
+                                </button>
+                              </div>
+
+                            </div>
+                          )}
                         </div>
                           )
                           })}
