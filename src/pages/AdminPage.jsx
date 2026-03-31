@@ -567,15 +567,17 @@ function parseNamuWiki(text) {
   const venueKeywords = /(?:극장|아트홀|아트센터|아트|씨어터|씨어타|theater|theatre|센터|공연\s*장소|공연장|NOL|유니플렉스|TOM(?!\s*\d)|KT&G|상상마당|자유극장|두산|연강홀|홍익대|예술의전당|CJ|토월|코엑스|아티움|국립|[가-힣]{1,10}[홀관당극])/i
   const seasonPrefixRe = /(?:공연\s*예정\s*)?(?:초연|재연|삼연|사연|오연|트라이아웃|앵콜\s*공연?|앵콜)\s*[:：]?\s*/gi
 
-  // "공연장" 또는 "공연 장소" 포함 줄에서 직접 추출
-  const venueLine = lines.find(l => /공연\s*장소|공연장/.test(l))
-  if (venueLine) {
-    const v = cleanLine(venueLine)
-      .replace(/공연\s*장소|공연장/g, '')
-      .replace(seasonPrefixRe, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-    if (v && venueKeywords.test(v)) result._venue = v
+  // "공연장" 또는 "공연 장소" 포함 줄 + 다음 줄까지 탐색
+  const venueLineIdx = lines.findIndex(l => /공연\s*장소|공연장/.test(l))
+  if (venueLineIdx >= 0) {
+    for (let i = venueLineIdx; i <= Math.min(venueLineIdx + 3, lines.length - 1); i++) {
+      const v = cleanLine(lines[i])
+        .replace(/공연\s*장소|공연장/g, '')
+        .replace(seasonPrefixRe, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+      if (v && venueKeywords.test(v)) { result._venue = v; break }
+    }
   }
 
   // ── 4. 기간 ──
@@ -594,13 +596,24 @@ function parseNamuWiki(text) {
   delete result._venue
 
   // ── 5. 관람시간 ──
-  const timeLine = lines.find(l => /관람\s*시간|관람시간|러닝\s*타임|러닝타임/.test(l))
-  console.log('[TIME2]', JSON.stringify(timeLine))
-  const runtimeMatch =
-    textNoEdit.match(/(?:관람\s*시간|관람시간|러닝\s*타임|러닝타임|상연\s*시간)\s*[:：]\s*(?:총\s*)?(\d{2,3})\s*분/) ??
-    textNoEdit.match(/(\d{2,3})\s*분\s*(?:\[\d+\])?\s*\(?\s*인터미션/) ??
-    textNoEdit.match(/총\s*(\d{2,3})\s*분/)
-  if (runtimeMatch) result.runtime = parseInt(runtimeMatch[1])
+  // "관람시간" 줄 찾고, 그 줄 + 앞뒤 3줄 범위에서 숫자+분 탐색
+  const timeLineIdx = lines.findIndex(l => /관람\s*시간|관람시간|러닝\s*타임|러닝타임|상연\s*시간/.test(l))
+  let runtimeVal = null
+  if (timeLineIdx >= 0) {
+    for (let i = Math.max(0, timeLineIdx - 1); i <= Math.min(timeLineIdx + 3, lines.length - 1); i++) {
+      const m = lines[i].replace(/\[\d+\]/g, '').match(/(\d{2,3})\s*분/)
+      if (m) { runtimeVal = parseInt(m[1]); break }
+    }
+  }
+  // fallback: 전체 텍스트에서 패턴 매칭
+  if (!runtimeVal) {
+    const fm =
+      textNoEdit.match(/(?:관람\s*시간|관람시간|러닝\s*타임|러닝타임|상연\s*시간)\s*[:：]\s*(?:총\s*)?(\d{2,3})\s*분/) ??
+      textNoEdit.match(/(\d{2,3})\s*분\s*(?:\[\d+\])?\s*\(?\s*인터미션/) ??
+      textNoEdit.match(/총\s*(\d{2,3})\s*분/)
+    if (fm) runtimeVal = parseInt(fm[1])
+  }
+  if (runtimeVal) result.runtime = runtimeVal
 
   return result
 }
