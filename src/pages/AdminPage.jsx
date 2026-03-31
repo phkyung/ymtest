@@ -594,15 +594,31 @@ function parseNamuWiki(text) {
   const seasonPrefixRe = new RegExp(`(?:공연\\s*예정\\s*)?(?:${SEASON_NAMES})\\s*[:：]?\\s*`, 'gi')
   const seasonLinePrefixRe = new RegExp(`(?:공연\\s*예정\\s*)?(?:${SEASON_NAMES})\\s*[:：]`, 'i')
 
-  // ① 시즌 prefix("초연:", "재연:", "육연:" 등) 있는 줄 중 가장 마지막 것 사용
+  // 시즌 이름 우선순위 (앞 = 낮음, 뒤 = 높음)
+  const SEASON_ORDER = ['초연','재연','삼연','사연','오연','육연','칠연','팔연','구연','십연','트라이아웃','앵콜']
+  function seasonRank(line) {
+    let best = -1
+    for (let r = 0; r < SEASON_ORDER.length; r++) {
+      if (line.includes(SEASON_ORDER[r])) best = r
+    }
+    // 앵콜 공연 등 변형 처리
+    if (/앵콜/.test(line)) best = Math.max(best, SEASON_ORDER.indexOf('앵콜'))
+    return best
+  }
+
+  // ① 시즌 prefix("초연:", "재연:", "육연:" 등) 있는 줄 중 가장 높은 시즌 우선
+  //    동순위면 텍스트 뒤쪽(마지막) 줄 사용
   const seasonVenueLines = lines
     .map((l, i) => ({ l, i }))
     .filter(({ l }) => seasonLinePrefixRe.test(l))
 
   if (seasonVenueLines.length > 0) {
-    // 시즌 prefix 줄 중 가장 마지막(텍스트 순서) 것부터 역순으로 탐색
-    for (let k = seasonVenueLines.length - 1; k >= 0; k--) {
-      const { i } = seasonVenueLines[k]
+    // 각 줄에 시즌 rank 부여 후, rank 내림차순 → 줄 번호 내림차순으로 정렬
+    const ranked = seasonVenueLines
+      .map(entry => ({ ...entry, rank: seasonRank(entry.l) }))
+      .sort((a, b) => b.rank !== a.rank ? b.rank - a.rank : b.i - a.i)
+
+    for (const { i } of ranked) {
       for (let j = i; j <= Math.min(i + 2, lines.length - 1); j++) {
         const v = cleanLine(lines[j])
           .replace(seasonPrefixRe, '')
