@@ -526,9 +526,12 @@ function parseNamuWiki(text) {
     const collected = []
     for (let i = headerIdx + 1; i < lines.length; i++) {
       const noEdit = linesNoEdit[i]
-      // 다음 섹션 헤더([편집] 포함 줄 또는 숫자. 시작 줄)에서 종료
+      // 다음 섹션 헤더([편집] 포함 줄 또는 "숫자. 한글/영문" 형태)에서 종료
+      // 단, 4자리 숫자로 시작하는 날짜(YYYY.MM.DD 등)는 종료하지 않음
       if (lines[i].includes('[편집]')) break
-      if (/^\d+\./.test(noEdit.trim())) break
+      const trimmed = noEdit.trim()
+      if (/^\d{4}\./.test(trimmed)) { collected.push(noEdit); continue }
+      if (/^\d+\.\s+[가-힣a-zA-Z]/.test(trimmed)) break
       collected.push(noEdit)
     }
     return collected.join('\n')
