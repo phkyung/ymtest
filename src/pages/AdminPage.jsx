@@ -538,8 +538,12 @@ function parseNamuWiki(text) {
   const stripLinks = s => s.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2').replace(/\[\[([^\]]+)\]\]/g, '$1')
   const preClean   = s => stripLinks(s).replace(/\[\d+\]/g, '').replace(/\{\{\{[^}]*\}\}\}/g, '').replace(/\{\{\{|\}\}\}/g, '')
 
-  const castHeaderIdx = lines.findIndex(l => /(?:캐스트|출연진|캐스팅)/.test(l))
-  console.log('[CAST] headerIdx:', castHeaderIdx, '\n다음10줄:', lines.slice(castHeaderIdx + 1, castHeaderIdx + 11))
+  const castKeywordRe = /(?:캐스트|출연진|캐스팅)/
+  const castHeaderIdx = (() => {
+    const withEdit = lines.findIndex(l => castKeywordRe.test(l) && l.includes('[편집]'))
+    if (withEdit >= 0) return withEdit
+    return lines.reduce((last, l, i) => castKeywordRe.test(l) ? i : last, -1)
+  })()
   let castText = ''
   if (castHeaderIdx >= 0) {
     const castNum = lines[castHeaderIdx].match(/^(\d+)\./)?.[1] ?? null
