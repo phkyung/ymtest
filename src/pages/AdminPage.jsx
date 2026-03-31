@@ -7,7 +7,7 @@
 //   - 등록 완료  : shows 컬렉션, 카드 수정/삭제
 // ─────────────────────────────────────────────
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors,
 } from '@dnd-kit/core'
@@ -1805,8 +1805,9 @@ export default function AdminPage() {
   // pending_actors 컬렉션 (플레이DB 수집 검토 대기 사진)
   const [pendingActors,        setPendingActors]        = useState([])
   const [pendingActorsLoading, setPendingActorsLoading] = useState(false)
-  // 배우 이름 검색
+  // 배우 이름 검색 + 정렬
   const [actorSearch, setActorSearch] = useState('')
+  const [actorSort,   setActorSort]   = useState('name') // 'name' | 'shows'
 
   // ── Firestore 실시간 구독 ────────────────────
   useEffect(() => {
@@ -1880,6 +1881,20 @@ export default function AdminPage() {
       })
       .catch(err => { console.error('pending_actors 로드 오류:', err); setPendingActorsLoading(false) })
   }, [tab, actorSubTab, authed])
+
+  // ── 배우별 출연 공연 수 집계 (shows + pending 전체 cast 스캔) ──
+  const actorShowCountMap = useMemo(() => {
+    const map = {}
+    for (const show of [...showsList, ...pendingList]) {
+      if (!Array.isArray(show.cast)) continue
+      const seen = new Set()
+      for (const m of show.cast) {
+        const name = m.actorName?.trim()
+        if (name && !seen.has(name)) { seen.add(name); map[name] = (map[name] ?? 0) + 1 }
+      }
+    }
+    return map
+  }, [showsList, pendingList])
 
   // ── 필터 + 정렬 적용된 대기 목록 ────────────
   const filteredPendingList = pendingList
@@ -3010,26 +3025,37 @@ export default function AdminPage() {
             </div>
 
 
-            {/* ── 배우 이름 검색 (사진 검토 / 배우 전체 목록 탭에서만 표시) ── */}
+            {/* ── 배우 이름 검색 + 정렬 (사진 검토 / 배우 전체 목록 탭에서만 표시) ── */}
             {(actorSubTab === 'review' || actorSubTab === 'list') && (
-              <div className="relative">
-                <input
-                  type="text"
-                  value={actorSearch}
-                  onChange={e => setActorSearch(e.target.value)}
-                  placeholder="배우 이름 검색..."
-                  className="w-full px-4 py-2.5 pr-9 rounded-xl border border-stone-200
-                             text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-300"
-                />
-                {actorSearch && (
-                  <button
-                    onClick={() => setActorSearch('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400
-                               hover:text-stone-600 text-lg leading-none"
-                  >
-                    ×
-                  </button>
-                )}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={actorSearch}
+                    onChange={e => setActorSearch(e.target.value)}
+                    placeholder="배우 이름 검색..."
+                    className="w-full px-4 py-2.5 pr-9 rounded-xl border border-stone-200
+                               text-sm bg-white focus:outline-none focus:ring-2 focus:ring-stone-300"
+                  />
+                  {actorSearch && (
+                    <button
+                      onClick={() => setActorSearch('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400
+                                 hover:text-stone-600 text-lg leading-none"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+                <select
+                  value={actorSort}
+                  onChange={e => setActorSort(e.target.value)}
+                  className="shrink-0 border border-stone-200 rounded-xl px-3 py-2 text-sm
+                             bg-white focus:outline-none focus:ring-2 focus:ring-stone-300 text-stone-600"
+                >
+                  <option value="name">가나다순</option>
+                  <option value="shows">출연 공연 많은 순</option>
+                </select>
               </div>
             )}
 
@@ -3060,22 +3086,29 @@ export default function AdminPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {pendingActors
-                      .filter(p => !actorSearch.trim() || p.actorName?.includes(actorSearch.trim()))
-                      .length === 0 ? (
-                      <p className="text-center text-stone-400 text-sm py-8">검색 결과가 없어요</p>
-                    ) : (
-                      pendingActors
+                    {(() => {
+                      const filtered = pendingActors
                         .filter(p => !actorSearch.trim() || p.actorName?.includes(actorSearch.trim()))
-                        .map(pending => (
+                        .sort((a, b) => actorSort === 'shows'
+                          ? (actorShowCountMap[b.actorName] ?? 0) - (actorShowCountMap[a.actorName] ?? 0)
+                          : (a.actorName ?? '').localeCompare(b.actorName ?? '', 'ko'))
+                      if (filtered.length === 0)
+                        return <p className="text-center text-stone-400 text-sm py-8">검색 결과가 없어요</p>
+                      return filtered.map(pending => (
+                        <div key={pending.id}>
+                          {actorSort === 'shows' && actorShowCountMap[pending.actorName] > 0 && (
+                            <p className="text-xs text-stone-400 mb-1 pl-1">
+                              {actorShowCountMap[pending.actorName]}개 공연 출연
+                            </p>
+                          )}
                           <PendingActorCard
-                            key={pending.id}
                             pending={pending}
                             onApprove={handleApprovePendingActor}
                             onReject={handleRejectPendingActor}
                           />
-                        ))
-                    )}
+                        </div>
+                      ))
+                    })()}
                   </div>
                 )}
               </div>
@@ -3112,10 +3145,20 @@ export default function AdminPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {actorsList.filter(a => !actorSearch.trim() || a.name?.includes(actorSearch.trim())).length === 0 ? (
+                    {actorsList
+                      .filter(a => !actorSearch.trim() || a.name?.includes(actorSearch.trim()))
+                      .sort((a, b) => actorSort === 'shows'
+                        ? (actorShowCountMap[b.name] ?? 0) - (actorShowCountMap[a.name] ?? 0)
+                        : (a.name ?? '').localeCompare(b.name ?? '', 'ko'))
+                      .length === 0 ? (
                       <p className="text-center text-stone-400 text-sm py-8">검색 결과가 없어요</p>
                     ) : null}
-                    {actorsList.filter(a => !actorSearch.trim() || a.name?.includes(actorSearch.trim())).map(actor => {
+                    {actorsList
+                      .filter(a => !actorSearch.trim() || a.name?.includes(actorSearch.trim()))
+                      .sort((a, b) => actorSort === 'shows'
+                        ? (actorShowCountMap[b.name] ?? 0) - (actorShowCountMap[a.name] ?? 0)
+                        : (a.name ?? '').localeCompare(b.name ?? '', 'ko'))
+                      .map(actor => {
                       const edit       = actorEdits[actor.id] ?? {}
                       const currentUrl = edit.imageUrl !== undefined ? edit.imageUrl : (actor.imageUrl ?? '')
                       const saving     = edit._saving  ?? false
@@ -3189,7 +3232,14 @@ export default function AdminPage() {
 
                           {/* 배우 정보 + 편집 */}
                           <div className="flex-1 min-w-0 space-y-2">
-                            <p className="font-semibold text-stone-800 text-sm">{actor.name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-stone-800 text-sm">{actor.name}</p>
+                              {actorShowCountMap[actor.name] > 0 && (
+                                <span className="text-[11px] text-stone-400">
+                                  {actorShowCountMap[actor.name]}개 공연
+                                </span>
+                              )}
+                            </div>
 
                             {/* URL 직접 입력 */}
                             <div className="flex gap-2">
