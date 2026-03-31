@@ -494,55 +494,57 @@ function parseNamuWiki(text) {
   // ── 1. 시놉시스 ──
   // 시놉시스 전용 추출: 빈 줄은 무시하고 계속 읽으며,
   // "숫자." 시작 줄 또는 [편집] 줄(헤더 자체 제외)에서 종료
+  // 줄에서 [편집]·접기태그 제거 후 탭/공백 strip
+  function cleanSynLine(raw) {
+    return raw
+      .replace(/\[편집\]/g, '')
+      .replace(/【[^】]*】/g, '')
+      .replace(/\{\{[^}]*\}\}/g, '')
+      .replace(/^[\t ]+|[\t ]+$/g, '')
+  }
+
   function synopsisBlock(headerIdx) {
     const collected = []
-    console.log('[SYN] synopsisBlock 시작, headerIdx=', headerIdx, '줄:', lines[headerIdx])
+
+    // ① 헤더 줄 자체에 탭+내용 인용구 형태인 경우 포함
+    //    예: "2. 시놉시스[편집]\t1907년 봄..." 또는 헤더 아래 탭줄
+    const headerLineClean = cleanSynLine(lines[headerIdx])
+    // 섹션 번호·제목 제거 후 남은 내용
+    const headerContent = headerLineClean.replace(/^\d+[\.\d]*\s*[가-힣a-zA-Z\s]*/, '').trim()
+    if (headerContent.length > 5) collected.push(headerContent)
+
     for (let i = headerIdx + 1; i < lines.length; i++) {
       const raw    = lines[i]
       const noEdit = linesNoEdit[i]
-      const charCodes = [...noEdit.slice(0,4)].map(c => c.charCodeAt(0))
-      if (raw.includes('[편집]')) {
-        console.log('[SYN] 종료([편집]) i=', i, '줄:', raw.slice(0,60))
-        break
-      }
-      if (/^\d+\./.test(noEdit.trim())) {
-        console.log('[SYN] 종료(섹션헤더) i=', i, '줄:', noEdit.slice(0,60))
-        break
-      }
-      console.log(`[SYN] i=${i} charCodes=${charCodes} | "${noEdit.slice(0,80)}"`)
-      const cleaned = noEdit
-        .replace(/【[^】]*】/g, '')
-        .replace(/\{\{[^}]*\}\}/g, '')
-        .replace(/^[\t ]+|[\t ]+$/g, '')
+      // [편집] 포함 줄 → 종료 (다음 섹션 헤더)
+      if (raw.includes('[편집]')) break
+      // "숫자." 으로 시작하는 섹션/하위섹션 헤더 → 종료
+      if (/^\d+\./.test(noEdit.trim())) break
+      const cleaned = cleanSynLine(raw)
       collected.push(cleaned)
     }
     return collected.join('\n')
   }
 
   const synHeaderIdx = lines.findIndex(l => /시놉시스/.test(l))
-  console.log('[SYN] synHeaderIdx=', synHeaderIdx, synHeaderIdx >= 0 ? lines[synHeaderIdx] : '없음')
   if (synHeaderIdx >= 0) {
     const synNumMatch = lines[synHeaderIdx].match(/^(\d+)\./)
     const synNum = synNumMatch?.[1] ?? null
     const synSubSecs = synNum ? allSubSections.filter(m => m[1] === synNum) : []
-    console.log('[SYN] synNum=', synNum, 'subSecs수=', synSubSecs.length)
 
     let syn = ''
     if (synSubSecs.length > 0) {
       const lastSub = synSubSecs[synSubSecs.length - 1]
-      console.log('[SYN] 마지막 하위섹션:', lastSub[0])
       const subLineIdx = linesNoEdit.findIndex((_, idx) => {
         let pos = 0
         for (let j = 0; j < idx; j++) pos += linesNoEdit[j].length + 1
         return pos >= lastSub.index
       })
-      console.log('[SYN] subLineIdx=', subLineIdx)
       syn = preClean(synopsisBlock(subLineIdx >= 0 ? subLineIdx : synHeaderIdx))
     } else {
       syn = preClean(synopsisBlock(synHeaderIdx))
     }
 
-    console.log('[SYN] 최종 syn(200자):', syn.slice(0, 200))
     syn = syn.replace(/이\s*문서에\s*스포일러[\s\S]*/i, '')
     syn = syn.replace(/^.*(?:링크픽|넘버\s*영상|공개|예고편|티저)[^\n]*$/gm, '')
     syn = syn.replace(/\n{3,}/g, '\n\n').trim()
@@ -607,7 +609,7 @@ function parseNamuWiki(text) {
   // 날짜: YYYY.MM.DD 또는 YYYY. MM. DD (공백 포함)
   const dateRegex = /(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?\s*[~～\-]\s*(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?/g
   // 공연장 키워드: 극장·홀·센터·아트·관·당·극 + 공연 장소
-  const venueKeywords = /(?:극장|아트홀|아트센터|아트|씨어터|씨어타|theater|theatre|센터|공연\s*장소|공연장|[가-힣]{1,10}[홀관당극])/i
+  const venueKeywords = /(?:극장|아트홀|아트센터|아트|씨어터|씨어타|theater|theatre|센터|공연\s*장소|공연장|NOL|유니플렉스|TOM(?!\s*\d)|KT&G|상상마당|자유극장|두산|연강홀|홍익대|예술의전당|CJ|토월|코엑스|아티움|국립|[가-힣]{1,10}[홀관당극])/i
   const removeDatePat  = /\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.?\s*[~～\-]\s*\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.?/g
 
   const dateMatches = [...textNoEdit.matchAll(dateRegex)]
@@ -635,9 +637,7 @@ function parseNamuWiki(text) {
         .replace(seasonPrefixRe, '')
         .replace(/[|\[\]]/g, '')
         .trim()
-      const matched = c && venueKeywords.test(c)
-      console.log('[VENUE] extractVenue:', JSON.stringify(line.slice(0,80)), '→ cleaned:', JSON.stringify(c), '/ keywordMatch:', matched)
-      return matched ? c.replace(/\s+/g, ' ') : null
+      return (c && venueKeywords.test(c)) ? c.replace(/\s+/g, ' ') : null
     }
 
     // ① "시즌prefix: 공연장" 형식 줄을 전체에서 모아 가장 마지막 사용
@@ -645,22 +645,18 @@ function parseNamuWiki(text) {
       seasonPrefixRe.test(preClean(l).trim()) && !dateRegex.test(l)
     )
     dateRegex.lastIndex = 0
-    console.log('[VENUE] prefixVenueLines:', prefixVenueLines)
     for (let i = prefixVenueLines.length - 1; i >= 0; i--) {
       const v = extractVenue(prefixVenueLines[i])
-      if (v) { venue = v; console.log('[VENUE] ①에서 결정:', v); break }
+      if (v) { venue = v; break }
     }
 
     // ② prefix 줄에 없으면 날짜 같은 줄에서 추출
     if (!venue && dateLineIdx >= 0) {
-      console.log('[VENUE] ② dateLine:', JSON.stringify(dateLine))
       venue = extractVenue(dateLine)
-      if (venue) console.log('[VENUE] ②에서 결정:', venue)
     }
 
     // ③ 앞 3줄 내에서 탐색
     if (!venue && dateLineIdx >= 0) {
-      console.log('[VENUE] ③ 앞3줄 탐색, dateLineIdx=', dateLineIdx)
       for (let i = Math.max(0, dateLineIdx - 3); i <= dateLineIdx; i++) {
         const v = extractVenue(linesNoEdit[i])
         if (v) {
@@ -668,13 +664,11 @@ function parseNamuWiki(text) {
           const isHallLine = nextLine && !venueKeywords.test(nextLine) &&
                              /[관동홀층]$/.test(nextLine) && nextLine.length <= 20
           venue = isHallLine ? `${v} ${nextLine}`.replace(/\s+/g, ' ') : v
-          console.log('[VENUE] ③에서 결정:', venue)
           break
         }
       }
     }
 
-    console.log('[VENUE] 최종 venue=', venue)
     result.dates = { startDate, endDate, venue }
   }
 
