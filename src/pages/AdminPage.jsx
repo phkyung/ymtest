@@ -443,37 +443,13 @@ function TicketLinksSection({ links, onChange }) {
 
 // ── 공연 정보 편집 폼 (대기 중 · 등록 완료 공통) ──
 function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
-  const [synopsisLoading, setSynopsisLoading] = useState(false)
-
   // sourceUrl에서 mt20id 파싱 (예: ...?pc=02&mt20id=PF12345)
   const mt20id = draft.sourceUrl
     ? new URLSearchParams(draft.sourceUrl.split('?')[1] ?? '').get('mt20id')
     : null
 
-  async function handleFetchSynopsis() {
-    if (!mt20id) return
-    const apiKey = import.meta.env.VITE_KOPIS_API_KEY
-    if (!apiKey) { alert('VITE_KOPIS_API_KEY 환경변수가 설정되지 않았습니다.'); return }
-    setSynopsisLoading(true)
-    try {
-      const res = await fetch(
-        `https://www.kopis.or.kr/openApi/restful/pblprfr/${mt20id}?service=${apiKey}`
-      )
-      const text = await res.text()
-      const parser = new DOMParser()
-      const xml = parser.parseFromString(text, 'text/xml')
-      const sty = xml.querySelector('sty')?.textContent?.trim() ?? ''
-      if (sty) {
-        onChangeDraft('synopsis', sty)
-      } else {
-        alert('KOPIS에서 시놉시스 정보를 찾을 수 없습니다.')
-      }
-    } catch (err) {
-      console.error('KOPIS 시놉시스 불러오기 실패:', err)
-      alert('불러오기 중 오류가 발생했습니다.')
-    } finally {
-      setSynopsisLoading(false)
-    }
+  function handleFetchSynopsis() {
+    alert('시놉시스는 Python 스크립트로 수집하세요.\npython kopis.py --synopsis-only')
   }
 
   // tags 배열 → 쉼표 문자열로 편집
@@ -631,11 +607,10 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
             <button
               type="button"
               onClick={handleFetchSynopsis}
-              disabled={synopsisLoading}
               className="text-xs px-2.5 py-1 rounded-lg bg-stone-100 text-stone-600
-                         hover:bg-stone-200 transition-colors disabled:opacity-50"
+                         hover:bg-stone-200 transition-colors"
             >
-              {synopsisLoading ? '불러오는 중…' : 'KOPIS에서 불러오기'}
+              KOPIS 시놉시스 안내
             </button>
           )}
         </div>
