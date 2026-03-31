@@ -551,6 +551,7 @@ function parseNamuWiki(text) {
       const endOff  = Math.min(nextSub?.index ?? Infinity, nextTop?.index ?? Infinity)
       castText = preClean(textNoEdit.slice(startIdx, endOff === Infinity ? undefined : startIdx + endOff))
     } else {
+      // 하위섹션 없으면 섹션 헤더 바로 다음부터 다음 섹션까지 수집
       castText = preClean(sectionBlockSimple(castHeaderIdx))
     }
   } else if (allSubSections.length > 0) {
@@ -563,7 +564,11 @@ function parseNamuWiki(text) {
   }
   if (castText) {
     const castItems = []
-    for (const m of castText.matchAll(/^[*\s]*([^:\|\-\n]{1,25}?)\s*(?::\s*|\s*\|\s*|\s+-\s*)(.+)$/gm)) {
+    for (const line of castText.split('\n')) {
+      // 날짜/공연 기간 줄 스킵 ("YYYY.MM.DD" 또는 "YYYY년" 포함)
+      if (/\d{4}\.\d{1,2}\.\d{1,2}/.test(line) || /\d{4}년/.test(line)) continue
+      const m = line.match(/^[*\s]*([^:\|\-\n]{1,25}?)\s*(?::\s*|\s*\|\s*|\s+-\s*)(.+)$/)
+      if (!m) continue
       const roleName = m[1].replace(/^\s*[-*]\s*/, '').trim()
       if (!roleName || /^\d+$/.test(roleName)) continue
       const actors = m[2].trim().split(/[,，/]/)
