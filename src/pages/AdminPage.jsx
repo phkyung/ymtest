@@ -450,255 +450,146 @@ function TicketLinksSection({ links, onChange }) {
 function parseNamuWiki(text) {
   const result = { synopsis: null, cast: null, dates: null, runtime: null }
 
-  // ── 공통 클린업 ──
-  const stripFootnotes = s => s.replace(/\[\d+\]/g, '').replace(/\[[A-Za-z]\]/g, '')
-  const stripLinks     = s => s.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2').replace(/\[\[([^\]]+)\]\]/g, '$1')
-  const stripFormat    = s => s.replace(/\{\{\{[^}]*\}\}\}/g, '').replace(/\{\{\{|\}\}\}/g, '')
-  const preClean       = s => stripFormat(stripLinks(stripFootnotes(s)))
-
   const lines = text.split('\n')
-  // [편집] 제거한 줄 배열
-  const linesNoEdit = lines.map(l => l.replace(/\[편집\]/g, ''))
 
-  // ── 헬퍼: [편집] 마커가 있는 줄의 인덱스 목록 ──
-  const editLineIdxs = lines
-    .map((l, i) => l.includes('[편집]') ? i : -1)
-    .filter(i => i >= 0)
-
-  const textNoEdit = linesNoEdit.join('\n')
-
-  // ── 헬퍼: X.X. 형식 서브섹션 목록 ──
-  const subSectionRe = /^(\d+)\.(\d+)\.\s+.+$/gm
-  const allSubSections = [...textNoEdit.matchAll(subSectionRe)]
-
-  // ── 헬퍼: 섹션 headerIdx 이후 블록 범위 반환 ──
-  // 종료 조건: [편집] 줄 / "숫자." 으로 시작하는 줄 / 연속 빈 줄 2개
-  function sectionBlock(headerIdx) {
-    const collected = []
-    let emptyRun = 0
-    for (let i = headerIdx + 1; i < lines.length; i++) {
-      const raw = lines[i]
-      const noEdit = linesNoEdit[i]
-      // [편집] 포함 줄 → 종료
-      if (raw.includes('[편집]')) break
-      // "숫자." 으로 시작하는 섹션 헤더 → 종료
-      if (/^\d+\./.test(noEdit.trim())) break
-      // 연속 빈 줄 2개 → 종료
-      if (noEdit.trim() === '') { emptyRun++; if (emptyRun >= 2) break }
-      else emptyRun = 0
-      collected.push(noEdit)
-    }
-    return collected.join('\n')
-  }
-
-  // ── 1. 시놉시스 ──
-  // 시놉시스 전용 추출: 빈 줄은 무시하고 계속 읽으며,
-  // "숫자." 시작 줄 또는 [편집] 줄(헤더 자체 제외)에서 종료
-  // 줄에서 [편집]·접기태그 제거 후 탭/공백 strip
-  function cleanSynLine(raw) {
+  // 공통: 줄 클린업 (링크·각주·편집태그·탭 제거)
+  function cleanLine(raw) {
     return raw
+      .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2')
+      .replace(/\[\[([^\]]+)\]\]/g, '$1')
       .replace(/\[편집\]/g, '')
+      .replace(/\[\d+\]/g, '')
+      .replace(/\[[A-Za-z]\]/g, '')
+      .replace(/\{\{\{[^}]*\}\}\}/g, '')
+      .replace(/\{\{\{|\}\}\}/g, '')
       .replace(/【[^】]*】/g, '')
-      .replace(/\{\{[^}]*\}\}/g, '')
       .replace(/^[\t ]+|[\t ]+$/g, '')
   }
 
-  // 추출된 시놉시스 블록 전체에 적용하는 필터
-  function cleanSynText(syn) {
-    syn = syn.replace(/이\s*문서에\s*스포일러[\s\S]*/i, '')
-    // 유튜브/영상/URL/제작사 홍보 줄 제거
-    syn = syn.replace(/^.*(?:링크픽|넘버\s*영상|공개|예고편|티저|구독자?|YouTube|youtu\.|다음에서\s*보기|TRAILER|http|www\.|콘텐츠합|CONTENTS\s*HAAP)[^\n]*$/gim, '')
-    // 영어 대문자로만 된 줄 제거 (VAL] SPECIAL TRAILER 류)
-    syn = syn.replace(/^[A-Z\s\[\]!?&|,.\-_'"]+$/gm, '')
-    syn = syn.replace(/\n{3,}/g, '\n\n').trim()
-    return syn
-  }
-
-  function synopsisBlock(headerIdx) {
-    const collected = []
-
-    // 헤더 줄 자체에 탭+내용 인용구가 있으면 포함
-    const headerLineClean = cleanSynLine(lines[headerIdx])
-    const headerContent = headerLineClean.replace(/^\d+[\.\d]*\s*[가-힣a-zA-Z\s]*/, '').trim()
-    if (headerContent.length > 5) collected.push(headerContent)
-
-    for (let i = headerIdx + 1; i < lines.length; i++) {
-      const raw    = lines[i]
-      const noEdit = linesNoEdit[i]
-      // [편집] 포함 줄 → 다음 섹션 헤더이므로 종료
-      if (raw.includes('[편집]')) break
-      // "숫자." 으로 시작하는 섹션/하위섹션 헤더 → 종료
-      if (/^\d+\./.test(noEdit.trim())) break
-      // 빈 줄 포함 그대로 수집 (내용 중간의 단락 구분 보존)
-      collected.push(cleanSynLine(raw))
-    }
-    return collected.join('\n')
-  }
-
+  // ── 1. 시놉시스 ──
   const synHeaderIdx = lines.findIndex(l => /시놉시스/.test(l))
-  if (synHeaderIdx >= 0) {
-    const synNumMatch = lines[synHeaderIdx].match(/^(\d+)\./)
-    const synNum = synNumMatch?.[1] ?? null
-    const synSubSecs = synNum ? allSubSections.filter(m => m[1] === synNum) : []
+  const synStartIdx  = synHeaderIdx >= 0 ? synHeaderIdx : -1
 
-    let syn = ''
-    if (synSubSecs.length > 0) {
-      const lastSub = synSubSecs[synSubSecs.length - 1]
-      const subLineIdx = linesNoEdit.findIndex((_, idx) => {
-        let pos = 0
-        for (let j = 0; j < idx; j++) pos += linesNoEdit[j].length + 1
-        return pos >= lastSub.index
-      })
-      syn = preClean(synopsisBlock(subLineIdx >= 0 ? subLineIdx : synHeaderIdx))
-    } else {
-      syn = preClean(synopsisBlock(synHeaderIdx))
+  if (synStartIdx >= 0) {
+    const collected = []
+    for (let i = synStartIdx + 1; i < lines.length; i++) {
+      const cl = cleanLine(lines[i])
+      // 숫자. 으로 시작하는 섹션 헤더 → 종료
+      if (/^\d+\./.test(cl)) break
+      // 불필요 줄 스킵
+      if (/구독자?|YouTube|youtu\.|TRAILER|http|www\.|다음에서\s*보기|이\s*문서에\s*스포일러/i.test(cl)) continue
+      // 영어 대문자로만 된 줄 스킵
+      if (/^[A-Z\s\[\]!?&|,.\-_'"]+$/.test(cl) && cl.trim().length > 0) continue
+      collected.push(cl)
     }
-
-    syn = cleanSynText(syn)
+    const syn = collected.join('\n').replace(/\n{3,}/g, '\n\n').trim()
     if (syn.length > 10) result.synopsis = syn
   }
 
-  // 시놉시스 추출 실패 시 "개요" 섹션으로 fallback
+  // 시놉시스 실패 시 "개요" 섹션으로 fallback
   if (!result.synopsis) {
-    const overviewHeaderIdx = lines.findIndex(l => /개요/.test(l))
-    if (overviewHeaderIdx >= 0) {
-      let ov = cleanSynText(preClean(synopsisBlock(overviewHeaderIdx)))
+    const ovIdx = lines.findIndex(l => /개요/.test(l))
+    if (ovIdx >= 0) {
+      const collected = []
+      for (let i = ovIdx + 1; i < lines.length; i++) {
+        const cl = cleanLine(lines[i])
+        if (/^\d+\./.test(cl)) break
+        if (/구독자?|YouTube|youtu\.|TRAILER|http|www\.|이\s*문서에\s*스포일러/i.test(cl)) continue
+        collected.push(cl)
+      }
+      const ov = collected.join('\n').replace(/\n{3,}/g, '\n\n').trim()
       if (ov.length > 10) result.synopsis = ov
     }
   }
 
   // ── 2. 캐스트: "캐스트" 또는 "출연진" 섹션의 마지막 하위 섹션 ──
+  const linesNoEdit   = lines.map(l => l.replace(/\[편집\]/g, ''))
+  const textNoEdit    = linesNoEdit.join('\n')
+  const allSubSections = [...textNoEdit.matchAll(/^(\d+)\.(\d+)\.\s+.+$/gm)]
+
+  function sectionBlockSimple(headerIdx) {
+    const collected = []
+    let emptyRun = 0
+    for (let i = headerIdx + 1; i < lines.length; i++) {
+      const noEdit = linesNoEdit[i]
+      if (lines[i].includes('[편집]')) break
+      if (/^\d+\./.test(noEdit.trim())) break
+      if (noEdit.trim() === '') { emptyRun++; if (emptyRun >= 2) break } else emptyRun = 0
+      collected.push(noEdit)
+    }
+    return collected.join('\n')
+  }
+
+  const stripLinks = s => s.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2').replace(/\[\[([^\]]+)\]\]/g, '$1')
+  const preClean   = s => stripLinks(s).replace(/\[\d+\]/g, '').replace(/\{\{\{[^}]*\}\}\}/g, '').replace(/\{\{\{|\}\}\}/g, '')
+
   const castHeaderIdx = lines.findIndex(l => /(?:캐스트|출연진)/.test(l))
   let castText = ''
   if (castHeaderIdx >= 0) {
-    const castNumMatch = lines[castHeaderIdx].match(/^(\d+)\./)
-    const castNum = castNumMatch?.[1] ?? null
-    const castSubSecs = castNum
-      ? allSubSections.filter(m => m[1] === castNum)
-      : []
-
+    const castNum = lines[castHeaderIdx].match(/^(\d+)\./)?.[1] ?? null
+    const castSubSecs = castNum ? allSubSections.filter(m => m[1] === castNum) : []
     if (castSubSecs.length > 0) {
       const last = castSubSecs[castSubSecs.length - 1]
       const startIdx = last.index + last[0].length
       const nextSub = textNoEdit.slice(startIdx).match(/^\d+\.\d+\.\s+/m)
       const nextTop = textNoEdit.slice(startIdx).match(/^\d+\.\s+\S/m)
-      const endOff  = Math.min(
-        nextSub ? nextSub.index : Infinity,
-        nextTop ? nextTop.index : Infinity,
-      )
+      const endOff  = Math.min(nextSub?.index ?? Infinity, nextTop?.index ?? Infinity)
       castText = preClean(textNoEdit.slice(startIdx, endOff === Infinity ? undefined : startIdx + endOff))
     } else {
-      castText = preClean(sectionBlock(castHeaderIdx))
+      castText = preClean(sectionBlockSimple(castHeaderIdx))
     }
-  } else {
-    // fallback: 전체에서 마지막 X.X. 서브섹션
-    if (allSubSections.length > 0) {
-      const last = allSubSections[allSubSections.length - 1]
-      const startIdx = last.index + last[0].length
-      const nextMatch = textNoEdit.slice(startIdx).match(/^\d+\.\d*\.?\s+\S/m)
-      const endIdx = nextMatch ? startIdx + nextMatch.index : textNoEdit.length
-      castText = preClean(textNoEdit.slice(startIdx, endIdx))
-    }
+  } else if (allSubSections.length > 0) {
+    const last = allSubSections[allSubSections.length - 1]
+    const startIdx = last.index + last[0].length
+    const nextMatch = textNoEdit.slice(startIdx).match(/^\d+\.\d*\.?\s+\S/m)
+    castText = preClean(textNoEdit.slice(startIdx, nextMatch ? startIdx + nextMatch.index : textNoEdit.length))
   }
   if (castText) {
     const castItems = []
-    const castLineRegex = /^[*\-\s]*([^:\|\n]{1,25}?)\s*(?::\s*|\s*\|\s*)(.+)$/gm
-    for (const m of castText.matchAll(castLineRegex)) {
+    for (const m of castText.matchAll(/^[*\-\s]*([^:\|\n]{1,25}?)\s*(?::\s*|\s*\|\s*)(.+)$/gm)) {
       const roleName = m[1].replace(/^\s*[-*]\s*/, '').trim()
       if (!roleName || /^\d+$/.test(roleName)) continue
-      const actorsPart = m[2].trim()
-      const actors = actorsPart
-        .split(/[,，/]/)
+      const actors = m[2].trim().split(/[,，/]/)
         .map(a => a.replace(/\(.*?\)/g, '').trim())
         .filter(a => a.length >= 2 && a.length <= 12 && /^[가-힣a-zA-Z\s]+$/.test(a))
       if (actors.length === 0) continue
       const isDouble = actors.length >= 2
-      for (const actorName of actors) {
-        castItems.push({ actorName, roleName, isDouble })
-      }
+      for (const actorName of actors) castItems.push({ actorName, roleName, isDouble })
     }
     if (castItems.length > 0) result.cast = castItems
   }
 
-  // ── 3. 공연장/기간: 가장 마지막 날짜 패턴 ──
-  const seasonPrefixRe = /^(?:공연\s*예정\s*)?(?:초연|재연|삼연|사연|오연|트라이아웃|앵콜\s*공연?|앵콜|[0-9]+(?:st|nd|rd|th)\s*시즌)\s*[:：]?\s*/i
-
-  // 한글 날짜 형식 "YYYY년 M월 D일 ~ YYYY년 M월 D일" → 점 형식으로 정규화
-  const normalizeKoreanDates = s =>
-    s.replace(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/g, (_, y, m, d) => `${y}.${m}.${d}`)
-
-  // 날짜: YYYY.MM.DD 또는 YYYY. MM. DD (공백 포함)
-  const dateRegex = /(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?\s*[~～\-]\s*(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?/g
-  // 공연장 키워드: 극장·홀·센터·아트·관·당·극 + 공연 장소
+  // ── 3. 공연장 ──
   const venueKeywords = /(?:극장|아트홀|아트센터|아트|씨어터|씨어타|theater|theatre|센터|공연\s*장소|공연장|NOL|유니플렉스|TOM(?!\s*\d)|KT&G|상상마당|자유극장|두산|연강홀|홍익대|예술의전당|CJ|토월|코엑스|아티움|국립|[가-힣]{1,10}[홀관당극])/i
-  const removeDatePat  = /\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.?\s*[~～\-]\s*\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.?/g
+  const seasonPrefixRe = /(?:공연\s*예정\s*)?(?:초연|재연|삼연|사연|오연|트라이아웃|앵콜\s*공연?|앵콜)\s*[:：]?\s*/gi
 
-  // 한글 날짜 정규화 후 매칭
-  const normalizedText = normalizeKoreanDates(textNoEdit)
-  const dateMatches = [...normalizedText.matchAll(dateRegex)]
-  if (dateMatches.length > 0) {
-    const last = dateMatches[dateMatches.length - 1]
-    const pad = n => String(n).padStart(2, '0')
-    const startDate = `${last[1]}-${pad(last[2])}-${pad(last[3])}`
-    const endDate   = `${last[4]}-${pad(last[5])}-${pad(last[6])}`
-
-    // 날짜가 있는 줄 인덱스 찾기 (normalizedText 기준 offset)
-    const normLines = normalizedText.split('\n')
-    let dateLine = ''
-    let dateLineIdx = -1
-    let charCount = 0
-    for (let i = 0; i < normLines.length; i++) {
-      if (charCount + normLines[i].length >= last.index) { dateLineIdx = i; dateLine = normLines[i]; break }
-      charCount += normLines[i].length + 1
-    }
-
-    let venue = null
-
-    // 헬퍼: 줄에서 날짜·각주·prefix·괄호 제거 후 공연장 후보 반환
-    const extractVenue = line => {
-      const c = preClean(normalizeKoreanDates(line))
-        .replace(removeDatePat, '')
-        .replace(/\[\d+\]/g, '')          // 각주 [1][2] 제거
-        .replace(seasonPrefixRe, '')
-        .replace(/[|\[\]]/g, '')
-        .trim()
-      return (c && venueKeywords.test(c)) ? c.replace(/\s+/g, ' ') : null
-    }
-
-    // ① "시즌prefix: 공연장" 형식 줄을 전체에서 모아 가장 마지막 사용
-    const prefixVenueLines = linesNoEdit.filter(l =>
-      seasonPrefixRe.test(preClean(l).trim()) && !dateRegex.test(l)
-    )
-    dateRegex.lastIndex = 0
-    for (let i = prefixVenueLines.length - 1; i >= 0; i--) {
-      const v = extractVenue(prefixVenueLines[i])
-      if (v) { venue = v; break }
-    }
-
-    // ② prefix 줄에 없으면 날짜 같은 줄에서 추출
-    if (!venue && dateLineIdx >= 0) {
-      venue = extractVenue(dateLine)
-    }
-
-    // ③ 앞 3줄 내에서 탐색
-    if (!venue && dateLineIdx >= 0) {
-      for (let i = Math.max(0, dateLineIdx - 3); i <= dateLineIdx; i++) {
-        const v = extractVenue(normLines[i] ?? '')
-        if (v) {
-          const nextLine = normLines[i + 1] ? preClean(normLines[i + 1]).trim() : ''
-          const isHallLine = nextLine && !venueKeywords.test(nextLine) &&
-                             /[관동홀층]$/.test(nextLine) && nextLine.length <= 20
-          venue = isHallLine ? `${v} ${nextLine}`.replace(/\s+/g, ' ') : v
-          break
-        }
-      }
-    }
-
-    result.dates = { startDate, endDate, venue }
+  // "공연장" 또는 "공연 장소" 포함 줄에서 직접 추출
+  const venueLine = lines.find(l => /공연\s*장소|공연장/.test(l))
+  if (venueLine) {
+    const v = cleanLine(venueLine)
+      .replace(/공연\s*장소|공연장/g, '')
+      .replace(seasonPrefixRe, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+    if (v && venueKeywords.test(v)) result._venue = v
   }
 
-  // ── 4. 관람시간 ──
-  // "관람 시간: " 뒤 내용이 없으면 추출하지 않음
+  // ── 4. 기간 ──
+  const normText = text.replace(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/g, (_, y, m, d) => `${y}.${m}.${d}`)
+  const dateRe   = /(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?\s*[~～\-]\s*(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?/g
+  const allDates = [...normText.matchAll(dateRe)]
+  if (allDates.length > 0) {
+    const last = allDates[allDates.length - 1]
+    const pad  = n => String(n).padStart(2, '0')
+    result.dates = {
+      startDate: `${last[1]}-${pad(last[2])}-${pad(last[3])}`,
+      endDate:   `${last[4]}-${pad(last[5])}-${pad(last[6])}`,
+      venue:     result._venue ?? null,
+    }
+  }
+  delete result._venue
+
+  // ── 5. 관람시간 ──
   const runtimeMatch =
     textNoEdit.match(/(?:관람\s*시간|관람시간|러닝\s*타임|러닝타임|상연\s*시간)\s*[:：]\s*(?:총\s*)?(\d{2,3})\s*분/) ??
     textNoEdit.match(/(\d{2,3})\s*분\s*(?:\[\d+\])?\s*\(?\s*인터미션/) ??
