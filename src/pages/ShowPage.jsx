@@ -965,12 +965,25 @@ export default function ShowPage() {
         {/* 정보 탭 */}
         {tab === 'info' && (
           <div className="space-y-6">
-            {show.synopsis && (
-              <section>
-                <h2 className="font-display text-lg text-[#2C1810] mb-3">작품 소개</h2>
+            <section>
+              <h2 className="font-display text-lg text-[#2C1810] mb-3">작품 소개</h2>
+              {show.synopsis ? (
                 <Synopsis text={show.synopsis} />
-              </section>
-            )}
+              ) : show.synopsisImages?.length > 0 ? (
+                <div className="space-y-2">
+                  {show.synopsisImages.map((url, i) => (
+                    <img
+                      key={i}
+                      src={toHttps(url)}
+                      alt={`시놉시스 이미지 ${i + 1}`}
+                      className="w-full rounded-lg"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-stone-400 text-sm">작품 소개가 준비 중입니다.</p>
+              )}
+            </section>
 
             {/* 이 공연의 성격 (showTags) */}
             {(show.showTags?.length > 0 || show.topKeywords?.length > 0) && (

@@ -481,34 +481,41 @@ def _extract_mt20id(doc_data: dict) -> str | None:
 
 def synopsis_only(kopis_key: str, firebase_key: str | None, limit: int | None) -> None:
     """
-    shows 컬렉션에서 synopsis 없는 공연을 찾아
+    shows / pending 컬렉션에서 synopsis 없는 공연을 찾아
     KOPIS API로 synopsis / synopsisImages 만 업데이트.
     """
     db = _init_firebase(firebase_key)
 
     print("🔍 synopsis 없는 공연 조회 중...")
-    # select로 필요한 필드만 읽어 읽기 비용 최소화
-    docs = list(
-        db.collection("shows")
-          .select(["synopsis", "kopisId", "sourceUrl", "title"])
-          .stream()
-    )
 
-    targets = []
-    for d in docs:
-        data = d.to_dict()
-        if not (data.get("synopsis") or "").strip():
+    # shows + pending 두 컬렉션에서 수집
+    # (collection_name, doc_id, title, mt20id)
+    targets: list[tuple[str, str, str, str]] = []
+    collection_counts: dict[str, int] = {}
+
+    for col_name in ("shows", "pending"):
+        docs = list(
+            db.collection(col_name)
+              .select(["synopsis", "kopisId", "sourceUrl", "title"])
+              .stream()
+        )
+        no_syn = [d for d in docs if not (d.to_dict().get("synopsis") or "").strip()]
+        col_targets = []
+        for d in no_syn:
+            data = d.to_dict()
             mid = _extract_mt20id(data)
             if mid:
-                targets.append((d.id, data.get("title", ""), mid))
+                col_targets.append((col_name, d.id, data.get("title", ""), mid))
+        collection_counts[col_name] = {
+            "total": len(docs),
+            "no_syn": len(no_syn),
+            "targets": len(col_targets),
+        }
+        targets.extend(col_targets)
 
-    total_no_syn = len([d for d in docs if not (d.to_dict().get("synopsis") or "").strip()])
-    total_no_id  = total_no_syn - len(targets)
-
-    print(f"   shows 전체: {len(docs)}개")
-    print(f"   synopsis 없음: {total_no_syn}개")
-    print(f"   → kopisId 없어 스킵: {total_no_id}개")
-    print(f"   → 처리 대상: {len(targets)}개")
+    for col_name, counts in collection_counts.items():
+        print(f"   [{col_name}] 전체: {counts['total']}개 / synopsis 없음: {counts['no_syn']}개 / 처리 대상: {counts['targets']}개")
+    print(f"   → 합계 처리 대상: {len(targets)}개")
 
     if limit:
         targets = targets[:limit]
@@ -524,8 +531,8 @@ def synopsis_only(kopis_key: str, firebase_key: str | None, limit: int | None) -
     skipped = 0
 
     with httpx.Client(follow_redirects=True, timeout=20) as client:
-        for idx, (doc_id, title, mt20id) in enumerate(targets, 1):
-            print(f"[{idx}/{len(targets)}] {title[:30]} ({mt20id})", end=" ")
+        for idx, (col_name, doc_id, title, mt20id) in enumerate(targets, 1):
+            print(f"[{idx}/{len(targets)}] [{col_name}] {title[:30]} ({mt20id})", end=" ")
 
             root = _get(client, f"pblprfr/{mt20id}", {"service": kopis_key})
             if root is None:
@@ -554,7 +561,7 @@ def synopsis_only(kopis_key: str, firebase_key: str | None, limit: int | None) -
                 if sty_images:
                     update["synopsisImages"] = sty_images
                 try:
-                    db.collection("shows").document(doc_id).update(update)
+                    db.collection(col_name).document(doc_id).update(update)
                     print(f"✅ 저장 (synopsis {len(synopsis)}자, 이미지 {len(sty_images)}개)")
                     updated += 1
                 except Exception as e:
