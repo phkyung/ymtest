@@ -504,10 +504,6 @@ function parseNamuWiki(text) {
   }
 
   function synopsisBlock(headerIdx) {
-    console.log('[SYN2] 전체 lines 수:', lines.length)
-    console.log('[SYN2] headerIdx 줄 내용:', JSON.stringify(lines[headerIdx]))
-    console.log('[SYN2] headerIdx+1 줄 내용:', JSON.stringify(lines[headerIdx + 1]))
-    console.log('[SYN2] headerIdx+2 줄 내용:', JSON.stringify(lines[headerIdx + 2]))
     const collected = []
 
     // ① 헤더 줄 자체에 탭+내용 인용구 형태인 경우 포함
@@ -553,6 +549,18 @@ function parseNamuWiki(text) {
     syn = syn.replace(/^.*(?:링크픽|넘버\s*영상|공개|예고편|티저)[^\n]*$/gm, '')
     syn = syn.replace(/\n{3,}/g, '\n\n').trim()
     if (syn.length > 10) result.synopsis = syn
+  }
+
+  // 시놉시스 추출 실패 시 "개요" 섹션으로 fallback
+  if (!result.synopsis) {
+    const overviewHeaderIdx = lines.findIndex(l => /개요/.test(l))
+    if (overviewHeaderIdx >= 0) {
+      let ov = preClean(synopsisBlock(overviewHeaderIdx))
+      ov = ov.replace(/이\s*문서에\s*스포일러[\s\S]*/i, '')
+      ov = ov.replace(/^.*(?:링크픽|넘버\s*영상|공개|예고편|티저)[^\n]*$/gm, '')
+      ov = ov.replace(/\n{3,}/g, '\n\n').trim()
+      if (ov.length > 10) result.synopsis = ov
+    }
   }
 
   // ── 2. 캐스트: "캐스트" 또는 "출연진" 섹션의 마지막 하위 섹션 ──
@@ -777,7 +785,14 @@ function NamuWikiModal({ onClose, onApply }) {
                     <span className="text-xs font-semibold text-stone-700">{preview ? '✅' : '❌'} {label}</span>
                     {preview
                       ? <p className="text-xs text-stone-500 mt-0.5 break-words">{preview}</p>
-                      : <p className="text-xs text-stone-400 mt-0.5">추출되지 않음</p>}
+                      : <p className="text-xs text-stone-400 mt-0.5">
+                          추출되지 않음
+                          {key === 'synopsis' && (
+                            <span className="block text-amber-600 mt-0.5">
+                              나무위키 인용구 형태는 직접 복사해서 붙여넣어 주세요
+                            </span>
+                          )}
+                        </p>}
                   </div>
                 </label>
               ))}
