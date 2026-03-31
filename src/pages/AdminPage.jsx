@@ -471,10 +471,24 @@ function parseNamuWiki(text) {
   const subSectionRe = /^(\d+)\.(\d+)\.\s+.+$/gm
   const allSubSections = [...textNoEdit.matchAll(subSectionRe)]
 
-  // ── 헬퍼: 섹션 headerIdx 이후 블록 범위 반환 (다음 [편집] 줄 전까지) ──
+  // ── 헬퍼: 섹션 headerIdx 이후 블록 범위 반환 ──
+  // 종료 조건: [편집] 줄 / "숫자." 으로 시작하는 줄 / 연속 빈 줄 2개
   function sectionBlock(headerIdx) {
-    const nextEdit = editLineIdxs.find(i => i > headerIdx) ?? lines.length
-    return linesNoEdit.slice(headerIdx + 1, nextEdit).join('\n')
+    const collected = []
+    let emptyRun = 0
+    for (let i = headerIdx + 1; i < lines.length; i++) {
+      const raw = lines[i]
+      const noEdit = linesNoEdit[i]
+      // [편집] 포함 줄 → 종료
+      if (raw.includes('[편집]')) break
+      // "숫자." 으로 시작하는 섹션 헤더 → 종료
+      if (/^\d+\./.test(noEdit.trim())) break
+      // 연속 빈 줄 2개 → 종료
+      if (noEdit.trim() === '') { emptyRun++; if (emptyRun >= 2) break }
+      else emptyRun = 0
+      collected.push(noEdit)
+    }
+    return collected.join('\n')
   }
 
   // ── 1. 시놉시스 ──
@@ -565,10 +579,11 @@ function parseNamuWiki(text) {
   }
 
   // ── 3. 공연장/기간: 가장 마지막 날짜 패턴 ──
-  const seasonPrefixRe = /^(?:초연|재연|삼연|사연|오연|앵콜\s*공연?|앵콜|[0-9]+(?:st|nd|rd|th)\s*시즌)\s*[:：]?\s*/i
+  const seasonPrefixRe = /^(?:초연|재연|삼연|사연|오연|트라이아웃|앵콜\s*공연?|앵콜|[0-9]+(?:st|nd|rd|th)\s*시즌)\s*[:：]?\s*/i
   const dateRegex = /(\d{4})\.(\d{1,2})\.(\d{1,2})\s*[~～\-]\s*(\d{4})\.(\d{1,2})\.(\d{1,2})/g
   // 공연장 키워드: 극장·홀·센터·아트·관·당·극 포함
   const venueKeywords = /(?:극장|아트홀|아트센터|아트|씨어터|씨어타|theater|theatre|센터|공연장|[가-힣]{1,10}[홀관당극])/i
+  const removeDatePat  = /\d{4}\.\d{1,2}\.\d{1,2}\s*[~～\-]\s*\d{4}\.\d{1,2}\.\d{1,2}/g
 
   const dateMatches = [...textNoEdit.matchAll(dateRegex)]
   if (dateMatches.length > 0) {
@@ -577,7 +592,7 @@ function parseNamuWiki(text) {
     const startDate = `${last[1]}-${pad(last[2])}-${pad(last[3])}`
     const endDate   = `${last[4]}-${pad(last[5])}-${pad(last[6])}`
 
-    // 날짜가 있는 줄 찾기
+    // 날짜가 있는 줄 인덱스 찾기
     let dateLine = ''
     let dateLineIdx = -1
     let charCount = 0
@@ -588,34 +603,42 @@ function parseNamuWiki(text) {
 
     let venue = null
 
-    // 날짜 패턴 제거 후 같은 줄에서 공연장 추출
-    if (dateLineIdx >= 0) {
-      const stripped = preClean(dateLine)
-        .replace(/\d{4}\.\d{1,2}\.\d{1,2}\s*[~～\-]\s*\d{4}\.\d{1,2}\.\d{1,2}/g, '')
+    // 헬퍼: 줄에서 날짜·prefix·괄호 제거 후 공연장 후보 반환
+    const extractVenue = line => {
+      const c = preClean(line)
+        .replace(removeDatePat, '')
         .replace(seasonPrefixRe, '')
         .replace(/[|\[\]]/g, '')
         .trim()
-      if (stripped && venueKeywords.test(stripped)) {
-        venue = stripped.replace(/\s+/g, ' ').trim()
-      }
+      return (c && venueKeywords.test(c)) ? c.replace(/\s+/g, ' ') : null
     }
 
-    // 같은 줄에 없으면 앞 3줄 내에서 탐색
+    // ① "시즌prefix: 공연장" 형식 줄을 전체에서 모아 가장 마지막 사용
+    const prefixVenueLines = linesNoEdit.filter(l =>
+      seasonPrefixRe.test(preClean(l).trim()) && !dateRegex.test(l)
+    )
+    // dateRegex 전역 플래그 리셋
+    dateRegex.lastIndex = 0
+    for (let i = prefixVenueLines.length - 1; i >= 0; i--) {
+      const v = extractVenue(prefixVenueLines[i])
+      if (v) { venue = v; break }
+    }
+
+    // ② prefix 줄에 없으면 날짜 같은 줄에서 추출
+    if (!venue && dateLineIdx >= 0) {
+      venue = extractVenue(dateLine)
+    }
+
+    // ③ 앞 3줄 내에서 탐색
     if (!venue && dateLineIdx >= 0) {
       for (let i = Math.max(0, dateLineIdx - 3); i <= dateLineIdx; i++) {
-        const candidate = preClean(linesNoEdit[i])
-          .replace(/\d{4}\.\d{1,2}\.\d{1,2}\s*[~～\-]\s*\d{4}\.\d{1,2}\.\d{1,2}/g, '')
-          .replace(seasonPrefixRe, '')
-          .replace(/[|\[\]]/g, '')
-          .trim()
-        if (candidate && venueKeywords.test(candidate)) {
+        const v = extractVenue(linesNoEdit[i])
+        if (v) {
           // 다음 줄에 홀명이 있으면 합치기
           const nextLine = linesNoEdit[i + 1] ? preClean(linesNoEdit[i + 1]).trim() : ''
           const isHallLine = nextLine && !venueKeywords.test(nextLine) &&
                              /[관동홀층]$/.test(nextLine) && nextLine.length <= 20
-          venue = isHallLine
-            ? `${candidate} ${nextLine}`.replace(/\s+/g, ' ').trim()
-            : candidate.replace(/\s+/g, ' ').trim()
+          venue = isHallLine ? `${v} ${nextLine}`.replace(/\s+/g, ' ') : v
           break
         }
       }
