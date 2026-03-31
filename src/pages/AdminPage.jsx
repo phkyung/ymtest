@@ -448,7 +448,7 @@ function TicketLinksSection({ links, onChange }) {
 
 // ── 나무위키 텍스트 파싱 ────────────────────────────
 function parseNamuWiki(text) {
-  const result = { synopsis: null, cast: null, dates: null, runtime: null }
+  const result = { synopsis: null, cast: null, dates: null, runtime: null, hasEncore: false }
 
   const lines = text.split('\n')
 
@@ -480,28 +480,16 @@ function parseNamuWiki(text) {
   if (synStartIdx >= 0) {
     // 시놉시스 섹션 번호 파악 (예: "2. 시놉시스" → "2")
     const synSecNum = lines[synStartIdx].match(/^(\d+)\./)?.[1] ?? null
-
-    // 하위섹션(2.1. 2.2. 등) 있으면 가장 마지막 것부터 시작
-    let synBodyStart = synStartIdx
-    if (synSecNum) {
-      const subRe = new RegExp(`^${synSecNum}\\.(\\d+)\\.`, 'm')
-      // [편집] 제거한 줄에서 해당 섹션 번호의 하위섹션 모두 찾기
-      const linesClean = lines.map(l => l.replace(/\[편집\]/g, ''))
-      let lastSubIdx = -1
-      for (let i = synStartIdx + 1; i < linesClean.length; i++) {
-        if (subRe.test(linesClean[i].trim())) lastSubIdx = i
-        // 다른 상위 섹션 시작하면 탐색 종료
-        const m = linesClean[i].trim().match(/^(\d+)\./)
-        if (m && m[1] !== synSecNum && !linesClean[i].includes('.')) break
-      }
-      if (lastSubIdx >= 0) synBodyStart = lastSubIdx
-    }
+    // 하위섹션 패턴 (예: "2.1.")
+    const synSubRe = synSecNum ? new RegExp(`^${synSecNum}\\.\\d+\\.`) : null
 
     const collected = []
-    for (let i = synBodyStart + 1; i < lines.length; i++) {
+    for (let i = synStartIdx + 1; i < lines.length; i++) {
       const raw = lines[i]
-      if (/이\s*문서에\s*스포일러/i.test(raw)) break   // 스포일러 경고 줄 이전까지
+      if (/이\s*문서에\s*스포일러/i.test(raw)) break
       const cl = cleanLine(raw).replace(/\[스포\]/g, '')
+      // 첫 번째 하위섹션(X.1. 등) 헤더 나오면 종료
+      if (synSubRe && synSubRe.test(cl)) break
       if (/^\d+\./.test(cl)) break
       if (/구독자?|YouTube|youtu\.|TRAILER|http|www\.|다음에서\s*보기/i.test(cl)) continue
       if (/^[A-Z\s\[\]!?&|,.\-_'"]+$/.test(cl) && cl.trim().length > 0) continue
@@ -659,6 +647,9 @@ function parseNamuWiki(text) {
   }
   delete result._venue
 
+  // 앵콜 감지: 공연장명 또는 텍스트 전체에 앵콜 키워드 존재 여부
+  if (/앵콜/.test(text)) result.hasEncore = true
+
   // ── 5. 관람시간 ──
   // "관람시간" 줄 찾고, 그 줄 + 앞뒤 3줄 범위에서 숫자+분 탐색
   const timeLineIdx = lines.findIndex(l => /관람\s*시간|관람시간|러닝\s*타임|러닝타임|상연\s*시간/.test(l))
@@ -748,6 +739,15 @@ function NamuWikiModal({ onClose, onApply }) {
           {parsed && (
             <div className="space-y-2 border border-stone-100 rounded-xl p-4">
               <p className="text-xs font-bold text-stone-500 mb-3">파싱 결과 — 적용할 항목을 선택하세요</p>
+
+              {parsed.hasEncore && (
+                <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-300 rounded-lg px-3 py-2.5 mb-2">
+                  <span className="text-base leading-none mt-0.5">⚠️</span>
+                  <p className="text-xs text-yellow-800 font-medium">
+                    앵콜 공연이 포함된 작품입니다. 공연장과 기간을 직접 확인해주세요.
+                  </p>
+                </div>
+              )}
 
               {[
                 { key: 'synopsis', label: '시놉시스',
