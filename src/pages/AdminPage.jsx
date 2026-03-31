@@ -492,31 +492,45 @@ function parseNamuWiki(text) {
   }
 
   // ── 1. 시놉시스 ──
+  // 시놉시스 전용 추출: 빈 줄은 무시하고 계속 읽으며,
+  // "숫자." 시작 줄 또는 [편집] 줄(헤더 자체 제외)에서 종료
+  function synopsisBlock(headerIdx) {
+    const collected = []
+    for (let i = headerIdx + 1; i < lines.length; i++) {
+      const raw    = lines[i]
+      const noEdit = linesNoEdit[i]
+      // [편집] 포함 줄 → 종료 (다음 섹션 헤더)
+      if (raw.includes('[편집]')) break
+      // "숫자." 으로 시작하는 섹션/하위섹션 헤더 → 종료
+      if (/^\d+\./.test(noEdit.trim())) break
+      // 나무위키 접기 태그 제거 후 추가
+      const cleaned = noEdit
+        .replace(/【[^】]*】/g, '')          // 【 가사/접기 】
+        .replace(/\{\{[^}]*\}\}/g, '')        // {{접기}} 등
+      collected.push(cleaned)
+    }
+    return collected.join('\n')
+  }
+
   const synHeaderIdx = lines.findIndex(l => /시놉시스/.test(l))
   if (synHeaderIdx >= 0) {
-    // 시놉시스 섹션 번호 추출 (e.g. "2.")
     const synNumMatch = lines[synHeaderIdx].match(/^(\d+)\./)
     const synNum = synNumMatch?.[1] ?? null
-
-    // 하위 섹션(2.1. 2.2. 등) 중 시놉시스 번호에 속하는 것 찾기
-    const synSubSecs = synNum
-      ? allSubSections.filter(m => m[1] === synNum)
-      : []
+    const synSubSecs = synNum ? allSubSections.filter(m => m[1] === synNum) : []
 
     let syn = ''
     if (synSubSecs.length > 0) {
-      // 가장 마지막 하위 섹션 내용 추출
-      const last = synSubSecs[synSubSecs.length - 1]
-      const startIdx = last.index + last[0].length
-      const nextSub = textNoEdit.slice(startIdx).match(/^\d+\.\d+\.\s+/m)
-      const nextTop = textNoEdit.slice(startIdx).match(/^\d+\.\s+\S/m)
-      const endOff  = Math.min(
-        nextSub ? nextSub.index : Infinity,
-        nextTop ? nextTop.index : Infinity,
-      )
-      syn = preClean(textNoEdit.slice(startIdx, endOff === Infinity ? undefined : startIdx + endOff))
+      // 가장 마지막 하위 섹션 내용 — 하위섹션도 동일 종료 조건 적용
+      const lastSub = synSubSecs[synSubSecs.length - 1]
+      // lastSub가 있는 줄 인덱스 계산
+      const subLineIdx = linesNoEdit.findIndex((_, idx) => {
+        let pos = 0
+        for (let j = 0; j < idx; j++) pos += linesNoEdit[j].length + 1
+        return pos >= lastSub.index
+      })
+      syn = preClean(synopsisBlock(subLineIdx >= 0 ? subLineIdx : synHeaderIdx))
     } else {
-      syn = preClean(sectionBlock(synHeaderIdx))
+      syn = preClean(synopsisBlock(synHeaderIdx))
     }
 
     syn = syn.replace(/이\s*문서에\s*스포일러[\s\S]*/i, '')
