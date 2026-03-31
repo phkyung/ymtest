@@ -443,7 +443,7 @@ function TicketLinksSection({ links, onChange }) {
 
 // ── 나무위키 텍스트 파싱 ────────────────────────────
 function parseNamuWiki(text) {
-  const result = { synopsis: null, cast: null, dates: null, numbers: null, runtime: null }
+  const result = { synopsis: null, cast: null, dates: null, runtime: null }
 
   // 공통 클린업
   const stripFootnotes = s => s.replace(/\[\d+\]/g, '').replace(/\[[A-Za-z]\]/g, '')
@@ -511,24 +511,7 @@ function parseNamuWiki(text) {
     result.dates = { startDate, endDate, venue: venueMatch?.[1]?.trim().replace(/\s+/g, ' ') ?? null }
   }
 
-  // ── 4. 넘버 목록 ──
-  // "넘버[편집]" 이후 ~ 다음 [편집] 전
-  const numSection = text.match(/넘버\[편집\]\s*\n([\s\S]*?)(?=\n[^\n]+\[편집\]|$)/)
-  if (numSection) {
-    const numbers = []
-    const numText = preClean(numSection[1])
-    for (const m of numText.matchAll(/^[*\-\s]*(?:[Mm]\d+|[Aa]ct\s*\d+|\d+)[.\)]\s+(.+)$/gm)) {
-      let title = m[1]
-        .replace(/\(.*?\)/g, '')
-        .replace(/-.*/,     '')
-        .replace(/\s{2,}/g, ' ')
-        .trim()
-      if (title && title.length >= 2 && title.length < 60) numbers.push(title)
-    }
-    if (numbers.length > 0) result.numbers = numbers
-  }
-
-  // ── 5. 관람시간 ──
+  // ── 4. 관람시간 ──
   // "160분[1] (인터미션: 15분)" → 160
   const runtimeMatch =
     textNoEdit.match(/(?:관람\s*시간|러닝\s*타임|상연\s*시간)\s*[:：]?\s*(?:총\s*)?(\d{2,3})\s*분/) ??
@@ -552,7 +535,6 @@ function NamuWikiModal({ onClose, onApply }) {
       synopsis: !!result.synopsis,
       cast:     !!result.cast,
       dates:    !!result.dates,
-      numbers:  !!result.numbers,
       runtime:  !!result.runtime,
     })
   }
@@ -562,7 +544,7 @@ function NamuWikiModal({ onClose, onApply }) {
     if (checked.synopsis && parsed.synopsis) apply.synopsis = parsed.synopsis
     if (checked.cast     && parsed.cast)     apply.cast     = parsed.cast
     if (checked.dates    && parsed.dates)    apply.dates    = parsed.dates
-    if (checked.numbers  && parsed.numbers)  apply.numbers  = parsed.numbers
+
     if (checked.runtime  && parsed.runtime)  apply.runtime  = parsed.runtime
     onApply(apply)
     onClose()
@@ -614,8 +596,6 @@ function NamuWikiModal({ onClose, onApply }) {
                   preview: parsed.cast ? `${parsed.cast.length}명 발견 (${parsed.cast.slice(0, 3).map(c => c.actorName).join(', ')}${parsed.cast.length > 3 ? ' 외' : ''})` : null },
                 { key: 'dates', label: '공연장/기간',
                   preview: parsed.dates ? `${parsed.dates.venue ?? '공연장 미확인'} / ${parsed.dates.startDate} ~ ${parsed.dates.endDate}` : null },
-                { key: 'numbers', label: '넘버 목록',
-                  preview: parsed.numbers ? `${parsed.numbers.length}개 발견 (${parsed.numbers.slice(0, 2).join(', ')}${parsed.numbers.length > 2 ? ' 외' : ''})` : null },
                 { key: 'runtime', label: '관람시간',
                   preview: parsed.runtime ? `${parsed.runtime}분` : null },
               ].map(({ key, label, preview }) => (
@@ -667,7 +647,7 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
   // 나무위키 파싱 모달
   const [namuOpen, setNamuOpen] = useState(false)
 
-  function handleNamuApply({ synopsis, cast, dates, numbers, runtime }) {
+  function handleNamuApply({ synopsis, cast, dates, runtime }) {
     if (synopsis) onChangeDraft('synopsis', synopsis)
     if (cast)     setCast(cast.map(c => ({ actorId: '', actorName: c.actorName, roleName: c.roleName, isDouble: false, imageUrl: null })))
     if (dates) {
@@ -675,7 +655,7 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
       if (dates.endDate)   onChangeDraft('endDate',   dates.endDate)
       if (dates.venue)     onChangeDraft('venue',     dates.venue)
     }
-    if (numbers) onChangeDraft('numbers', numbers)
+
     if (runtime) onChangeDraft('runtime', runtime)
   }
 
