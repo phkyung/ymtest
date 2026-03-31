@@ -475,14 +475,30 @@ function parseNamuWiki(text) {
   const synStartIdx  = synHeaderIdx >= 0 ? synHeaderIdx : -1
 
   if (synStartIdx >= 0) {
+    // 시놉시스 섹션 번호 파악 (예: "2. 시놉시스" → "2")
+    const synSecNum = lines[synStartIdx].match(/^(\d+)\./)?.[1] ?? null
+
+    // 하위섹션(2.1. 2.2. 등) 있으면 가장 마지막 것부터 시작
+    let synBodyStart = synStartIdx
+    if (synSecNum) {
+      const subRe = new RegExp(`^${synSecNum}\\.(\\d+)\\.`, 'm')
+      // [편집] 제거한 줄에서 해당 섹션 번호의 하위섹션 모두 찾기
+      const linesClean = lines.map(l => l.replace(/\[편집\]/g, ''))
+      let lastSubIdx = -1
+      for (let i = synStartIdx + 1; i < linesClean.length; i++) {
+        if (subRe.test(linesClean[i].trim())) lastSubIdx = i
+        // 다른 상위 섹션 시작하면 탐색 종료
+        const m = linesClean[i].trim().match(/^(\d+)\./)
+        if (m && m[1] !== synSecNum && !linesClean[i].includes('.')) break
+      }
+      if (lastSubIdx >= 0) synBodyStart = lastSubIdx
+    }
+
     const collected = []
-    for (let i = synStartIdx + 1; i < lines.length; i++) {
+    for (let i = synBodyStart + 1; i < lines.length; i++) {
       const cl = cleanLine(lines[i])
-      // 숫자. 으로 시작하는 섹션 헤더 → 종료
       if (/^\d+\./.test(cl)) break
-      // 불필요 줄 스킵
       if (/구독자?|YouTube|youtu\.|TRAILER|http|www\.|다음에서\s*보기|이\s*문서에\s*스포일러/i.test(cl)) continue
-      // 영어 대문자로만 된 줄 스킵
       if (/^[A-Z\s\[\]!?&|,.\-_'"]+$/.test(cl) && cl.trim().length > 0) continue
       collected.push(cl)
     }
@@ -567,16 +583,36 @@ function parseNamuWiki(text) {
   const venueKeywords = /(?:극장|아트홀|아트센터|아트|씨어터|씨어타|theater|theatre|센터|공연\s*장소|공연장|NOL|유니플렉스|TOM(?!\s*\d)|KT&G|상상마당|자유극장|두산|연강홀|홍익대|예술의전당|CJ|토월|코엑스|아티움|국립|[가-힣]{1,10}[홀관당극])/i
   const seasonPrefixRe = /(?:공연\s*예정\s*)?(?:초연|재연|삼연|사연|오연|트라이아웃|앵콜\s*공연?|앵콜)\s*[:：]?\s*/gi
 
-  // "공연장" 또는 "공연 장소" 포함 줄 + 다음 줄까지 탐색
-  const venueLineIdx = lines.findIndex(l => /공연\s*장소|공연장/.test(l))
-  if (venueLineIdx >= 0) {
-    for (let i = venueLineIdx; i <= Math.min(venueLineIdx + 3, lines.length - 1); i++) {
-      const v = cleanLine(lines[i])
-        .replace(/공연\s*장소|공연장/g, '')
+  // ① 시즌 prefix("초연:", "재연:" 등) 있는 줄 중 가장 마지막에서 공연장 추출
+  const seasonLinePrefixRe = /(?:공연\s*예정\s*)?(?:초연|재연|삼연|사연|오연|트라이아웃|앵콜\s*공연?|앵콜)\s*[:：]/i
+  const seasonVenueLines = lines
+    .map((l, i) => ({ l, i }))
+    .filter(({ l }) => seasonLinePrefixRe.test(l))
+  for (let k = seasonVenueLines.length - 1; k >= 0; k--) {
+    const { l, i } = seasonVenueLines[k]
+    for (let j = i; j <= Math.min(i + 2, lines.length - 1); j++) {
+      const v = cleanLine(lines[j])
         .replace(seasonPrefixRe, '')
+        .replace(/공연\s*장소|공연장/g, '')
         .replace(/\s+/g, ' ')
         .trim()
       if (v && venueKeywords.test(v)) { result._venue = v; break }
+    }
+    if (result._venue) break
+  }
+
+  // ② prefix 없으면 "공연장"/"공연 장소" 포함 줄 + 다음 줄까지 탐색
+  if (!result._venue) {
+    const venueLineIdx = lines.findIndex(l => /공연\s*장소|공연장/.test(l))
+    if (venueLineIdx >= 0) {
+      for (let i = venueLineIdx; i <= Math.min(venueLineIdx + 3, lines.length - 1); i++) {
+        const v = cleanLine(lines[i])
+          .replace(/공연\s*장소|공연장/g, '')
+          .replace(seasonPrefixRe, '')
+          .replace(/\s+/g, ' ')
+          .trim()
+        if (v && venueKeywords.test(v)) { result._venue = v; break }
+      }
     }
   }
 
