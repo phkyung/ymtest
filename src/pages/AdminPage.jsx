@@ -613,22 +613,19 @@ function parseNamuWiki(text) {
     .filter(({ l }) => seasonLinePrefixRe.test(l))
 
   if (seasonVenueLines.length > 0) {
-    // 각 줄에 시즌 rank 부여 후, rank 내림차순 → 줄 번호 내림차순으로 정렬
+    // rank 내림차순 → 줄 번호 내림차순 정렬
     const ranked = seasonVenueLines
       .map(entry => ({ ...entry, rank: seasonRank(entry.l) }))
       .sort((a, b) => b.rank !== a.rank ? b.rank - a.rank : b.i - a.i)
 
-    for (const { i } of ranked) {
-      for (let j = i; j <= Math.min(i + 2, lines.length - 1); j++) {
-        const v = cleanLine(lines[j])
-          .replace(seasonPrefixRe, '')
-          .replace(/공연\s*장소|공연장/g, '')
-          .replace(/\s+/g, ' ')
-          .trim()
-        // prefix 제거 후 날짜(YYYY) 포함된 줄은 공연장이 아님
-        if (v && venueKeywords.test(v) && !/\d{4}/.test(v)) { result._venue = v; break }
-      }
-      if (result._venue) break
+    for (const { l } of ranked) {
+      const v = cleanLine(l)
+        .replace(seasonPrefixRe, '')
+        .replace(/공연\s*장소|공연장/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+      // 날짜(4자리 숫자) 없고 텍스트 있으면 공연장명
+      if (v && !/\d{4}/.test(v)) { result._venue = v; break }
     }
   }
 
