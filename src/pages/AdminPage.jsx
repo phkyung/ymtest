@@ -445,76 +445,95 @@ function TicketLinksSection({ links, onChange }) {
 function parseNamuWiki(text) {
   const result = { synopsis: null, cast: null, dates: null, numbers: null, runtime: null }
 
-  // [편집] 태그 제거
-  const clean = text.replace(/\[편집\]/g, '').replace(/\[각주\]/g, '')
+  // 공통 클린업
+  const stripFootnotes = s => s.replace(/\[\d+\]/g, '').replace(/\[[A-Za-z]\]/g, '')
+  const stripLinks     = s => s.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2').replace(/\[\[([^\]]+)\]\]/g, '$1')
+  const stripFormat    = s => s.replace(/\{\{\{[^}]*\}\}\}/g, '').replace(/\{\{\{|\}\}\}/g, '')
+  const preClean       = s => stripFormat(stripLinks(stripFootnotes(s)))
 
-  // 1. 시놉시스: "시놉시스" ~ "등장인물" 또는 "캐릭터" 사이
-  const synMatch = clean.match(/시놉시스\s*\n([\s\S]*?)(?=\n\s*(?:등장인물|캐릭터|줄거리|##|[1-9]\.)\s*\n)/)
-  if (synMatch) {
-    result.synopsis = synMatch[1].replace(/^\s*=+[^=]+=+\s*$/gm, '').trim()
+  // [편집] 없는 버전
+  const textNoEdit = text.replace(/\[편집\]/g, '')
+
+  // ── 1. 시놉시스 ──
+  // "시놉시스[편집]" 줄 이후 ~ 다음 "[편집]" 줄 이전
+  const synRaw = text.match(/시놉시스\[편집\]\s*\n([\s\S]*?)(?=\n[^\n]+\[편집\])/)
+  if (synRaw) {
+    let syn = preClean(synRaw[1])
+    syn = syn.replace(/이\s*문서에\s*스포일러[\s\S]*/i, '')
+    syn = syn.replace(/^.*(?:링크픽|넘버\s*영상|공개|예고편|티저)[^\n]*$/gm, '')
+    syn = syn.replace(/\n{3,}/g, '\n\n').trim()
+    if (syn.length > 10) result.synopsis = syn
   }
 
-  // 2. 캐스트: "4.숫자." 형태의 마지막 섹션
-  //    "역할명: 배우1, 배우2" 형태 파싱
-  const sectionMatches = [...clean.matchAll(/^(?:={2,3}|\d+\.\d+\.?\s+)\S[^\n]*(?:시즌|년|회차|캐스팅|cast|배우|출연)[^\n]*/gim)]
-  // 대안: 숫자.숫자. 패턴으로 섹션 분리
-  const castSections = [...clean.matchAll(/^\d+\.\d+\.?\s+(.+)$/gm)]
+  // ── 2. 캐스트 ──
+  // 마지막 "X.X." 서브섹션 (가장 최근 연도)
+  const subSections = [...textNoEdit.matchAll(/^(\d+\.\d+)\.\s+(.+)$/gm)]
   let castText = ''
-  if (castSections.length > 0) {
-    const lastSection = castSections[castSections.length - 1]
-    const startIdx = lastSection.index + lastSection[0].length
-    const nextSectionMatch = clean.slice(startIdx).match(/^\d+\.\d+\.?\s+/m)
-    const endIdx = nextSectionMatch ? startIdx + nextSectionMatch.index : clean.length
-    castText = clean.slice(startIdx, endIdx)
+  if (subSections.length > 0) {
+    const last = subSections[subSections.length - 1]
+    const startIdx = last.index + last[0].length
+    const nextMatch = textNoEdit.slice(startIdx).match(/^\d+\.\d*\.?\s+\S/m)
+    const endIdx = nextMatch ? startIdx + nextMatch.index : textNoEdit.length
+    castText = preClean(textNoEdit.slice(startIdx, endIdx))
   }
   if (castText) {
     const castItems = []
-    // "역할명: 배우1, 배우2" 또는 "역할명 - 배우1/배우2"
-    const castLineRegex = /^[*\s]*([^:\-\n]+?)\s*[:\-]\s*(.+)$/gm
+    // 형식 A: "역할명: 배우1, 배우2"
+    // 형식 B: "역할명 | 배우1, 배우2"
+    const castLineRegex = /^[*\-\s]*([^:\|\n]{1,25}?)\s*(?::\s*|\s*\|\s*)(.+)$/gm
     for (const m of castText.matchAll(castLineRegex)) {
-      const roleName = m[1].trim()
+      const roleName = m[1].replace(/^\s*[-*]\s*/, '').trim()
+      if (!roleName || roleName.length < 1 || /^\d+$/.test(roleName)) continue
       const actorsPart = m[2].trim()
-      if (!roleName || roleName.length > 30) continue
-      // 배우 이름 분리 (쉼표, 슬래시, →, / 구분)
-      const actors = actorsPart.split(/[,，/→]/).map(a => a.trim()).filter(a => a && a.length <= 15 && a.length >= 2)
+      const actors = actorsPart
+        .split(/[,，/]/)
+        .map(a => a.replace(/\(.*?\)/g, '').trim())
+        .filter(a => a.length >= 2 && a.length <= 12 && /^[가-힣a-zA-Z\s]+$/.test(a))
+      if (actors.length === 0) continue
+      const isDouble = actors.length >= 2
       for (const actorName of actors) {
-        if (/^[가-힣a-zA-Z\s]+$/.test(actorName)) {
-          castItems.push({ actorName, roleName })
-        }
+        castItems.push({ actorName, roleName, isDouble })
       }
     }
     if (castItems.length > 0) result.cast = castItems
   }
 
-  // 3. 날짜/공연장: YYYY.MM.DD ~ YYYY.MM.DD 패턴
+  // ── 3. 공연장/기간 ──
   const dateRegex = /(\d{4})\.(\d{1,2})\.(\d{1,2})\s*[~～\-]\s*(\d{4})\.(\d{1,2})\.(\d{1,2})/g
-  const dateMatches = [...clean.matchAll(dateRegex)]
+  const dateMatches = [...textNoEdit.matchAll(dateRegex)]
   if (dateMatches.length > 0) {
     const last = dateMatches[dateMatches.length - 1]
     const pad = n => String(n).padStart(2, '0')
     const startDate = `${last[1]}-${pad(last[2])}-${pad(last[3])}`
     const endDate   = `${last[4]}-${pad(last[5])}-${pad(last[6])}`
-    // 날짜 앞뒤 줄에서 공연장 추출
-    const around = clean.slice(Math.max(0, last.index - 80), last.index + last[0].length + 80)
-    const venueMatch = around.match(/([가-힣a-zA-Z0-9\s]{2,20}(?:극장|홀|센터|아트|씨어터|theater|theatre|hall)[가-힣a-zA-Z0-9\s()（）]*)/i)
-    result.dates = { startDate, endDate, venue: venueMatch?.[1]?.trim() ?? null }
+    const around = textNoEdit.slice(Math.max(0, last.index - 200), last.index + last[0].length + 200)
+    const venueMatch = around.match(/([가-힣a-zA-Z0-9·\s]{2,30}(?:극장|홀|센터|아트센터|아트홀|씨어터|씨어타|theater|theatre|hall|HALL)[가-힣a-zA-Z0-9\s관동서남북()（）]*)/i)
+    result.dates = { startDate, endDate, venue: venueMatch?.[1]?.trim().replace(/\s+/g, ' ') ?? null }
   }
 
-  // 4. 넘버 목록: "넘버" 섹션에서 "01. 제목" 형태
-  const numSectionMatch = clean.match(/넘버\s*\n([\s\S]*?)(?=\n\s*(?:\d+\.|={2,}|##)\s*\S)/)
-  if (numSectionMatch) {
+  // ── 4. 넘버 목록 ──
+  // "넘버[편집]" 이후 ~ 다음 [편집] 전
+  const numSection = text.match(/넘버\[편집\]\s*\n([\s\S]*?)(?=\n[^\n]+\[편집\]|$)/)
+  if (numSection) {
     const numbers = []
-    for (const m of numSectionMatch[1].matchAll(/^\s*\d+[.\)]\s+(.+)$/gm)) {
-      const title = m[1].replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim()
-      if (title && title.length < 60) numbers.push(title)
+    const numText = preClean(numSection[1])
+    for (const m of numText.matchAll(/^[*\-\s]*(?:[Mm]\d+|[Aa]ct\s*\d+|\d+)[.\)]\s+(.+)$/gm)) {
+      let title = m[1]
+        .replace(/\(.*?\)/g, '')
+        .replace(/-.*/,     '')
+        .replace(/\s{2,}/g, ' ')
+        .trim()
+      if (title && title.length >= 2 && title.length < 60) numbers.push(title)
     }
     if (numbers.length > 0) result.numbers = numbers
   }
 
-  // 5. 관람시간: "XX분" 패턴
-  const runtimeMatch = clean.match(/(?:관람\s*시간|러닝\s*타임|상연\s*시간)[^\n]*?(\d+)\s*분/)
-    ?? clean.match(/(\d{2,3})\s*분\s*(?:인터미션|\(|（)/)
-    ?? clean.match(/총\s*(\d{2,3})\s*분/)
+  // ── 5. 관람시간 ──
+  // "160분[1] (인터미션: 15분)" → 160
+  const runtimeMatch =
+    textNoEdit.match(/(?:관람\s*시간|러닝\s*타임|상연\s*시간)\s*[:：]?\s*(?:총\s*)?(\d{2,3})\s*분/) ??
+    textNoEdit.match(/(\d{2,3})\s*분\s*(?:\[\d+\])?\s*\(?\s*인터미션/) ??
+    textNoEdit.match(/총\s*(\d{2,3})\s*분/)
   if (runtimeMatch) result.runtime = parseInt(runtimeMatch[1])
 
   return result
