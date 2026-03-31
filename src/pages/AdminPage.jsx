@@ -2236,12 +2236,16 @@ export default function AdminPage() {
   // ── pending_actors 승인: actors imageUrl 업데이트 + pending_actors 문서 삭제 ──
   async function handleApprovePendingActor(pending, imageUrl) {
     try {
-      await updateDoc(doc(db, 'actors', pending.actorId), { imageUrl: imageUrl.trim() })
+      const actorUpdate = { imageUrl: imageUrl.trim() }
+      if (pending.profileUrl) actorUpdate.profileUrl = pending.profileUrl
+      await updateDoc(doc(db, 'actors', pending.actorId), actorUpdate)
       await deleteDoc(doc(db, 'pending_actors', pending.id))
       setPendingActors(prev => prev.filter(p => p.id !== pending.id))
       // 배우 전체 목록 탭에도 즉시 반영
       setActorsList(prev =>
-        prev.map(a => a.id === pending.actorId ? { ...a, imageUrl: imageUrl.trim() } : a)
+        prev.map(a => a.id === pending.actorId
+          ? { ...a, imageUrl: imageUrl.trim(), ...(pending.profileUrl ? { profileUrl: pending.profileUrl } : {}) }
+          : a)
       )
     } catch (err) {
       console.error('배우 사진 승인 오류:', err)
@@ -3305,12 +3309,12 @@ export default function AdminPage() {
                               <div className="flex items-center gap-2">
                                 <p className="font-semibold text-stone-800 text-sm">{actor.name}</p>
                                 <a
-                                  href={`https://www.playdb.co.kr/people/search?keyword=${encodeURIComponent(actor.name)}`}
+                                  href={actor.profileUrl || `https://www.playdb.co.kr/people/search?keyword=${encodeURIComponent(actor.name)}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-[11px] text-blue-400 hover:underline shrink-0"
+                                  className="text-xs text-blue-500 hover:underline shrink-0"
                                 >
-                                  플레이DB →
+                                  플레이DB 프로필 보기 →
                                 </a>
                               </div>
                               {(actorShowsMap[actor.name]?.length ?? 0) > 0 ? (
