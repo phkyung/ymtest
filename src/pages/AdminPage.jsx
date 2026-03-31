@@ -242,7 +242,12 @@ function CastEditSection({ cast, onChange }) {
                            placeholder:text-stone-300 bg-white"
               />
               {/* 더블캐스팅 체크박스 */}
-              <label className="flex items-center gap-1 text-xs text-stone-500 shrink-0 cursor-pointer select-none">
+              <label className={`flex items-center gap-1 text-xs shrink-0 cursor-pointer select-none
+                                 px-2 py-1 rounded-full border transition-colors ${
+                c.isDouble
+                  ? 'bg-amber-100 border-amber-400 text-amber-700 font-semibold'
+                  : 'border-stone-200 text-stone-400'
+              }`}>
                 <input
                   type="checkbox"
                   checked={c.isDouble ?? false}
@@ -649,7 +654,7 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
 
   function handleNamuApply({ synopsis, cast, dates, runtime }) {
     if (synopsis) onChangeDraft('synopsis', synopsis)
-    if (cast)     setCast(cast.map(c => ({ actorId: '', actorName: c.actorName, roleName: c.roleName, isDouble: false, imageUrl: null })))
+    if (cast)     setCast(cast.map(c => ({ actorId: '', actorName: c.actorName, roleName: c.roleName, isDouble: c.isDouble ?? false, imageUrl: null })))
     if (dates) {
       if (dates.startDate) onChangeDraft('startDate', dates.startDate)
       if (dates.endDate)   onChangeDraft('endDate',   dates.endDate)
