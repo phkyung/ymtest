@@ -3243,10 +3243,14 @@ function CastingUploadSection({ db, showsList = [] }) {
         reader.onerror = reject
         reader.readAsDataURL(file)
       })
+      console.log('base64 길이:', b64.length)
+      console.log('base64 앞 100자:', b64.substring(0, 100))
+      console.log('mimeType:', file.type)
       // castList를 함께 전송 — Worker가 역할명 매칭에 활용
       const body = { imageBase64: b64, mimeType: file.type }
       if (castList.length > 0) body.castList = castList
       if (selectedShow)        body.showTitle = selectedShow.title
+      console.log('Worker로 전송 중...')
       const res = await fetch(WORKER_URL, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
