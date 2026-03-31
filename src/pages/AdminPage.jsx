@@ -623,8 +623,8 @@ function parseNamuWiki(text) {
         .replace(/공연\s*장소|공연장/g, '')
         .replace(/\s+/g, ' ')
         .trim()
-      // 날짜(4자리 숫자) 없고 텍스트 있으면 공연장명
-      if (v && !/\d{4}/.test(v)) { result._venue = v; break }
+      // 날짜(4자리 숫자) 없고, 숫자+분 패턴 없고, 텍스트 있으면 공연장명
+      if (v && !/\d{4}/.test(v) && !/\d+\s*분/.test(v)) { result._venue = v; break }
     }
   }
 
@@ -662,13 +662,22 @@ function parseNamuWiki(text) {
   if (/앵콜/.test(text)) result.hasEncore = true
 
   // ── 5. 관람시간 ──
-  // "관람시간" 줄 찾고, 그 줄 + 앞뒤 3줄 범위에서 숫자+분 탐색
-  const timeLineIdx = lines.findIndex(l => /관람\s*시간|관람시간|러닝\s*타임|러닝타임|상연\s*시간/.test(l))
+  // 시즌 prefix(초연:, 재연: 등) 포함 관람시간 줄이 여러 개면 마지막 것 우선
+  const timeKeywordRe = /관람\s*시간|관람시간|러닝\s*타임|러닝타임|상연\s*시간/
+  const timeLines = lines
+    .map((l, i) => ({ l, i }))
+    .filter(({ l }) => timeKeywordRe.test(l))
   let runtimeVal = null
-  if (timeLineIdx >= 0) {
-    for (let i = Math.max(0, timeLineIdx - 1); i <= Math.min(timeLineIdx + 3, lines.length - 1); i++) {
-      const m = lines[i].replace(/\[\d+\]/g, '').match(/(\d{2,3})\s*분/)
-      if (m) { runtimeVal = parseInt(m[1]); break }
+  if (timeLines.length > 0) {
+    // 마지막 관람시간 줄부터 역순으로 탐색, ±3줄 범위에서 숫자+분 추출
+    for (let k = timeLines.length - 1; k >= 0; k--) {
+      const { i } = timeLines[k]
+      for (let j = Math.max(0, i - 1); j <= Math.min(i + 3, lines.length - 1); j++) {
+        const cleaned = lines[j].replace(/\[\d+\]/g, '').replace(seasonPrefixRe, '')
+        const m = cleaned.match(/(\d{2,3})\s*분/)
+        if (m) { runtimeVal = parseInt(m[1]); break }
+      }
+      if (runtimeVal) break
     }
   }
   // fallback: 전체 텍스트에서 패턴 매칭
