@@ -3302,11 +3302,23 @@ export default function AdminPage() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-stone-800 text-sm">{actor.name}</p>
-                              {actorShowCountMap[actor.name] > 0 && (
-                                <span className="text-[11px] text-stone-400">
-                                  {actorShowCountMap[actor.name]}개 공연
-                                </span>
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-stone-800 text-sm">{actor.name}</p>
+                                <a
+                                  href={`https://www.playdb.co.kr/people/search?keyword=${encodeURIComponent(actor.name)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[11px] text-blue-400 hover:underline shrink-0"
+                                >
+                                  플레이DB →
+                                </a>
+                              </div>
+                              {(actorShowsMap[actor.name]?.length ?? 0) > 0 ? (
+                                <p className="text-xs text-stone-400 mt-0.5 truncate">
+                                  {actorShowsMap[actor.name].join(' · ')}
+                                </p>
+                              ) : (
+                                <p className="text-xs text-stone-300 mt-0.5">출연 공연 없음</p>
                               )}
                             </div>
                             <button
