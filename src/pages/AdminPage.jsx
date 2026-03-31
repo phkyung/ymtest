@@ -504,6 +504,10 @@ function parseNamuWiki(text) {
   }
 
   function synopsisBlock(headerIdx) {
+    console.log('[SYN2] 전체 lines 수:', lines.length)
+    console.log('[SYN2] headerIdx 줄 내용:', JSON.stringify(lines[headerIdx]))
+    console.log('[SYN2] headerIdx+1 줄 내용:', JSON.stringify(lines[headerIdx + 1]))
+    console.log('[SYN2] headerIdx+2 줄 내용:', JSON.stringify(lines[headerIdx + 2]))
     const collected = []
 
     // ① 헤더 줄 자체에 탭+내용 인용구 형태인 경우 포함
