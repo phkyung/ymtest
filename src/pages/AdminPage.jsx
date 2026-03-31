@@ -465,30 +465,84 @@ function parseNamuWiki(text) {
     .map((l, i) => l.includes('[편집]') ? i : -1)
     .filter(i => i >= 0)
 
+  const textNoEdit = linesNoEdit.join('\n')
+
+  // ── 헬퍼: X.X. 형식 서브섹션 목록 ──
+  const subSectionRe = /^(\d+)\.(\d+)\.\s+.+$/gm
+  const allSubSections = [...textNoEdit.matchAll(subSectionRe)]
+
+  // ── 헬퍼: 섹션 headerIdx 이후 블록 범위 반환 (다음 [편집] 줄 전까지) ──
+  function sectionBlock(headerIdx) {
+    const nextEdit = editLineIdxs.find(i => i > headerIdx) ?? lines.length
+    return linesNoEdit.slice(headerIdx + 1, nextEdit).join('\n')
+  }
+
   // ── 1. 시놉시스 ──
-  // "시놉시스" 단어가 포함된 줄 찾기 (섹션 번호 무관)
   const synHeaderIdx = lines.findIndex(l => /시놉시스/.test(l))
   if (synHeaderIdx >= 0) {
-    // 다음 [편집] 줄 찾기
-    const nextEditIdx = editLineIdxs.find(i => i > synHeaderIdx) ?? lines.length
-    const synLines = linesNoEdit.slice(synHeaderIdx + 1, nextEditIdx)
-    let syn = preClean(synLines.join('\n'))
+    // 시놉시스 섹션 번호 추출 (e.g. "2.")
+    const synNumMatch = lines[synHeaderIdx].match(/^(\d+)\./)
+    const synNum = synNumMatch?.[1] ?? null
+
+    // 하위 섹션(2.1. 2.2. 등) 중 시놉시스 번호에 속하는 것 찾기
+    const synSubSecs = synNum
+      ? allSubSections.filter(m => m[1] === synNum)
+      : []
+
+    let syn = ''
+    if (synSubSecs.length > 0) {
+      // 가장 마지막 하위 섹션 내용 추출
+      const last = synSubSecs[synSubSecs.length - 1]
+      const startIdx = last.index + last[0].length
+      const nextSub = textNoEdit.slice(startIdx).match(/^\d+\.\d+\.\s+/m)
+      const nextTop = textNoEdit.slice(startIdx).match(/^\d+\.\s+\S/m)
+      const endOff  = Math.min(
+        nextSub ? nextSub.index : Infinity,
+        nextTop ? nextTop.index : Infinity,
+      )
+      syn = preClean(textNoEdit.slice(startIdx, endOff === Infinity ? undefined : startIdx + endOff))
+    } else {
+      syn = preClean(sectionBlock(synHeaderIdx))
+    }
+
     syn = syn.replace(/이\s*문서에\s*스포일러[\s\S]*/i, '')
     syn = syn.replace(/^.*(?:링크픽|넘버\s*영상|공개|예고편|티저)[^\n]*$/gm, '')
     syn = syn.replace(/\n{3,}/g, '\n\n').trim()
     if (syn.length > 10) result.synopsis = syn
   }
 
-  // ── 2. 캐스트: 가장 마지막 X.X. 서브섹션 ──
-  const textNoEdit = linesNoEdit.join('\n')
-  const subSections = [...textNoEdit.matchAll(/^(\d+\.\d+)\.\s+(.+)$/gm)]
+  // ── 2. 캐스트: "캐스트" 또는 "출연진" 섹션의 마지막 하위 섹션 ──
+  const castHeaderIdx = lines.findIndex(l => /(?:캐스트|출연진)/.test(l))
   let castText = ''
-  if (subSections.length > 0) {
-    const last = subSections[subSections.length - 1]
-    const startIdx = last.index + last[0].length
-    const nextMatch = textNoEdit.slice(startIdx).match(/^\d+\.\d*\.?\s+\S/m)
-    const endIdx = nextMatch ? startIdx + nextMatch.index : textNoEdit.length
-    castText = preClean(textNoEdit.slice(startIdx, endIdx))
+  if (castHeaderIdx >= 0) {
+    const castNumMatch = lines[castHeaderIdx].match(/^(\d+)\./)
+    const castNum = castNumMatch?.[1] ?? null
+    const castSubSecs = castNum
+      ? allSubSections.filter(m => m[1] === castNum)
+      : []
+
+    if (castSubSecs.length > 0) {
+      const last = castSubSecs[castSubSecs.length - 1]
+      const startIdx = last.index + last[0].length
+      const nextSub = textNoEdit.slice(startIdx).match(/^\d+\.\d+\.\s+/m)
+      const nextTop = textNoEdit.slice(startIdx).match(/^\d+\.\s+\S/m)
+      const endOff  = Math.min(
+        nextSub ? nextSub.index : Infinity,
+        nextTop ? nextTop.index : Infinity,
+      )
+      castText = preClean(textNoEdit.slice(startIdx, endOff === Infinity ? undefined : startIdx + endOff))
+    } else {
+      castText = preClean(sectionBlock(castHeaderIdx))
+    }
+  } else {
+    // fallback: 전체에서 마지막 X.X. 서브섹션
+    if (allSubSections.length > 0) {
+      const last = allSubSections[allSubSections.length - 1]
+      const startIdx = last.index + last[0].length
+      const nextMatch = textNoEdit.slice(startIdx).match(/^\d+\.\d*\.?\s+\S/m)
+      const endIdx = nextMatch ? startIdx + nextMatch.index : textNoEdit.length
+      castText = preClean(textNoEdit.slice(startIdx, endIdx))
+    }
   }
   if (castText) {
     const castItems = []
@@ -510,11 +564,11 @@ function parseNamuWiki(text) {
     if (castItems.length > 0) result.cast = castItems
   }
 
-  // ── 3. 공연장/기간: 가장 마지막 시즌 기준 ──
-  // 시즌 prefix 제거 후 날짜/공연장 추출
+  // ── 3. 공연장/기간: 가장 마지막 날짜 패턴 ──
   const seasonPrefixRe = /^(?:초연|재연|삼연|사연|오연|앵콜\s*공연?|앵콜|[0-9]+(?:st|nd|rd|th)\s*시즌)\s*[:：]?\s*/i
   const dateRegex = /(\d{4})\.(\d{1,2})\.(\d{1,2})\s*[~～\-]\s*(\d{4})\.(\d{1,2})\.(\d{1,2})/g
-  const venueKeywords = /(?:극장|홀|센터|아트센터|아트홀|씨어터|씨어타|theater|theatre|hall|HALL)/i
+  // 공연장 키워드: 극장·홀·센터·아트·관·당·극 포함
+  const venueKeywords = /(?:극장|아트홀|아트센터|아트|씨어터|씨어타|theater|theatre|센터|공연장|[가-힣]{1,10}[홀관당극])/i
 
   const dateMatches = [...textNoEdit.matchAll(dateRegex)]
   if (dateMatches.length > 0) {
@@ -523,7 +577,7 @@ function parseNamuWiki(text) {
     const startDate = `${last[1]}-${pad(last[2])}-${pad(last[3])}`
     const endDate   = `${last[4]}-${pad(last[5])}-${pad(last[6])}`
 
-    // 날짜가 있는 줄 인덱스 찾기
+    // 날짜가 있는 줄 찾기
     let dateLine = ''
     let dateLineIdx = -1
     let charCount = 0
@@ -534,18 +588,27 @@ function parseNamuWiki(text) {
 
     let venue = null
 
-    // 날짜와 같은 줄에서 공연장 추출 (날짜 앞부분)
-    const sameLineBefore = dateLine.slice(0, dateLine.search(/\d{4}\.\d/))
-    const sameLineClean  = preClean(sameLineBefore).replace(seasonPrefixRe, '').trim()
-    if (venueKeywords.test(sameLineClean)) {
-      venue = sameLineClean.replace(/\s+/g, ' ').trim()
+    // 날짜 패턴 제거 후 같은 줄에서 공연장 추출
+    if (dateLineIdx >= 0) {
+      const stripped = preClean(dateLine)
+        .replace(/\d{4}\.\d{1,2}\.\d{1,2}\s*[~～\-]\s*\d{4}\.\d{1,2}\.\d{1,2}/g, '')
+        .replace(seasonPrefixRe, '')
+        .replace(/[|\[\]]/g, '')
+        .trim()
+      if (stripped && venueKeywords.test(stripped)) {
+        venue = stripped.replace(/\s+/g, ' ').trim()
+      }
     }
 
     // 같은 줄에 없으면 앞 3줄 내에서 탐색
     if (!venue && dateLineIdx >= 0) {
       for (let i = Math.max(0, dateLineIdx - 3); i <= dateLineIdx; i++) {
-        const candidate = preClean(linesNoEdit[i]).replace(seasonPrefixRe, '').trim()
-        if (venueKeywords.test(candidate)) {
+        const candidate = preClean(linesNoEdit[i])
+          .replace(/\d{4}\.\d{1,2}\.\d{1,2}\s*[~～\-]\s*\d{4}\.\d{1,2}\.\d{1,2}/g, '')
+          .replace(seasonPrefixRe, '')
+          .replace(/[|\[\]]/g, '')
+          .trim()
+        if (candidate && venueKeywords.test(candidate)) {
           // 다음 줄에 홀명이 있으면 합치기
           const nextLine = linesNoEdit[i + 1] ? preClean(linesNoEdit[i + 1]).trim() : ''
           const isHallLine = nextLine && !venueKeywords.test(nextLine) &&
