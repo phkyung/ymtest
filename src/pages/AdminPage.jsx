@@ -3893,6 +3893,7 @@ function CastingUploadSection({ db, showsList = [] }) {
   const [toast,          setToast]          = useState('')
   const [error,          setError]          = useState('')
   const [copied,         setCopied]         = useState(false)
+  const [ticketSelecting, setTicketSelecting] = useState(false)
 
   const selectedShow = showsList.find(s => s.id === selectedShowId) ?? null
   const castList = (selectedShow?.cast ?? []).map(c => ({
@@ -3966,6 +3967,16 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
     setRows(prev => prev.filter((_, idx) => idx !== i))
   }
 
+  async function saveTicketSite(site) {
+    if (!selectedShowId || !db) return
+    try {
+      await setDoc(doc(db, 'shows', selectedShowId), { ticketSite: site }, { merge: true })
+      setTicketSelecting(false)
+    } catch (e) {
+      setError(`예매처 저장 실패: ${e.message}`)
+    }
+  }
+
   async function saveToFirestore() {
     if (!rows?.length || !db) return
     setSaving(true)
@@ -4023,24 +4034,72 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
         )}
         {selectedShow && (() => {
           const cleanTitle = selectedShow.title.replace(/\s*\[.*?\]\s*/g, '').trim()
+          const TICKET_SITES = {
+            interpark: { label: '인터파크', url: `https://tickets.interpark.com/search?keyword=${encodeURIComponent(cleanTitle)}` },
+            melon:     { label: '멜론티켓', url: `https://ticket.melon.com/search/searchMain.htm?q=${encodeURIComponent(cleanTitle)}` },
+            yes24:     { label: 'YES24',    url: `https://ticket.yes24.com/Search?query=${encodeURIComponent(cleanTitle)}` },
+            other:     { label: '기타',      url: `https://www.google.com/search?q=${encodeURIComponent(cleanTitle + ' 티켓 예매')}` },
+          }
+          const btnCls = 'px-3 py-1.5 rounded-lg bg-stone-100 text-xs text-stone-600 hover:bg-stone-200 transition-colors'
           return (
-            <div className="flex gap-2 flex-wrap">
-              {[
-                { label: '🔍 트위터: 티켓오픈', href: `https://twitter.com/search?q=${encodeURIComponent(cleanTitle + ' 티켓 오픈')}&f=live` },
-                { label: '🔍 트위터: 캐스팅',   href: `https://twitter.com/search?q=${encodeURIComponent(cleanTitle + ' 캐스팅')}&f=live` },
-                { label: '🔍 구글',             href: `https://www.google.com/search?q=${encodeURIComponent(cleanTitle + ' 티켓 오픈 site:twitter.com')}` },
-              ].map(btn => (
-                <a
-                  key={btn.label}
-                  href={btn.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-stone-100 text-xs text-stone-600
-                             hover:bg-stone-200 transition-colors"
-                >
-                  {btn.label}
-                </a>
-              ))}
+            <div className="space-y-2 pt-1">
+              {/* 티켓 예매처 섹션 */}
+              {!selectedShow.ticketSite || ticketSelecting ? (
+                <div className="flex gap-2 flex-wrap items-center">
+                  <a
+                    href={`https://twitter.com/search?q=${encodeURIComponent(cleanTitle + ' 티켓')}&f=live`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={btnCls}
+                  >
+                    🔍 트위터에서 예매처 확인
+                  </a>
+                  <span className="text-xs text-stone-400">예매처:</span>
+                  {Object.entries(TICKET_SITES).map(([key, site]) => (
+                    <button
+                      key={key}
+                      onClick={() => saveTicketSite(key)}
+                      className={btnCls}
+                    >
+                      {site.label}
+                    </button>
+                  ))}
+                  {ticketSelecting && (
+                    <button onClick={() => setTicketSelecting(false)} className="text-xs text-stone-400 hover:text-stone-600">취소</button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex gap-2 items-center flex-wrap">
+                  <a
+                    href={TICKET_SITES[selectedShow.ticketSite]?.url ?? `https://www.google.com/search?q=${encodeURIComponent(cleanTitle + ' 티켓 예매')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 rounded-lg bg-amber-100 text-xs text-amber-700 hover:bg-amber-200 transition-colors font-semibold"
+                  >
+                    🎫 {TICKET_SITES[selectedShow.ticketSite]?.label ?? selectedShow.ticketSite}에서 검색
+                  </a>
+                  <button onClick={() => setTicketSelecting(true)} className="text-xs text-stone-400 hover:text-stone-600">변경</button>
+                </div>
+              )}
+
+              {/* 검색 버튼 */}
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { label: '🔍 트위터: 티켓오픈', href: `https://twitter.com/search?q=${encodeURIComponent(cleanTitle + ' 티켓 오픈')}&f=live` },
+                  { label: '🔍 트위터: 캐스팅',   href: `https://twitter.com/search?q=${encodeURIComponent(cleanTitle + ' 캐스팅')}&f=live` },
+                  { label: '🔍 구글',             href: `https://www.google.com/search?q=${encodeURIComponent(cleanTitle + ' 티켓 오픈 site:twitter.com')}` },
+                ].map(btn => (
+                  <a
+                    key={btn.label}
+                    href={btn.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={btnCls}
+                  >
+                    {btn.label}
+                  </a>
+                ))}
+              </div>
             </div>
           )
         })()}
