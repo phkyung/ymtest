@@ -965,10 +965,18 @@ export default function ShowPage() {
             </div>
           )}
 
-          {(show.ticketLinks?.length > 0 || show.ticketUrl) && (
+          {(show.ticketLinks?.length > 0 || show.ticketUrl) && (() => {
+            const siteNameMap = {
+              'NHN티켓링크': '티켓링크',
+              '놀유니버스':  'NOL티켓',
+              '클립서비스주식회사': '클립서비스',
+            }
+            return (
             <div className="mt-4 flex flex-wrap gap-2">
               {show.ticketLinks?.length > 0
-                ? show.ticketLinks.filter(l => l.url?.trim()).map((l, i) => (
+                ? show.ticketLinks.filter(l => l.url?.trim()).map((l, i) => {
+                    const displayName = siteNameMap[l.site] || l.site || l.customSite || '예매처'
+                    return (
                     <a
                       key={i}
                       href={l.url}
@@ -977,9 +985,9 @@ export default function ShowPage() {
                       className="px-4 py-2 bg-[#8FAF94] hover:bg-[#7A9E7F]
                                  text-white text-sm font-medium rounded-xl transition-colors"
                     >
-                      {(l.site && l.site !== '직접입력' ? l.site : l.customSite || l.site || '예매처')} 예매
+                      {displayName} 예매
                     </a>
-                  ))
+                  )})
                 : (
                   <a
                     href={show.ticketUrl}
@@ -993,7 +1001,7 @@ export default function ShowPage() {
                 )
               }
             </div>
-          )}
+          )})()}
         </div>
       </section>
 
