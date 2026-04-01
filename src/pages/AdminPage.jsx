@@ -4021,28 +4021,29 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
             {castList.length > 3 ? ` 외 ${castList.length - 3}명` : ''}
           </p>
         )}
-        {selectedShow && (
-          <div className="flex gap-2 flex-wrap">
-            <a
-              href={`https://twitter.com/search?q=${encodeURIComponent(selectedShow.title + ' 캐스팅')}&f=live`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-semibold text-stone-600
-                         hover:bg-stone-200 transition-colors"
-            >
-              🔍 트위터 검색
-            </a>
-            <a
-              href={`https://www.google.com/search?q=${encodeURIComponent('site:twitter.com ' + selectedShow.title + ' 캐스팅')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-semibold text-stone-600
-                         hover:bg-stone-200 transition-colors"
-            >
-              🔍 구글 검색
-            </a>
-          </div>
-        )}
+        {selectedShow && (() => {
+          const cleanTitle = selectedShow.title.replace(/\s*\[.*?\]\s*/g, '').trim()
+          return (
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { label: '🔍 트위터: 티켓오픈', href: `https://twitter.com/search?q=${encodeURIComponent(cleanTitle + ' 티켓 오픈')}&f=live` },
+                { label: '🔍 트위터: 캐스팅',   href: `https://twitter.com/search?q=${encodeURIComponent(cleanTitle + ' 캐스팅')}&f=live` },
+                { label: '🔍 구글',             href: `https://www.google.com/search?q=${encodeURIComponent(cleanTitle + ' 티켓 오픈 site:twitter.com')}` },
+              ].map(btn => (
+                <a
+                  key={btn.label}
+                  href={btn.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-lg bg-stone-100 text-xs text-stone-600
+                             hover:bg-stone-200 transition-colors"
+                >
+                  {btn.label}
+                </a>
+              ))}
+            </div>
+          )
+        })()}
       </div>
 
       {/* Step 1: 프롬프트 복사 */}
