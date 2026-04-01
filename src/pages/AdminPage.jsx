@@ -3894,6 +3894,7 @@ function CastingUploadSection({ db, showsList = [] }) {
   const [error,          setError]          = useState('')
   const [copied,         setCopied]         = useState(false)
   const [ticketSelecting, setTicketSelecting] = useState(false)
+  const [ticketDraft,     setTicketDraft]     = useState(null)  // null=보기모드, []이상=편집모드
 
   const selectedShow = showsList.find(s => s.id === selectedShowId) ?? null
   const castList = (selectedShow?.cast ?? []).map(c => ({
@@ -3967,10 +3968,11 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
     setRows(prev => prev.filter((_, idx) => idx !== i))
   }
 
-  async function saveTicketSite(site) {
+  async function saveTicketSites(sites) {
     if (!selectedShowId || !db) return
     try {
-      await setDoc(doc(db, 'shows', selectedShowId), { ticketSite: site }, { merge: true })
+      await setDoc(doc(db, 'shows', selectedShowId), { ticketSites: sites }, { merge: true })
+      setTicketDraft(null)
       setTicketSelecting(false)
     } catch (e) {
       setError(`예매처 저장 실패: ${e.message}`)
@@ -4035,50 +4037,90 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
         {selectedShow && (() => {
           const cleanTitle = selectedShow.title.replace(/\s*\[.*?\]\s*/g, '').trim()
           const TICKET_SITES = {
-            interpark: { label: '인터파크', url: `https://tickets.interpark.com/search?keyword=${encodeURIComponent(cleanTitle)}` },
-            melon:     { label: '멜론티켓', url: `https://ticket.melon.com/search/searchMain.htm?q=${encodeURIComponent(cleanTitle)}` },
-            yes24:     { label: 'YES24',    url: `https://ticket.yes24.com/Search?query=${encodeURIComponent(cleanTitle)}` },
-            other:     { label: '기타',      url: `https://www.google.com/search?q=${encodeURIComponent(cleanTitle + ' 티켓 예매')}` },
+            nol:        { label: 'NOL티켓',   url: `https://tickets.nol.com/search?keyword=${encodeURIComponent(cleanTitle)}` },
+            ticketlink: { label: '티켓링크',   url: `https://www.ticketlink.co.kr/search?keyword=${encodeURIComponent(cleanTitle)}` },
+            naver:      { label: '네이버N예약', url: `https://booking.naver.com/search?query=${encodeURIComponent(cleanTitle)}` },
+            timeticket: { label: '타임티켓',   url: `https://www.timeticket.co.kr/search?keyword=${encodeURIComponent(cleanTitle)}` },
+            melon:      { label: '멜론티켓',   url: `https://ticket.melon.com/search/searchMain.htm?q=${encodeURIComponent(cleanTitle)}` },
+            yes24:      { label: 'YES24',      url: `https://ticket.yes24.com/Search?query=${encodeURIComponent(cleanTitle)}` },
           }
+          // 기존 ticketSite 문자열 호환
+          const savedSites = Array.isArray(selectedShow.ticketSites)
+            ? selectedShow.ticketSites
+            : selectedShow.ticketSite ? [selectedShow.ticketSite] : []
+          const isEditing = ticketDraft !== null
           const btnCls = 'px-3 py-1.5 rounded-lg bg-stone-100 text-xs text-stone-600 hover:bg-stone-200 transition-colors'
           return (
             <div className="space-y-2 pt-1">
               {/* 티켓 예매처 섹션 */}
-              {!selectedShow.ticketSite || ticketSelecting ? (
-                <div className="flex gap-2 flex-wrap items-center">
-                  <a
-                    href={`https://twitter.com/search?q=${encodeURIComponent(cleanTitle + ' 티켓')}&f=live`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={btnCls}
-                  >
-                    🔍 트위터에서 예매처 확인
-                  </a>
-                  <span className="text-xs text-stone-400">예매처:</span>
-                  {Object.entries(TICKET_SITES).map(([key, site]) => (
-                    <button
-                      key={key}
-                      onClick={() => saveTicketSite(key)}
+              {savedSites.length === 0 || isEditing ? (
+                <div className="space-y-1.5">
+                  <div className="flex gap-2 flex-wrap items-center">
+                    <a
+                      href={`https://twitter.com/search?q=${encodeURIComponent(cleanTitle + ' 티켓')}&f=live`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className={btnCls}
                     >
-                      {site.label}
+                      🔍 트위터에서 예매처 확인
+                    </a>
+                  </div>
+                  <div className="flex gap-2 flex-wrap items-center">
+                    <span className="text-xs text-stone-400 shrink-0">예매처 선택:</span>
+                    {Object.entries(TICKET_SITES).map(([key, site]) => {
+                      const draft = ticketDraft ?? savedSites
+                      const selected = draft.includes(key)
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => {
+                            const base = ticketDraft ?? savedSites
+                            setTicketDraft(selected ? base.filter(k => k !== key) : [...base, key])
+                          }}
+                          className={`px-3 py-1.5 rounded-lg border text-xs transition-colors ${
+                            selected
+                              ? 'bg-amber-100 border-amber-400 text-amber-700'
+                              : 'bg-stone-100 border-transparent text-stone-600 hover:bg-stone-200'
+                          }`}
+                        >
+                          {site.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => saveTicketSites(ticketDraft ?? [])}
+                      disabled={!ticketDraft}
+                      className="px-3 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-semibold
+                                 hover:bg-amber-400 disabled:opacity-40 transition-colors"
+                    >
+                      저장
                     </button>
-                  ))}
-                  {ticketSelecting && (
-                    <button onClick={() => setTicketSelecting(false)} className="text-xs text-stone-400 hover:text-stone-600">취소</button>
-                  )}
+                    {isEditing && (
+                      <button onClick={() => setTicketDraft(null)} className="text-xs text-stone-400 hover:text-stone-600">취소</button>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="flex gap-2 items-center flex-wrap">
-                  <a
-                    href={TICKET_SITES[selectedShow.ticketSite]?.url ?? `https://www.google.com/search?q=${encodeURIComponent(cleanTitle + ' 티켓 예매')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1.5 rounded-lg bg-amber-100 text-xs text-amber-700 hover:bg-amber-200 transition-colors font-semibold"
+                  {savedSites.map(key => (
+                    <a
+                      key={key}
+                      href={TICKET_SITES[key]?.url ?? `https://www.google.com/search?q=${encodeURIComponent(cleanTitle + ' 티켓 예매')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-amber-100 text-xs text-amber-700 hover:bg-amber-200 transition-colors font-semibold"
+                    >
+                      🎫 {TICKET_SITES[key]?.label ?? key}
+                    </a>
+                  ))}
+                  <button
+                    onClick={() => setTicketDraft(savedSites)}
+                    className="text-xs text-stone-400 hover:text-stone-600"
                   >
-                    🎫 {TICKET_SITES[selectedShow.ticketSite]?.label ?? selectedShow.ticketSite}에서 검색
-                  </a>
-                  <button onClick={() => setTicketSelecting(true)} className="text-xs text-stone-400 hover:text-stone-600">변경</button>
+                    변경
+                  </button>
                 </div>
               )}
 
