@@ -4037,10 +4037,10 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
         {selectedShow && (() => {
           const cleanTitle = selectedShow.title.replace(/\s*\[.*?\]\s*/g, '').trim()
           const TICKET_SITES = {
-            nol:        { label: 'NOL티켓',   url: `https://tickets.nol.com/search?keyword=${encodeURIComponent(cleanTitle)}` },
-            ticketlink: { label: '티켓링크',   url: `https://www.ticketlink.co.kr/search?keyword=${encodeURIComponent(cleanTitle)}` },
+            nol:        { label: 'NOL티켓',   url: `https://tickets.nol.com/front/search/searchMain?keyword=${encodeURIComponent(cleanTitle)}` },
+            ticketlink: { label: '티켓링크',   url: `https://www.ticketlink.co.kr/search/total?keyword=${encodeURIComponent(cleanTitle)}` },
             naver:      { label: '네이버N예약', url: `https://booking.naver.com/search?query=${encodeURIComponent(cleanTitle)}` },
-            timeticket: { label: '타임티켓',   url: `https://www.timeticket.co.kr/search?keyword=${encodeURIComponent(cleanTitle)}` },
+            timeticket: { label: '타임티켓',   url: `https://www.timeticket.co.kr/search?q=${encodeURIComponent(cleanTitle)}` },
             melon:      { label: '멜론티켓',   url: `https://ticket.melon.com/search/searchMain.htm?q=${encodeURIComponent(cleanTitle)}` },
             yes24:      { label: 'YES24',      url: `https://ticket.yes24.com/Search?query=${encodeURIComponent(cleanTitle)}` },
           }
