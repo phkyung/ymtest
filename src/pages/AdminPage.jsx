@@ -3884,101 +3884,74 @@ function CastingTab({ db, showsList }) {
 }
 
 
-// ── [섹션 1] 캐스팅 사진 분석 ──────────────────
-const WORKER_URL = 'https://playpick-ai-v2.merhen08.workers.dev/casting'
-
+// ── [섹션 1] 캐스팅 AI 복붙 입력 ──────────────────
 function CastingUploadSection({ db, showsList = [] }) {
-  const [file,           setFile]           = useState(null)
-  const [preview,        setPreview]        = useState('')
-  const [analyzing,      setAnalyzing]      = useState(false)
-  const [rows,           setRows]           = useState(null)   // null=미분석, []이상=분석완료
+  const [selectedShowId, setSelectedShowId] = useState('')
+  const [pasteText,      setPasteText]      = useState('')
+  const [rows,           setRows]           = useState(null)   // null=미파싱, []이상=파싱완료
   const [saving,         setSaving]         = useState(false)
   const [toast,          setToast]          = useState('')
   const [error,          setError]          = useState('')
-  const [rawResponse,    setRawResponse]    = useState('')   // Worker 원본 응답
-  const [selectedShowId, setSelectedShowId] = useState('')
-  const dropRef = useRef(null)
+  const [copied,         setCopied]         = useState(false)
 
-  // 선택한 공연의 cast 배열
   const selectedShow = showsList.find(s => s.id === selectedShowId) ?? null
   const castList = (selectedShow?.cast ?? []).map(c => ({
     actorName: c.actorName,
     roleName:  c.roleName ?? '',
   }))
 
-  function handleFile(f) {
-    if (!f) return
-    setFile(f)
-    setPreview(URL.createObjectURL(f))
-    setRows(null)
-    setError('')
-    setToast('')
+  function buildPrompt() {
+    const castLines = castList.length > 0
+      ? castList.map(c => `- ${c.actorName}${c.roleName ? ` (${c.roleName})` : ''}`).join('\n')
+      : '(캐스트 정보 없음)'
+    return `아래 이미지(또는 텍스트)에서 캐스팅 정보를 추출해서 JSON 배열로만 출력해주세요.
+출력 형식:
+[{"date":"YYYY-MM-DD","showTitle":"공연명","actorName":"배우명","roleName":"역할명"}]
+
+조건:
+- 날짜가 없으면 date는 빈 문자열
+- 여러 배우가 있으면 각각 별도 객체
+- JSON 배열 외 다른 텍스트는 출력하지 마세요
+${selectedShow ? `\n공연명: ${selectedShow.title}` : ''}
+${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
   }
 
-  function onDrop(e) {
-    e.preventDefault()
-    handleFile(e.dataTransfer.files[0])
-  }
-
-  // Worker 응답에서 rows 배열 추출
-  function extractRows(data) {
-    if (Array.isArray(data))       return data
-    if (Array.isArray(data.rows))  return data.rows
-    if (Array.isArray(data.casts)) return data.casts
-    if (Array.isArray(data.results)) return data.results
-    for (const v of Object.values(data)) {
-      if (Array.isArray(v)) return v
-    }
-    return []
-  }
-
-  async function analyze() {
-    if (!file) return
-    setAnalyzing(true)
-    setError('')
-    setRawResponse('')
-    setRows(null)
-    setToast('')
+  async function copyPrompt() {
     try {
-      const b64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload  = e => resolve(e.target.result.split(',')[1])
-        reader.onerror = reject
-        reader.readAsDataURL(file)
-      })
-      console.log('base64 길이:', b64.length)
-      console.log('base64 앞 100자:', b64.substring(0, 100))
-      console.log('mimeType:', file.type)
-      // castList를 함께 전송 — Worker가 역할명 매칭에 활용
-      const body = { imageBase64: b64, mimeType: file.type }
-      if (castList.length > 0) body.castList = castList
-      if (selectedShow)        body.showTitle = selectedShow.title
-      console.log('Worker로 전송 중...')
-      const res = await fetch(WORKER_URL, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(body),
-      })
-      const text = await res.text()
-      setRawResponse(text)
-      if (!res.ok) throw new Error(`Worker 오류 ${res.status}: ${text.slice(0, 200)}`)
-      let data
-      try { data = JSON.parse(text) } catch { throw new Error(`JSON 파싱 실패`) }
-      const extracted = extractRows(data)
-      const normalized = extracted.map(r => ({
-        date:      r.date      ?? '',
-        showTitle: r.showTitle ?? r.show_title ?? r.title ?? selectedShow?.title ?? '',
-        actorName: r.actorName ?? r.actor_name ?? r.actor ?? '',
-        roleName:  r.roleName  ?? r.role_name  ?? r.role  ?? '',
-      }))
-      setRows(normalized)
-    } catch (e) {
-      console.error('[Casting 분석 오류]', e)
-      setError(e.message)
-      setRows([])
-    } finally {
-      setAnalyzing(false)
+      await navigator.clipboard.writeText(buildPrompt())
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setError('클립보드 복사에 실패했어요')
     }
+  }
+
+  function parseAiResult() {
+    setError('')
+    setRows(null)
+    const text = pasteText
+      .replace(/```json\s*/gi, '')
+      .replace(/```\s*/g, '')
+      .trim()
+    const match = text.match(/\[[\s\S]*\]/)
+    if (!match) { setError('JSON 배열을 찾을 수 없어요. AI 응답을 그대로 붙여넣어 주세요.'); return }
+    let parsed
+    try { parsed = JSON.parse(match[0]) } catch { setError('JSON 파싱 실패. 형식을 확인해주세요.'); return }
+    if (!Array.isArray(parsed)) { setError('배열 형식이 아니에요.'); return }
+    const normalized = parsed.map(r => ({
+      date:      r.date      ?? r['날짜']  ?? '',
+      showTitle: r.showTitle ?? r.show_title ?? r.title ?? r['공연명'] ?? selectedShow?.title ?? '',
+      actorName: r.actorName ?? r.actor_name ?? r.actor ?? r['배우명'] ?? r['배우'] ?? '',
+      roleName:  r.roleName  ?? r.role_name  ?? r.role  ?? r['역할명'] ?? r['역할'] ?? '',
+    }))
+    setRows(normalized)
+  }
+
+  function reset() {
+    setPasteText('')
+    setRows(null)
+    setError('')
+    setToast('')
   }
 
   function updateRow(i, field, val) {
@@ -4010,7 +3983,7 @@ function CastingUploadSection({ db, showsList = [] }) {
         batch.set(ref, { ...data, createdAt: serverTimestamp() }, { merge: true })
       })
       await batch.commit()
-      setToast(`캐스팅이 등록됐어요 🎭`)
+      setToast('캐스팅이 등록됐어요 🎭')
       setTimeout(() => setToast(''), 3000)
     } catch (e) {
       setError(`저장 실패: ${e.message}`)
@@ -4019,13 +3992,15 @@ function CastingUploadSection({ db, showsList = [] }) {
     }
   }
 
+  const prompt = buildPrompt()
+
   return (
     <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 space-y-5">
-      <h3 className="font-bold text-stone-700">🎬 캐스팅 사진 분석</h3>
+      <h3 className="font-bold text-stone-700">🤖 캐스팅 AI 복붙 입력</h3>
 
       {/* 공연 선택 */}
       <div className="space-y-1">
-        <label className={LABEL}>공연 선택 (선택 시 cast 데이터로 역할명 자동 매칭)</label>
+        <label className={LABEL}>공연 선택 (선택 시 프롬프트에 캐스트 정보 포함)</label>
         <select
           value={selectedShowId}
           onChange={e => setSelectedShowId(e.target.value)}
@@ -4048,48 +4023,83 @@ function CastingUploadSection({ db, showsList = [] }) {
         )}
       </div>
 
-      {/* 업로드 영역 */}
-      <div
-        ref={dropRef}
-        onDragOver={e => e.preventDefault()}
-        onDrop={onDrop}
-        onClick={() => dropRef.current.querySelector('input').click()}
-        className="border-2 border-dashed border-stone-200 rounded-xl p-8 text-center cursor-pointer
-                   hover:border-amber-300 hover:bg-amber-50/30 transition-colors"
-      >
-        <input type="file" accept="image/*" className="hidden"
-               onChange={e => handleFile(e.target.files[0])} />
-        {preview ? (
-          <img src={preview} alt="미리보기" className="max-h-48 mx-auto rounded-lg object-contain" />
-        ) : (
-          <div className="space-y-1">
-            <p className="text-3xl">🖼️</p>
-            <p className="text-sm text-stone-400">클릭하거나 이미지를 드래그하세요</p>
-          </div>
-        )}
+      {/* Step 1: 프롬프트 복사 */}
+      <div className="space-y-2">
+        <p className="text-xs font-semibold text-stone-500">Step 1 — 프롬프트 복사 후 AI에 붙여넣기</p>
+
+        {/* AI 바로가기 링크 */}
+        <div className="flex gap-2 flex-wrap">
+          {[
+            { label: 'ChatGPT', href: 'https://chat.openai.com/' },
+            { label: 'Claude',  href: 'https://claude.ai/' },
+            { label: 'Gemini',  href: 'https://gemini.google.com/' },
+          ].map(ai => (
+            <a
+              key={ai.label}
+              href={ai.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-semibold text-stone-600
+                         hover:bg-stone-200 transition-colors"
+            >
+              {ai.label} ↗
+            </a>
+          ))}
+        </div>
+
+        {/* 프롬프트 미리보기 */}
+        <details className="group">
+          <summary className="text-xs text-stone-400 cursor-pointer hover:text-stone-600 select-none">
+            프롬프트 미리보기
+          </summary>
+          <pre className="mt-2 bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-xs
+                          text-stone-600 whitespace-pre-wrap break-words">
+            {prompt}
+          </pre>
+        </details>
+
+        <button
+          onClick={copyPrompt}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            copied
+              ? 'bg-emerald-100 text-emerald-700'
+              : 'bg-amber-500 text-white hover:bg-amber-400'
+          }`}
+        >
+          {copied ? '✓ 복사됨' : '📋 프롬프트 복사'}
+        </button>
       </div>
 
-      {file && (
-        <p className="text-xs text-stone-400">{file.name} ({(file.size / 1024).toFixed(0)} KB)</p>
-      )}
-
-      {/* 분석 버튼 */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={analyze}
-          disabled={!file || analyzing}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-semibold
-                     hover:bg-amber-400 disabled:opacity-40 transition-colors"
-        >
-          {analyzing && (
-            <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-            </svg>
+      {/* Step 2: AI 결과 붙여넣기 */}
+      <div className="space-y-2">
+        <p className="text-xs font-semibold text-stone-500">Step 2 — AI 결과 붙여넣기 후 파싱</p>
+        <textarea
+          value={pasteText}
+          onChange={e => setPasteText(e.target.value)}
+          placeholder='AI 응답을 여기에 붙여넣으세요&#10;(JSON 배열 또는 ```json ... ``` 코드블록)'
+          rows={6}
+          className="w-full px-3 py-2 text-sm border border-stone-200 rounded-xl resize-y
+                     focus:outline-none focus:border-stone-400 font-mono bg-stone-50"
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={parseAiResult}
+            disabled={!pasteText.trim()}
+            className="px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-semibold
+                       hover:bg-amber-400 disabled:opacity-40 transition-colors"
+          >
+            파싱하기
+          </button>
+          {(pasteText || rows !== null) && (
+            <button
+              onClick={reset}
+              className="px-4 py-2 rounded-xl bg-stone-100 text-stone-600 text-sm font-semibold
+                         hover:bg-stone-200 transition-colors"
+            >
+              초기화
+            </button>
           )}
-          {analyzing ? '분석 중...' : 'Gemini로 분석하기'}
-        </button>
-        {analyzing && <span className="text-xs text-stone-400 animate-pulse">이미지를 분석하고 있어요</span>}
+        </div>
       </div>
 
       {/* 에러 */}
@@ -4099,23 +4109,12 @@ function CastingUploadSection({ db, showsList = [] }) {
         </div>
       )}
 
-      {/* Worker 원본 응답 (rows가 비거나 에러 시 항상 표시) */}
-      {rawResponse && (Array.isArray(rows) && rows.length === 0 || error) && (
-        <div className="space-y-1">
-          <p className="text-xs font-semibold text-stone-400">Worker 원본 응답</p>
-          <pre className="bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-xs text-stone-600
-                          overflow-x-auto whitespace-pre-wrap break-all">
-            {rawResponse}
-          </pre>
-        </div>
-      )}
-
-      {/* 분석 결과 테이블 */}
+      {/* 파싱 결과 테이블 */}
       {Array.isArray(rows) && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-xs text-stone-500 font-semibold">
-              분석 결과 — {rows.length}행{rows.length > 0 ? ', 수정 후 저장하세요' : ''}
+              파싱 결과 — {rows.length}행{rows.length > 0 ? ', 수정 후 저장하세요' : ''}
             </p>
             <button onClick={addRow}
                     className="text-xs text-amber-600 hover:text-amber-500 font-medium">
