@@ -4076,6 +4076,7 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
                           onClick={() => {
                             const base = ticketDraft ?? savedSites
                             setTicketDraft(selected ? base.filter(k => k !== key) : [...base, key])
+                            window.open(site.url, '_blank')
                           }}
                           className={`px-3 py-1.5 rounded-lg border text-xs transition-colors ${
                             selected
