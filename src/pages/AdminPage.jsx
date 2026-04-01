@@ -4021,6 +4021,28 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
             {castList.length > 3 ? ` 외 ${castList.length - 3}명` : ''}
           </p>
         )}
+        {selectedShow && (
+          <div className="flex gap-2 flex-wrap">
+            <a
+              href={`https://twitter.com/search?q=${encodeURIComponent(selectedShow.title + ' 캐스팅')}&f=live`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-semibold text-stone-600
+                         hover:bg-stone-200 transition-colors"
+            >
+              🔍 트위터 검색
+            </a>
+            <a
+              href={`https://www.google.com/search?q=${encodeURIComponent('site:twitter.com ' + selectedShow.title + ' 캐스팅')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-semibold text-stone-600
+                         hover:bg-stone-200 transition-colors"
+            >
+              🔍 구글 검색
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Step 1: 프롬프트 복사 */}
