@@ -1988,6 +1988,7 @@ export default function AdminPage() {
   const [suggestionsList, setSuggestionsList] = useState([])
 
   // ── 대기 중 탭 필터 상태 ──────────────────────
+  const [pendingSearch,  setPendingSearch]  = useState('')
   // 기간 필터: all / short(7일↓) / medium(8~30일) / long(31일↑)
   const [filterDuration, setFilterDuration] = useState('all')
   // 지역 필터: all / daehakro / seoul_center / seoul_outer / province
@@ -2138,6 +2139,8 @@ export default function AdminPage() {
   // ── 필터 + 정렬 적용된 대기 목록 ────────────
   const filteredPendingList = pendingList
     .filter(show => {
+      // 검색어 필터
+      if (pendingSearch.trim() && !show.title?.includes(pendingSearch.trim())) return false
       // 기간 필터 적용
       if (filterDuration !== 'all') {
         const cat = getDurationCategory(getDurationDays(show))
@@ -2171,7 +2174,7 @@ export default function AdminPage() {
     })
 
   // ── 페이지네이션: 필터 변경 시 첫 페이지로 리셋 ──
-  useEffect(() => { setPendingPage(0) }, [filterDuration, filterRegion, filterGenre, sortBy])
+  useEffect(() => { setPendingPage(0) }, [pendingSearch, filterDuration, filterRegion, filterGenre, sortBy])
 
   // 현재 페이지에 보여줄 행 (50건 슬라이싱)
   const totalPendingPages   = Math.max(1, Math.ceil(filteredPendingList.length / PENDING_PAGE_SIZE))
@@ -2578,6 +2581,29 @@ export default function AdminPage() {
         {tab === 'pending' && (
           <div className="space-y-4">
 
+            {/* ── 검색창 ── */}
+            {pendingList.length > 0 && (
+              <div className="relative">
+                <input
+                  type="text"
+                  value={pendingSearch}
+                  onChange={e => setPendingSearch(e.target.value)}
+                  placeholder="공연명 검색..."
+                  className="w-full px-4 py-2.5 pr-9 text-sm border border-stone-200 rounded-xl
+                             bg-white shadow-sm focus:outline-none focus:border-stone-400"
+                />
+                {pendingSearch && (
+                  <button
+                    onClick={() => setPendingSearch('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400
+                               hover:text-stone-600 text-lg leading-none"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* ── 스마트 필터 바 ── */}
             {pendingList.length > 0 && (
               <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 space-y-3">
@@ -2755,12 +2781,14 @@ export default function AdminPage() {
               <div className="bg-white rounded-2xl border border-stone-100 shadow-sm
                               text-center py-12 text-stone-400">
                 <div className="text-4xl mb-3">🔍</div>
-                <p className="font-medium text-stone-600 mb-2">필터에 해당하는 공연이 없습니다</p>
+                <p className="font-medium text-stone-600 mb-2">
+                  {pendingSearch.trim() ? '검색 결과가 없어요' : '필터에 해당하는 공연이 없습니다'}
+                </p>
                 <button
-                  onClick={() => { setFilterDuration('all'); setFilterRegion('all'); setFilterGenre('all') }}
+                  onClick={() => { setPendingSearch(''); setFilterDuration('all'); setFilterRegion('all'); setFilterGenre('all') }}
                   className="text-sm text-amber-600 underline hover:text-amber-500"
                 >
-                  필터 초기화
+                  {pendingSearch.trim() ? '검색 초기화' : '필터 초기화'}
                 </button>
               </div>
             ) : (
