@@ -20,7 +20,7 @@ import { toHttps } from '../utils/imageUrl'
 import {
   doc, setDoc, deleteDoc, addDoc, collection,
   onSnapshot, writeBatch, serverTimestamp,
-  query, orderBy, where, getDocs, updateDoc, arrayUnion,
+  query, orderBy, where, getDocs, updateDoc, arrayUnion, deleteField,
 } from 'firebase/firestore'
 
 const ADMIN_PW = import.meta.env.VITE_ADMIN_PASSWORD ?? 'theater2025'
@@ -1995,7 +1995,9 @@ export default function AdminPage() {
   const [filterRegion,   setFilterRegion]   = useState('all')
   // 장르 필터: all / 뮤지컬 / 연극 / 오페라 / 기타
   const [filterGenre,    setFilterGenre]    = useState('all')
-  // 정렬: collectedAt_desc(등록일) / startDate_asc(시작일) / duration_asc(기간 짧은 순)
+  // 상태 필터: all / pending / hold
+  const [filterStatus,   setFilterStatus]   = useState('pending')
+  // 정렬: collectedAt_desc(등록일) / startDate_asc(시작일) / duration_asc(기간 짧은 순) / endDate_asc(종료일)
   const [sortBy,         setSortBy]         = useState('collectedAt_desc')
   // 대기 중 현재 페이지 (0-indexed)
   const [pendingPage,    setPendingPage]     = useState(0)
@@ -2139,6 +2141,12 @@ export default function AdminPage() {
   // ── 필터 + 정렬 적용된 대기 목록 ────────────
   const filteredPendingList = pendingList
     .filter(show => {
+      // 상태 필터 적용
+      if (filterStatus === 'pending') {
+        if (show.status && show.status !== 'pending') return false
+      } else if (filterStatus === 'hold') {
+        if (show.status !== 'hold') return false
+      }
       // 검색어 필터
       if (pendingSearch.trim() && !show.title?.includes(pendingSearch.trim())) return false
       // 기간 필터 적용
@@ -2167,6 +2175,9 @@ export default function AdminPage() {
         const db = getDurationDays(b) ?? 9999
         return da - db
       }
+      if (sortBy === 'endDate_asc') {
+        return (a.endDate ?? '9999').localeCompare(b.endDate ?? '9999')
+      }
       // 기본: 등록일 내림차순 (collectedAt_desc)
       const ta = a.collectedAt?.seconds ?? 0
       const tb = b.collectedAt?.seconds ?? 0
@@ -2174,7 +2185,7 @@ export default function AdminPage() {
     })
 
   // ── 페이지네이션: 필터 변경 시 첫 페이지로 리셋 ──
-  useEffect(() => { setPendingPage(0) }, [pendingSearch, filterDuration, filterRegion, filterGenre, sortBy])
+  useEffect(() => { setPendingPage(0) }, [pendingSearch, filterDuration, filterRegion, filterGenre, sortBy, filterStatus])
 
   // 현재 페이지에 보여줄 행 (50건 슬라이싱)
   const totalPendingPages   = Math.max(1, Math.ceil(filteredPendingList.length / PENDING_PAGE_SIZE))
@@ -2348,6 +2359,36 @@ export default function AdminPage() {
       } else {
         alert(`일괄 거절 중 오류가 발생했습니다.\n(${err?.code ?? err?.message ?? '알 수 없는 오류'})`)
       }
+    }
+  }
+
+  // ── 일괄 보류 ─────────────────────────────────
+  async function handleBulkHold() {
+    if (selected.size === 0) return
+    if (!window.confirm(`선택한 ${selected.size}개 공연을 보류하시겠습니까?`)) return
+    try {
+      const batch = writeBatch(db)
+      for (const id of selected) batch.update(doc(db, 'pending', id), { status: 'hold' })
+      await batch.commit()
+      setSelected(new Set())
+    } catch (err) {
+      console.error('일괄 보류 오류:', err)
+      alert('일괄 보류 중 오류가 발생했습니다.')
+    }
+  }
+
+  // ── 일괄 복원 ─────────────────────────────────
+  async function handleBulkRestore() {
+    if (selected.size === 0) return
+    if (!window.confirm(`선택한 ${selected.size}개 공연을 복원하시겠습니까?`)) return
+    try {
+      const batch = writeBatch(db)
+      for (const id of selected) batch.update(doc(db, 'pending', id), { status: deleteField() })
+      await batch.commit()
+      setSelected(new Set())
+    } catch (err) {
+      console.error('일괄 복원 오류:', err)
+      alert('일괄 복원 중 오류가 발생했습니다.')
     }
   }
 
@@ -2608,6 +2649,28 @@ export default function AdminPage() {
             {pendingList.length > 0 && (
               <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 space-y-3">
 
+                {/* 상태 필터 */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-semibold text-stone-500 w-10 shrink-0">상태</span>
+                  {[
+                    { value: 'pending', label: '대기 중' },
+                    { value: 'hold',    label: '보류' },
+                    { value: 'all',     label: '전체' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setFilterStatus(opt.value)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                        filterStatus === opt.value
+                          ? 'bg-stone-900 text-white'
+                          : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
                 {/* 공연 기간 필터 */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-semibold text-stone-500 w-10 shrink-0">기간</span>
@@ -2686,6 +2749,7 @@ export default function AdminPage() {
                     { value: 'collectedAt_desc', label: '등록일 순' },
                     { value: 'startDate_asc',    label: '시작일 순' },
                     { value: 'duration_asc',     label: '기간 짧은 순' },
+                    { value: 'endDate_asc',      label: '종료일 순' },
                   ].map(opt => (
                     <button
                       key={opt.value}
@@ -2746,6 +2810,23 @@ export default function AdminPage() {
                       >
                         ✅ 일괄 승인
                       </button>
+                      {filterStatus === 'hold' ? (
+                        <button
+                          onClick={handleBulkRestore}
+                          className="px-4 py-2 bg-blue-500 text-white text-sm font-semibold
+                                     rounded-lg hover:bg-blue-400 transition-colors"
+                        >
+                          🔄 복원
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleBulkHold}
+                          className="px-4 py-2 bg-amber-500 text-white text-sm font-semibold
+                                     rounded-lg hover:bg-amber-400 transition-colors"
+                        >
+                          ⏸ 보류
+                        </button>
+                      )}
                       <button
                         onClick={handleBulkReject}
                         className="px-4 py-2 bg-red-500 text-white text-sm font-semibold
@@ -2785,7 +2866,7 @@ export default function AdminPage() {
                   {pendingSearch.trim() ? '검색 결과가 없어요' : '필터에 해당하는 공연이 없습니다'}
                 </p>
                 <button
-                  onClick={() => { setPendingSearch(''); setFilterDuration('all'); setFilterRegion('all'); setFilterGenre('all') }}
+                  onClick={() => { setPendingSearch(''); setFilterDuration('all'); setFilterRegion('all'); setFilterGenre('all'); setFilterStatus('pending') }}
                   className="text-sm text-amber-600 underline hover:text-amber-500"
                 >
                   {pendingSearch.trim() ? '검색 초기화' : '필터 초기화'}
