@@ -90,25 +90,36 @@ def normalize_cast(cast: list) -> list[dict]:
 
 
 # ── 중복 체크 ───────────────────────────────────
-def is_duplicate(db: firestore.Client, title: str, start_date: str) -> bool:
-    """
-    pending 또는 shows 컬렉션에 동일한 (제목 + 시작일) 공연이 있으면 True.
-    두 컬렉션 모두 확인해 승인된 공연도 재등록되지 않도록 함.
-    """
-    for collection in ("pending", "shows"):
-        query = (
-            db.collection(collection)
-            .where("title", "==", title)
-            .where("startDate", "==", start_date)
-            .limit(1)
-        )
-        if query.get():  # 결과가 1개라도 있으면 중복
-            return True
+def load_existing_ids(db: firestore.Client) -> set:
+    """shows + pending 컬렉션에서 kopisId와 title+startDate를 한 번에 가져와서 Set으로 반환"""
+    existing = set()
+    for col_name in ("shows", "pending"):
+        print(f"  📥 {col_name} 컬렉션 로드 중...")
+        docs = db.collection(col_name).select(["kopisId", "title", "startDate"]).stream()
+        for doc in docs:
+            data = doc.to_dict()
+            kopis_id = data.get("kopisId", "").strip()
+            if kopis_id:
+                existing.add(f"kopis:{kopis_id}")
+            title = data.get("title", "").strip()
+            start = data.get("startDate", "").strip()
+            if title and start:
+                existing.add(f"title:{title}|{start}")
+    print(f"  ✅ 기존 공연 {len(existing)}개 캐시 완료")
+    return existing
+
+
+def is_duplicate_cached(existing: set, kopis_id: str, title: str, start_date: str) -> bool:
+    """캐시된 Set에서 중복 체크 (Firestore 쿼리 없음)"""
+    if kopis_id and f"kopis:{kopis_id}" in existing:
+        return True
+    if title and start_date and f"title:{title}|{start_date}" in existing:
+        return True
     return False
 
 
 # ── 업로드 ──────────────────────────────────────
-def upload(db: firestore.Client, shows: list[dict]) -> tuple[int, int, int]:
+def upload(db: firestore.Client, shows: list[dict], existing: set) -> tuple[int, int, int]:
     """
     공연 목록을 pending 컬렉션에 업로드.
     반환: (성공, 중복 스킵, 실패) 카운트
@@ -118,6 +129,7 @@ def upload(db: firestore.Client, shows: list[dict]) -> tuple[int, int, int]:
     for show in shows:
         title      = show.get("title", "").strip()
         start_date = show.get("startDate", "")
+        kopis_id   = show.get("kopisId", "").strip()
 
         if not title:
             print("  ⚠️  제목 없는 항목 스킵")
@@ -125,7 +137,7 @@ def upload(db: firestore.Client, shows: list[dict]) -> tuple[int, int, int]:
             continue
 
         # 중복 확인
-        if is_duplicate(db, title, start_date):
+        if is_duplicate_cached(existing, kopis_id, title, start_date):
             print(f"  ↩️  중복 스킵: {title} ({start_date})")
             skipped += 1
             continue
@@ -186,7 +198,8 @@ def main() -> None:
     db = init_firebase(args.key)
     print(f"\n☁️  Firestore '{COLLECTION_NAME}' 컬렉션에 업로드 시작\n")
 
-    success, skipped, failed = upload(db, shows)
+    existing = load_existing_ids(db)
+    success, skipped, failed = upload(db, shows, existing)
 
     print(f"""
 ──────────────────────────────
