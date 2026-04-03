@@ -28,6 +28,7 @@ const GENRE_COLOR = {
 function formatDateRange(start, end) {
   if (!start) return ''
   const fmt = d => `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`
+  if (!end) return `${fmt(new Date(start))} ~ 오픈런`
   return `${fmt(new Date(start))} ~ ${fmt(new Date(end))}`
 }
 

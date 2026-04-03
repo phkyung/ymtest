@@ -1189,12 +1189,31 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
           />
         </div>
         <div>
-          <label className={LABEL}>종료일 *</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs font-semibold text-stone-500">종료일 *</label>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!draft.endDate && draft.isOpenRun === true}
+                onChange={e => {
+                  if (e.target.checked) {
+                    onChangeDraft('endDate', '')
+                    onChangeDraft('isOpenRun', true)
+                  } else {
+                    onChangeDraft('isOpenRun', false)
+                  }
+                }}
+                className="accent-stone-700"
+              />
+              <span className="text-xs text-stone-500 font-medium">오픈런</span>
+            </label>
+          </div>
           <input
             type="date"
             value={draft.endDate ?? ''}
             onChange={e => onChangeDraft('endDate', e.target.value)}
-            className={INPUT}
+            disabled={!draft.endDate && draft.isOpenRun === true}
+            className={`${INPUT} ${!draft.endDate && draft.isOpenRun === true ? 'opacity-40' : ''}`}
           />
         </div>
         <div>
@@ -1338,7 +1357,7 @@ function PendingRow({ show, selected, onSelect, onEdit, onApprove, onReject, ris
 
   // 날짜를 "3.28" 짧은 형식으로
   function shortDate(d) {
-    if (!d) return '?'
+    if (!d) return '오픈런'
     const [, m, day] = d.split('-')
     return `${parseInt(m)}.${parseInt(day)}`
   }
@@ -2364,7 +2383,7 @@ export default function AdminPage() {
         return da - db
       }
       if (sortBy === 'endDate_asc') {
-        return (a.endDate ?? '9999').localeCompare(b.endDate ?? '9999')
+        return (a.endDate || '9999-12-31').localeCompare(b.endDate || '9999-12-31')
       }
       // 기본: 등록일 내림차순 (collectedAt_desc)
       const ta = a.collectedAt?.seconds ?? 0
@@ -3234,13 +3253,31 @@ export default function AdminPage() {
                   />
                 </div>
                 <div>
-                  <label className={LABEL}>종료일 *</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-stone-500">종료일 *</label>
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!addForm.endDate && addForm.isOpenRun === true}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setAddForm(f => ({ ...f, endDate: '', isOpenRun: true }))
+                          } else {
+                            setAddForm(f => ({ ...f, isOpenRun: false }))
+                          }
+                        }}
+                        className="accent-stone-700"
+                      />
+                      <span className="text-xs text-stone-500 font-medium">오픈런</span>
+                    </label>
+                  </div>
                   <input
                     type="date"
                     value={addForm.endDate}
                     onChange={e => setAddForm(f => ({ ...f, endDate: e.target.value }))}
-                    required
-                    className={INPUT}
+                    required={!addForm.isOpenRun}
+                    disabled={!addForm.endDate && addForm.isOpenRun === true}
+                    className={`${INPUT} ${!addForm.endDate && addForm.isOpenRun === true ? 'opacity-40' : ''}`}
                   />
                 </div>
                 <div>
@@ -4204,18 +4241,108 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
       .replace(/```json\s*/gi, '')
       .replace(/```\s*/g, '')
       .trim()
+
+    // 1) JSON 파싱 시도
     const match = text.match(/\[[\s\S]*\]/)
-    if (!match) { setError('JSON 배열을 찾을 수 없어요. AI 응답을 그대로 붙여넣어 주세요.'); return }
-    let parsed
-    try { parsed = JSON.parse(match[0]) } catch { setError('JSON 파싱 실패. 형식을 확인해주세요.'); return }
-    if (!Array.isArray(parsed)) { setError('배열 형식이 아니에요.'); return }
-    const normalized = parsed.map(r => ({
-      date:      r.date      ?? r['날짜']  ?? '',
-      showTitle: r.showTitle ?? r.show_title ?? r.title ?? r['공연명'] ?? selectedShow?.title ?? '',
-      actorName: r.actorName ?? r.actor_name ?? r.actor ?? r['배우명'] ?? r['배우'] ?? '',
-      roleName:  r.roleName  ?? r.role_name  ?? r.role  ?? r['역할명'] ?? r['역할'] ?? '',
-    }))
-    setRows(normalized)
+    if (match) {
+      try {
+        const parsed = JSON.parse(match[0])
+        if (Array.isArray(parsed)) {
+          const normalized = parsed.map(r => ({
+            date:      r.date      ?? r['날짜']  ?? '',
+            showTitle: r.showTitle ?? r.show_title ?? r.title ?? r['공연명'] ?? selectedShow?.title ?? '',
+            actorName: r.actorName ?? r.actor_name ?? r.actor ?? r['배우명'] ?? r['배우'] ?? '',
+            roleName:  r.roleName  ?? r.role_name  ?? r.role  ?? r['역할명'] ?? r['역할'] ?? '',
+          }))
+          setRows(normalized)
+          return
+        }
+      } catch { /* JSON 실패 → 텍스트 파싱으로 fallback */ }
+    }
+
+    // 2) 텍스트 파싱 fallback
+    const now = new Date()
+    const curYear = now.getFullYear()
+    const showTitle = selectedShow?.title ?? ''
+
+    // 연도 없는 월/일 → 가까운 연도 추정
+    function guessYear(month, day) {
+      const thisDate = new Date(curYear, month - 1, day)
+      const nextDate = new Date(curYear + 1, month - 1, day)
+      // 6개월 이상 과거면 내년으로
+      if (thisDate < now && (now - thisDate) > 180 * 86400000) return curYear + 1
+      return curYear
+    }
+
+    function pad2(n) { return String(n).padStart(2, '0') }
+
+    // castList에서 배우 이름 → roleName 매칭
+    function findRole(name) {
+      const trimmed = name.trim()
+      const found = castList.find(c => c.actorName === trimmed)
+      return found?.roleName ?? ''
+    }
+
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+    const results = []
+
+    for (const line of lines) {
+      // 날짜 파싱: "M월 D일" / "M/D" / "MM.DD" / "YYYY.MM.DD" / "YYYY-MM-DD"
+      let dateStr = ''
+      const fullDateMatch = line.match(/(\d{4})[.\-](\d{1,2})[.\-](\d{1,2})/)
+      const mdKorMatch    = line.match(/(\d{1,2})월\s*(\d{1,2})일/)
+      const mdSlashMatch  = line.match(/(?<!\d)(\d{1,2})\/(\d{1,2})(?![\d:])/)
+      const mdDotMatch    = line.match(/(?<!\d)(\d{2})\.(\d{2})(?!\.)/)
+
+      if (fullDateMatch) {
+        dateStr = `${fullDateMatch[1]}-${pad2(fullDateMatch[2])}-${pad2(fullDateMatch[3])}`
+      } else if (mdKorMatch) {
+        const m = parseInt(mdKorMatch[1]), d = parseInt(mdKorMatch[2])
+        dateStr = `${guessYear(m, d)}-${pad2(m)}-${pad2(d)}`
+      } else if (mdSlashMatch) {
+        const m = parseInt(mdSlashMatch[1]), d = parseInt(mdSlashMatch[2])
+        if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+          dateStr = `${guessYear(m, d)}-${pad2(m)}-${pad2(d)}`
+        }
+      } else if (mdDotMatch) {
+        const m = parseInt(mdDotMatch[1]), d = parseInt(mdDotMatch[2])
+        if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+          dateStr = `${guessYear(m, d)}-${pad2(m)}-${pad2(d)}`
+        }
+      }
+
+      // 시간 패턴 제거: "HH:MM" / "HH시"
+      let cleaned = line
+        .replace(/\d{4}[.\-]\d{1,2}[.\-]\d{1,2}/g, '')
+        .replace(/\d{1,2}월\s*\d{1,2}일/g, '')
+        .replace(/\d{1,2}\/\d{1,2}/g, '')
+        .replace(/\d{2}\.\d{2}/g, '')
+        .replace(/\d{1,2}:\d{2}/g, '')
+        .replace(/\d{1,2}시/g, '')
+        .replace(/[(\[][월화수목금토일][)\]]/g, '')  // 요일 제거
+        .replace(/\b[월화수목금토일]\b/g, '')
+
+      // "/" 또는 "," 로 분리해서 남은 토큰이 배우 이름
+      const tokens = cleaned
+        .split(/[\/,]/)
+        .map(t => t.trim())
+        .filter(t => t.length > 0 && !/^\d+$/.test(t))
+
+      for (const name of tokens) {
+        results.push({
+          date: dateStr,
+          showTitle,
+          actorName: name,
+          roleName: findRole(name),
+        })
+      }
+    }
+
+    if (results.length === 0) {
+      setError('파싱할 수 있는 데이터가 없어요. JSON 또는 "날짜 / 배우명" 형식으로 입력해주세요.')
+      return
+    }
+    setRows(results)
   }
 
   function reset() {
