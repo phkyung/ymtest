@@ -192,7 +192,7 @@ export default function CastingBoard() {
     getDocs(q)
       .then(snap => {
         const items = snap.docs.map(d => d.data())
-        items.sort((a, b) => (a.showTitle ?? '').localeCompare(b.showTitle ?? '', 'ko'))
+        items.sort((a, b) => (a.showTitle ?? '').localeCompare(b.showTitle ?? '', 'ko') || (a.time ?? '').localeCompare(b.time ?? ''))
         setCasts(items)
       })
       .finally(() => setLoading(false))
@@ -252,40 +252,71 @@ export default function CastingBoard() {
             아직 등록된 캐스팅 정보가 없어요.<br />
             곧 채워질 예정입니다 🎭
           </p>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {casts.map((cast, i) => (
-              <div
-                key={cast.showId ?? i}
-                className="bg-white rounded-2xl border border-[#E8E4DF] px-6 py-5 shadow-sm"
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="font-semibold text-[#2C1810] text-base leading-tight">
-                    {cast.showTitle ?? '(제목 없음)'}
-                  </span>
-                  {cast.genre && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${genreBadgeClass(cast.genre)}`}>
-                      {cast.genre}
-                    </span>
-                  )}
-                </div>
-                <ul className="flex flex-col gap-1.5">
-                  {(cast.entries ?? []).map((entry, j) => (
-                    <li key={j} className="flex items-baseline gap-2 text-sm">
-                      <span className="font-medium text-[#2C1810]">{entry.actorName}</span>
-                      {entry.role && (
-                        <>
-                          <span className="text-stone-300">·</span>
-                          <span className="text-[#6B5E52]">{entry.role}</span>
-                        </>
+        ) : (() => {
+          // 같은 공연이 여러 회차(시간)를 가질 수 있으므로 showTitle로 그룹핑
+          const byShow = {}
+          casts.forEach(cast => {
+            const title = cast.showTitle ?? '(제목 없음)'
+            if (!byShow[title]) byShow[title] = { genre: cast.genre, sessions: [] }
+            byShow[title].sessions.push(cast)
+          })
+          // 각 공연 내 세션을 시간 순 정렬
+          Object.values(byShow).forEach(g => g.sessions.sort((a, b) => (a.time ?? '').localeCompare(b.time ?? '')))
+
+          function timeLabel(t) {
+            if (!t) return ''
+            const hour = parseInt(t.split(':')[0])
+            if (hour < 17) return `낮공연(${t})`
+            return `밤공연(${t})`
+          }
+
+          return (
+            <div className="flex flex-col gap-4">
+              {Object.entries(byShow).map(([title, { genre, sessions }]) => {
+                const hasMultiple = sessions.length > 1 || sessions.some(s => s.time)
+                return (
+                  <div
+                    key={title}
+                    className="bg-white rounded-2xl border border-[#E8E4DF] px-6 py-5 shadow-sm"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-semibold text-[#2C1810] text-base leading-tight">
+                        {title}
+                      </span>
+                      {genre && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${genreBadgeClass(genre)}`}>
+                          {genre}
+                        </span>
                       )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        )}
+                    </div>
+                    {sessions.map((cast, si) => (
+                      <div key={si} className={si > 0 ? 'mt-3 pt-3 border-t border-[#E8E4DF]' : ''}>
+                        {hasMultiple && cast.time && (
+                          <p className="text-xs font-semibold text-[#8FAF94] mb-2">
+                            🕐 {timeLabel(cast.time)}
+                          </p>
+                        )}
+                        <ul className="flex flex-col gap-1.5">
+                          {(cast.entries ?? []).map((entry, j) => (
+                            <li key={j} className="flex items-baseline gap-2 text-sm">
+                              <span className="font-medium text-[#2C1810]">{entry.actorName}</span>
+                              {entry.role && (
+                                <>
+                                  <span className="text-stone-300">·</span>
+                                  <span className="text-[#6B5E52]">{entry.role}</span>
+                                </>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })()}
 
       </div>
     </div>

@@ -4279,6 +4279,10 @@ function CastingUploadSection({ db, showsList = [] }) {
         }
       }
 
+      // 시간 (인덱스 2): "20:00" 형식
+      const timePart = parts[2] ?? ''
+      const timeStr = /^\d{1,2}:\d{2}$/.test(timePart) ? timePart : ''
+
       // 배우들 (인덱스 3부터)
       const actors = parts.slice(3)
 
@@ -4286,6 +4290,7 @@ function CastingUploadSection({ db, showsList = [] }) {
         if (!actorName) return
         results.push({
           date: dateStr,
+          time: timeStr,
           showTitle: showTitle || '',
           actorName,
           roleName: roles[idx] || '',
@@ -4312,6 +4317,7 @@ function CastingUploadSection({ db, showsList = [] }) {
         if (Array.isArray(parsed)) {
           const normalized = parsed.map(r => ({
             date:      r.date      ?? r['날짜']  ?? '',
+            time:      r.time      ?? r['시간']  ?? '',
             showTitle: r.showTitle ?? r.show_title ?? r.title ?? r['공연명'] ?? selectedShow?.title ?? '',
             actorName: r.actorName ?? r.actor_name ?? r.actor ?? r['배우명'] ?? r['배우'] ?? '',
             roleName:  r.roleName  ?? r.role_name  ?? r.role  ?? r['역할명'] ?? r['역할'] ?? '',
@@ -4382,6 +4388,10 @@ function CastingUploadSection({ db, showsList = [] }) {
         }
       }
 
+      // 시간 추출: "HH:MM"
+      const timeMatch = line.match(/(\d{1,2}:\d{2})/)
+      const timeStr = timeMatch ? timeMatch[1] : ''
+
       let cleaned = line
         .replace(/\d{4}[.\-]\d{1,2}[.\-]\d{1,2}/g, '')
         .replace(/\d{1,2}월\s*\d{1,2}일/g, '')
@@ -4400,6 +4410,7 @@ function CastingUploadSection({ db, showsList = [] }) {
       for (const name of tokens) {
         results.push({
           date: dateStr,
+          time: timeStr,
           showTitle,
           actorName: name,
           roleName: findRole(name),
@@ -4426,7 +4437,7 @@ function CastingUploadSection({ db, showsList = [] }) {
   }
 
   function addRow() {
-    setRows(prev => [...prev, { date: '', showTitle: '', actorName: '', roleName: '' }])
+    setRows(prev => [...prev, { date: '', time: '', showTitle: '', actorName: '', roleName: '' }])
   }
 
   function removeRow(i) {
@@ -4451,8 +4462,9 @@ function CastingUploadSection({ db, showsList = [] }) {
     try {
       const grouped = {}
       rows.forEach(r => {
-        const key = `${(r.showTitle || 'unknown').replace(/\s/g, '_')}_${r.date || 'nodate'}`
-        if (!grouped[key]) grouped[key] = { date: r.date, showTitle: r.showTitle, entries: [] }
+        const timePart = r.time ? `_${r.time.replace(':', '')}` : ''
+        const key = `${(r.showTitle || 'unknown').replace(/\s/g, '_')}_${r.date || 'nodate'}${timePart}`
+        if (!grouped[key]) grouped[key] = { date: r.date, time: r.time || '', showTitle: r.showTitle, entries: [] }
         grouped[key].entries.push({ actorName: r.actorName, role: r.roleName })
       })
       const batch = writeBatch(db)
@@ -4717,7 +4729,7 @@ function CastingUploadSection({ db, showsList = [] }) {
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="bg-stone-50 border-b border-stone-100">
-                    {['날짜', '공연명', '배우명', '역할', ''].map((h, i) => (
+                    {['날짜', '시간', '공연명', '배우명', '역할', ''].map((h, i) => (
                       <th key={i} className="text-left text-xs font-semibold text-stone-400 px-3 py-2">{h}</th>
                     ))}
                   </tr>
@@ -4725,7 +4737,7 @@ function CastingUploadSection({ db, showsList = [] }) {
                 <tbody>
                   {rows.map((row, i) => (
                     <tr key={i} className="border-b border-stone-50 last:border-0">
-                      {['date', 'showTitle', 'actorName', 'roleName'].map(field => (
+                      {['date', 'time', 'showTitle', 'actorName', 'roleName'].map(field => (
                         <td key={field} className="px-2 py-1.5">
                           <input
                             value={row[field] ?? ''}
