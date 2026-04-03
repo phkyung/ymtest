@@ -4403,6 +4403,27 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
 
   const prompt = buildPrompt()
 
+  function buildCastingPrompt() {
+    const castLines = castList.length > 0
+      ? castList.map(c => `- ${c.actorName}${c.roleName ? ` (${c.roleName})` : ''}`).join('\n')
+      : ''
+    return `이 캐스팅 정보를 JSON 배열로 변환해줘. 다른 설명 없이 JSON만:
+[{"date":"2026-05-14","actorName":"배우이름","roleName":""}]${selectedShow ? `\n\n공연명: ${selectedShow.title}` : ''}${castLines ? `\n\n등록된 캐스트:\n${castLines}` : ''}`
+  }
+
+  const [copiedCasting, setCopiedCasting] = useState(false)
+  async function copyCastingPrompt() {
+    try {
+      await navigator.clipboard.writeText(buildCastingPrompt())
+      setCopiedCasting(true)
+      setTimeout(() => setCopiedCasting(false), 2000)
+    } catch {
+      setError('클립보드 복사에 실패했어요')
+    }
+  }
+
+  const castingPrompt = buildCastingPrompt()
+
   return (
     <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 space-y-5">
       <h3 className="font-bold text-stone-700">🤖 캐스팅 AI 복붙 입력</h3>
@@ -4577,18 +4598,35 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
                           text-stone-600 whitespace-pre-wrap break-words">
             {prompt}
           </pre>
+          <p className="mt-3 text-xs font-semibold text-stone-400">캐스팅 전용 프롬프트:</p>
+          <pre className="mt-1 bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-xs
+                          text-stone-600 whitespace-pre-wrap break-words">
+            {castingPrompt}
+          </pre>
         </details>
 
-        <button
-          onClick={copyPrompt}
-          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            copied
-              ? 'bg-emerald-100 text-emerald-700'
-              : 'bg-amber-500 text-white hover:bg-amber-400'
-          }`}
-        >
-          {copied ? '✓ 복사됨' : '📋 프롬프트 복사'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={copyPrompt}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              copied
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-amber-500 text-white hover:bg-amber-400'
+            }`}
+          >
+            {copied ? '✓ 복사됨' : '📋 프롬프트 복사'}
+          </button>
+          <button
+            onClick={copyCastingPrompt}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              copiedCasting
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-amber-500 text-white hover:bg-amber-400'
+            }`}
+          >
+            {copiedCasting ? '✓ 복사됨' : '📋 캐스팅 프롬프트 복사'}
+          </button>
+        </div>
       </div>
 
       {/* Step 2: AI 결과 붙여넣기 */}
