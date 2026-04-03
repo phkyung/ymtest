@@ -825,6 +825,171 @@ function NamuWikiModal({ onClose, onApply }) {
   )
 }
 
+// ── 티켓 사이트 텍스트 파싱 ────────────────────────────
+function parseTicketSite(text) {
+  const result = {}
+
+  // 제목: 〈〉 또는 <> 안의 텍스트
+  const titleMatch = text.match(/[연극뮤지컬]+[〈<]([^〉>]+)[〉>]/)
+  if (titleMatch) result.title = titleMatch[1].trim()
+
+  // 장르
+  if (text.includes('뮤지컬')) result.genre = '뮤지컬'
+  else if (text.includes('연극')) result.genre = '연극'
+
+  // 장소: "장소" 다음 줄
+  const venueMatch = text.match(/장소\s*\n?\s*([^\n(]+)/)
+  if (venueMatch) result.venue = venueMatch[1].trim()
+
+  // 공연기간
+  const periodMatch = text.match(/공연기간\s*\n?\s*(\d{4}\.\d{2}\.\d{2})\s*~\s*(\d{4}\.\d{2}\.\d{2}|오픈런)/)
+  if (periodMatch) {
+    result.startDate = periodMatch[1].replace(/\./g, '-')
+    result.endDate = periodMatch[2] === '오픈런' ? '' : periodMatch[2].replace(/\./g, '-')
+    result.isOpenRun = periodMatch[2] === '오픈런'
+  }
+
+  // 공연시간 (분)
+  const runtimeMatch = text.match(/공연시간\s*\n?\s*(\d+)분/) || text.match(/(\d+)분/)
+  if (runtimeMatch) result.runtime = parseInt(runtimeMatch[1])
+
+  // 관람연령
+  const ageMatch = text.match(/관람연령\s*\n?\s*([^\n]+)/)
+  if (ageMatch) result.ageLimit = ageMatch[1].trim()
+
+  return result
+}
+
+function TicketSiteModal({ onClose, onApply }) {
+  const [text, setText] = useState('')
+  const [parsed, setParsed] = useState(null)
+  const [checked, setChecked] = useState({})
+
+  function handleParse() {
+    const result = parseTicketSite(text)
+    setParsed(result)
+    setChecked({
+      title:     !!result.title,
+      genre:     !!result.genre,
+      venue:     !!result.venue,
+      dates:     !!(result.startDate || result.endDate),
+      runtime:   !!result.runtime,
+      ageLimit:  !!result.ageLimit,
+    })
+  }
+
+  function handleApply() {
+    const apply = {}
+    if (checked.title    && parsed.title)     apply.title    = parsed.title
+    if (checked.genre    && parsed.genre)     apply.genre    = parsed.genre
+    if (checked.venue    && parsed.venue)     apply.venue    = parsed.venue
+    if (checked.dates) {
+      if (parsed.startDate) apply.startDate = parsed.startDate
+      if (parsed.endDate)   apply.endDate   = parsed.endDate
+    }
+    if (checked.runtime  && parsed.runtime)   apply.runtime  = parsed.runtime
+    onApply(apply)
+    onClose()
+  }
+
+  const toggle = key => setChecked(prev => ({ ...prev, [key]: !prev[key] }))
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-8">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100">
+          <h3 className="font-bold text-stone-800">🎫 티켓 사이트 붙여넣기</h3>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 text-xl leading-none">×</button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* 입력 영역 */}
+          <div>
+            <label className="text-xs font-semibold text-stone-500 mb-1 block">티켓 사이트 텍스트를 붙여넣으세요</label>
+            <textarea
+              value={text}
+              onChange={e => setText(e.target.value)}
+              rows={10}
+              placeholder="티켓 사이트 페이지에서 공연 정보를 복사해서 붙여넣으세요..."
+              className="w-full px-3 py-2 border border-stone-200 rounded-xl text-xs
+                         font-mono focus:outline-none focus:ring-2 focus:ring-stone-300 resize-y"
+            />
+          </div>
+
+          <button
+            onClick={handleParse}
+            disabled={!text.trim()}
+            className="w-full py-2.5 bg-stone-800 text-white text-sm font-semibold
+                       rounded-xl hover:bg-stone-700 disabled:opacity-40 transition-colors"
+          >
+            파싱
+          </button>
+
+          {/* 파싱 결과 미리보기 */}
+          {parsed && (
+            <div className="space-y-2 border border-stone-100 rounded-xl p-4">
+              <p className="text-xs font-bold text-stone-500 mb-3">파싱 결과 — 적용할 항목을 선택하세요</p>
+
+              {parsed.isOpenRun && (
+                <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-300 rounded-lg px-3 py-2.5 mb-2">
+                  <span className="text-base leading-none mt-0.5">⚠️</span>
+                  <p className="text-xs text-yellow-800 font-medium">
+                    오픈런 공연입니다. 종료일이 비어 있습니다.
+                  </p>
+                </div>
+              )}
+
+              {[
+                { key: 'title', label: '제목',
+                  preview: parsed.title || null },
+                { key: 'genre', label: '장르',
+                  preview: parsed.genre || null },
+                { key: 'venue', label: '장소',
+                  preview: parsed.venue || null },
+                { key: 'dates', label: '공연기간',
+                  preview: (parsed.startDate || parsed.endDate)
+                    ? `${parsed.startDate ?? '?'} ~ ${parsed.isOpenRun ? '오픈런' : (parsed.endDate ?? '?')}`
+                    : null },
+                { key: 'runtime', label: '공연시간',
+                  preview: parsed.runtime ? `${parsed.runtime}분` : null },
+                { key: 'ageLimit', label: '관람연령',
+                  preview: parsed.ageLimit || null },
+              ].map(({ key, label, preview }) => (
+                <label key={key} className={`flex items-start gap-3 p-2.5 rounded-lg cursor-pointer transition-colors
+                                             ${preview ? 'hover:bg-stone-50' : 'opacity-40 cursor-default'}`}>
+                  <input
+                    type="checkbox"
+                    checked={!!checked[key]}
+                    disabled={!preview || key === 'ageLimit'}
+                    onChange={() => toggle(key)}
+                    className="mt-0.5 accent-stone-700"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-semibold text-stone-700">{preview ? '✅' : '❌'} {label}</span>
+                    {preview
+                      ? <p className="text-xs text-stone-500 mt-0.5 break-words">{preview}</p>
+                      : <p className="text-xs text-stone-400 mt-0.5">추출되지 않음</p>}
+                  </div>
+                </label>
+              ))}
+
+              <button
+                onClick={handleApply}
+                disabled={!Object.values(checked).some(Boolean)}
+                className="w-full mt-2 py-2.5 bg-amber-600 text-white text-sm font-semibold
+                           rounded-xl hover:bg-amber-500 disabled:opacity-40 transition-colors"
+              >
+                선택 항목 폼에 적용
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── 공연 정보 편집 폼 (대기 중 · 등록 완료 공통) ──
 function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
   // sourceUrl에서 mt20id 파싱 (예: ...?pc=02&mt20id=PF12345)
@@ -838,6 +1003,18 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
 
   // 나무위키 파싱 모달
   const [namuOpen, setNamuOpen] = useState(false)
+
+  // 티켓 사이트 파싱 모달
+  const [ticketSiteOpen, setTicketSiteOpen] = useState(false)
+
+  function handleTicketSiteApply({ title, genre, venue, startDate, endDate, runtime }) {
+    if (title    && !draft.title)     onChangeDraft('title', title)
+    if (genre    && !draft.genre)     onChangeDraft('genre', genre)
+    if (venue    && !draft.venue)     onChangeDraft('venue', venue)
+    if (startDate && !draft.startDate) onChangeDraft('startDate', startDate)
+    if (endDate  && !draft.endDate)   onChangeDraft('endDate', endDate)
+    if (runtime  && !draft.runtime)   onChangeDraft('runtime', runtime)
+  }
 
   function handleNamuApply({ synopsis, cast, dates, runtime }) {
     if (synopsis) onChangeDraft('synopsis', synopsis)
@@ -913,8 +1090,11 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
       {namuOpen && (
         <NamuWikiModal onClose={() => setNamuOpen(false)} onApply={handleNamuApply} />
       )}
+      {ticketSiteOpen && (
+        <TicketSiteModal onClose={() => setTicketSiteOpen(false)} onApply={handleTicketSiteApply} />
+      )}
 
-      {/* ── 나무위키 버튼들 ── */}
+      {/* ── 나무위키 / 티켓 사이트 버튼들 ── */}
       <div className="flex justify-end gap-2">
         {draft.title && (() => {
           const cleanTitle = (draft.title ?? '').replace(/\s*\[[^\]]*\]\s*/g, '').trim()
@@ -939,6 +1119,14 @@ function ShowEditForm({ draft, onChangeDraft, onSave, onCancel }) {
                      hover:bg-sky-100 font-semibold transition-colors border border-sky-200"
         >
           📋 나무위키 붙여넣기
+        </button>
+        <button
+          type="button"
+          onClick={() => setTicketSiteOpen(true)}
+          className="text-xs px-3 py-1.5 rounded-lg bg-violet-50 text-violet-700
+                     hover:bg-violet-100 font-semibold transition-colors border border-violet-200"
+        >
+          🎫 티켓 사이트 붙여넣기
         </button>
       </div>
 
