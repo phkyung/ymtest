@@ -4209,19 +4209,21 @@ function CastingUploadSection({ db, showsList = [] }) {
   }))
 
   function buildPrompt() {
+    const curYear = new Date().getFullYear()
     const castLines = castList.length > 0
       ? castList.map(c => `- ${c.actorName}${c.roleName ? ` (${c.roleName})` : ''}`).join('\n')
-      : '(캐스트 정보 없음)'
-    return `아래 이미지(또는 텍스트)에서 캐스팅 정보를 추출해서 JSON 배열로만 출력해주세요.
-출력 형식:
-[{"date":"YYYY-MM-DD","showTitle":"공연명","actorName":"배우명","roleName":"역할명"}]
+      : ''
+    return `아래 캐스팅 정보를 JSON 배열로 변환해줘.
 
-조건:
-- 날짜가 없으면 date는 빈 문자열
-- 여러 배우가 있으면 각각 별도 객체
-- JSON 배열 외 다른 텍스트는 출력하지 마세요
-${selectedShow ? `\n공연명: ${selectedShow.title}` : ''}
-${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
+규칙:
+- 날짜는 YYYY-MM-DD 형식 (예: 5월 14일 → ${curYear}-05-14)
+- 연도가 없으면 ${curYear}년으로
+- 한 줄에 배우 여러 명이면 각각 별도 객체
+- '공연없음' 줄은 제외
+- JSON 배열만 출력, 다른 설명 없이
+
+형식:
+[{"date":"${curYear}-05-14","showTitle":"공연명","actorName":"배우명","roleName":"역할명"}]${selectedShow ? `\n\n공연명: ${selectedShow.title}` : ''}${castLines ? `\n\n등록된 캐스트:\n${castLines}` : ''}`
   }
 
   async function copyPrompt() {
@@ -4232,6 +4234,66 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
     } catch {
       setError('클립보드 복사에 실패했어요')
     }
+  }
+
+  function parseTextCasting(text, showTitle) {
+    const lines = text.trim().split('\n').filter(l => l.trim())
+    if (lines.length < 2) return []
+
+    // 첫 줄에서 역할명 추출 (날짜/요일/시간 제외)
+    const headerParts = lines[0].split('/').map(s => s.trim())
+    const roles = headerParts.slice(3) // 앞 3개(날짜/요일/시간) 제외
+
+    const results = []
+    const now = new Date()
+    const curYear = now.getFullYear()
+
+    function guessYear(month, day) {
+      const thisDate = new Date(curYear, month - 1, day)
+      if (thisDate < now && (now - thisDate) > 180 * 86400000) return curYear + 1
+      return curYear
+    }
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i]
+      if (line.includes('공연없음')) continue
+
+      const parts = line.split('/').map(s => s.trim())
+      if (parts.length < 4) continue
+
+      // 날짜 파싱: "5월 14일" / "5/14" / "05.14" / "2026-05-14"
+      let dateStr = ''
+      const fullMatch = parts[0].match(/(\d{4})[.\-](\d{1,2})[.\-](\d{1,2})/)
+      const korMatch  = parts[0].match(/(\d{1,2})월\s*(\d{1,2})일/)
+      const dotMatch  = parts[0].match(/(\d{1,2})\.(\d{1,2})/)
+
+      if (fullMatch) {
+        dateStr = `${fullMatch[1]}-${String(fullMatch[2]).padStart(2,'0')}-${String(fullMatch[3]).padStart(2,'0')}`
+      } else if (korMatch) {
+        const m = parseInt(korMatch[1]), d = parseInt(korMatch[2])
+        dateStr = `${guessYear(m, d)}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+      } else if (dotMatch) {
+        const m = parseInt(dotMatch[1]), d = parseInt(dotMatch[2])
+        if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+          dateStr = `${guessYear(m, d)}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+        }
+      }
+
+      // 배우들 (인덱스 3부터)
+      const actors = parts.slice(3)
+
+      actors.forEach((actorName, idx) => {
+        if (!actorName) return
+        results.push({
+          date: dateStr,
+          showTitle: showTitle || '',
+          actorName,
+          roleName: roles[idx] || '',
+        })
+      })
+    }
+
+    return results
   }
 
   function parseAiResult() {
@@ -4260,34 +4322,43 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
       } catch { /* JSON 실패 → 텍스트 파싱으로 fallback */ }
     }
 
-    // 2) 텍스트 파싱 fallback
+    // 2) 텍스트 파싱: 첫 줄에 "/" 3개 이상이면 헤더 있는 테이블 형식
+    const lines = text.split('\n').filter(l => l.trim())
+    const firstLine = lines[0] ?? ''
+    const slashCount = (firstLine.match(/\//g) || []).length
+
+    if (slashCount >= 3) {
+      const results = parseTextCasting(text, selectedShow?.title ?? '')
+      if (results.length > 0) {
+        setRows(results)
+        return
+      }
+    }
+
+    // 3) 단순 텍스트 파싱 (헤더 없이 줄 단위)
     const now = new Date()
     const curYear = now.getFullYear()
     const showTitle = selectedShow?.title ?? ''
 
-    // 연도 없는 월/일 → 가까운 연도 추정
     function guessYear(month, day) {
       const thisDate = new Date(curYear, month - 1, day)
-      const nextDate = new Date(curYear + 1, month - 1, day)
-      // 6개월 이상 과거면 내년으로
       if (thisDate < now && (now - thisDate) > 180 * 86400000) return curYear + 1
       return curYear
     }
 
     function pad2(n) { return String(n).padStart(2, '0') }
 
-    // castList에서 배우 이름 → roleName 매칭
     function findRole(name) {
       const trimmed = name.trim()
       const found = castList.find(c => c.actorName === trimmed)
       return found?.roleName ?? ''
     }
 
-    const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
     const results = []
 
     for (const line of lines) {
-      // 날짜 파싱: "M월 D일" / "M/D" / "MM.DD" / "YYYY.MM.DD" / "YYYY-MM-DD"
+      if (line.includes('공연없음')) continue
+
       let dateStr = ''
       const fullDateMatch = line.match(/(\d{4})[.\-](\d{1,2})[.\-](\d{1,2})/)
       const mdKorMatch    = line.match(/(\d{1,2})월\s*(\d{1,2})일/)
@@ -4311,7 +4382,6 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
         }
       }
 
-      // 시간 패턴 제거: "HH:MM" / "HH시"
       let cleaned = line
         .replace(/\d{4}[.\-]\d{1,2}[.\-]\d{1,2}/g, '')
         .replace(/\d{1,2}월\s*\d{1,2}일/g, '')
@@ -4319,10 +4389,9 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
         .replace(/\d{2}\.\d{2}/g, '')
         .replace(/\d{1,2}:\d{2}/g, '')
         .replace(/\d{1,2}시/g, '')
-        .replace(/[(\[][월화수목금토일][)\]]/g, '')  // 요일 제거
+        .replace(/[(\[][월화수목금토일][)\]]/g, '')
         .replace(/\b[월화수목금토일]\b/g, '')
 
-      // "/" 또는 "," 로 분리해서 남은 토큰이 배우 이름
       const tokens = cleaned
         .split(/[\/,]/)
         .map(t => t.trim())
@@ -4402,27 +4471,6 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
   }
 
   const prompt = buildPrompt()
-
-  function buildCastingPrompt() {
-    const castLines = castList.length > 0
-      ? castList.map(c => `- ${c.actorName}${c.roleName ? ` (${c.roleName})` : ''}`).join('\n')
-      : ''
-    return `이 캐스팅 정보를 JSON 배열로 변환해줘. 다른 설명 없이 JSON만:
-[{"date":"2026-05-14","actorName":"배우이름","roleName":""}]${selectedShow ? `\n\n공연명: ${selectedShow.title}` : ''}${castLines ? `\n\n등록된 캐스트:\n${castLines}` : ''}`
-  }
-
-  const [copiedCasting, setCopiedCasting] = useState(false)
-  async function copyCastingPrompt() {
-    try {
-      await navigator.clipboard.writeText(buildCastingPrompt())
-      setCopiedCasting(true)
-      setTimeout(() => setCopiedCasting(false), 2000)
-    } catch {
-      setError('클립보드 복사에 실패했어요')
-    }
-  }
-
-  const castingPrompt = buildCastingPrompt()
 
   return (
     <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-6 space-y-5">
@@ -4598,35 +4646,18 @@ ${castList.length > 0 ? `\n등록된 캐스트:\n${castLines}` : ''}`
                           text-stone-600 whitespace-pre-wrap break-words">
             {prompt}
           </pre>
-          <p className="mt-3 text-xs font-semibold text-stone-400">캐스팅 전용 프롬프트:</p>
-          <pre className="mt-1 bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-xs
-                          text-stone-600 whitespace-pre-wrap break-words">
-            {castingPrompt}
-          </pre>
         </details>
 
-        <div className="flex gap-2">
-          <button
-            onClick={copyPrompt}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-              copied
-                ? 'bg-emerald-100 text-emerald-700'
-                : 'bg-amber-500 text-white hover:bg-amber-400'
-            }`}
-          >
-            {copied ? '✓ 복사됨' : '📋 프롬프트 복사'}
-          </button>
-          <button
-            onClick={copyCastingPrompt}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-              copiedCasting
-                ? 'bg-emerald-100 text-emerald-700'
-                : 'bg-amber-500 text-white hover:bg-amber-400'
-            }`}
-          >
-            {copiedCasting ? '✓ 복사됨' : '📋 캐스팅 프롬프트 복사'}
-          </button>
-        </div>
+        <button
+          onClick={copyPrompt}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            copied
+              ? 'bg-emerald-100 text-emerald-700'
+              : 'bg-amber-500 text-white hover:bg-amber-400'
+          }`}
+        >
+          {copied ? '✓ 복사됨' : '📋 프롬프트 복사'}
+        </button>
       </div>
 
       {/* Step 2: AI 결과 붙여넣기 */}
