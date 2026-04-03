@@ -255,6 +255,17 @@ export default function NosonArchive({ showId, cast, actorIdMap }) {
                       ) : (
                         <p className="text-xs text-stone-300 text-center py-2">아직 기록이 없어요</p>
                       )}
+
+                      {/* 키워드 남기기 버튼 (로그인 시만) */}
+                      {user && (
+                        <button
+                          onClick={() => setEditActor(m)}
+                          className="mt-3 w-full py-2 text-xs font-semibold rounded-lg
+                                     bg-[#8FAF94]/15 text-[#4A6B4F] hover:bg-[#8FAF94]/25 transition-colors"
+                        >
+                          ✏️ 키워드 남기기
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
