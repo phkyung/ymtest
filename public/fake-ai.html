@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI Chat</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#212121;color:#fff;height:100dvh;display:flex;flex-direction:column}
+
+.role-select{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100dvh;gap:16px;padding:20px}
+.role-select h1{font-size:22px;font-weight:600}
+.role-select p{color:#999;font-size:13px;text-align:center;line-height:1.6}
+.role-btns{display:flex;gap:12px;margin-top:4px}
+.role-btns button{padding:14px 28px;font-size:15px;border-radius:12px;border:none;cursor:pointer;font-weight:500}
+.btn-admin{background:#10a37f;color:#fff}
+.btn-user{background:#2f2f2f;color:#fff;border:1px solid #444!important}
+.room-section{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:8px}
+.room-input{background:#2f2f2f;border:1px solid #444;border-radius:12px;padding:10px 16px;color:#fff;font-size:18px;text-align:center;width:160px;letter-spacing:4px;outline:none}
+.room-input:focus{border-color:#10a37f}
+.room-input::placeholder{letter-spacing:0;font-size:14px;color:#666}
+
+.chat-wrap{display:flex;flex-direction:column;height:100dvh}
+.chat-header{padding:12px 16px;border-bottom:1px solid #333;display:flex;align-items:center;gap:10px;background:#212121;flex-shrink:0}
+.logo{width:28px;height:28px;border-radius:50%;background:#10a37f;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo svg{width:16px;height:16px}
+.chat-header span{font-size:15px;font-weight:500}
+
+.messages{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+
+.msg-user-bubble{display:flex;justify-content:flex-end;margin:8px 0}
+.msg-user-bubble .bubble{background:#2f2f2f;padding:10px 16px;border-radius:20px 20px 4px 20px;max-width:80%;font-size:15px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+
+.msg-ai-row{display:flex;gap:10px;margin:16px 0;align-items:flex-start}
+.msg-ai-row .text{font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-word;max-width:calc(100% - 42px)}
+
+.typing-ind{display:flex;gap:10px;margin:12px 0;align-items:center}
+.dots{display:flex;gap:4px}
+.dot{width:6px;height:6px;border-radius:50%;background:#999;animation:blink 1.4s infinite}
+.dot:nth-child(2){animation-delay:.2s}
+.dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+
+.msg-in{padding:12px 16px;margin:8px 0;border-radius:12px;background:#1a3a2a;border-left:3px solid #10a37f}
+.msg-in .lbl{font-size:11px;color:#10a37f;margin-bottom:4px}
+.msg-out{padding:12px 16px;margin:8px 0;border-radius:12px;background:#2f2f2f}
+.msg-out .lbl{font-size:11px;color:#888;margin-bottom:4px}
+.msg-text{font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+
+.input-bar{padding:10px 12px;border-top:1px solid #333;display:flex;gap:8px;background:#212121;flex-shrink:0}
+.input-bar input{flex:1;background:#2f2f2f;border:1px solid #444;border-radius:20px;padding:10px 16px;color:#fff;font-size:15px;outline:none}
+.input-bar input:focus{border-color:#10a37f}
+.input-bar button{background:#10a37f;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+.admin-bar{padding:6px 12px;display:flex;gap:8px;align-items:center;background:#1a1a1a;border-bottom:1px solid #333;flex-shrink:0}
+.admin-bar button{background:#2f2f2f;border:1px solid #444;color:#ccc;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer}
+.admin-bar button:hover{background:#444}
+
+.empty{display:flex;align-items:center;justify-content:center;height:100%;color:#555;font-size:14px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyA5Cp5GPuZyxMSspOMs0onpYndnVx8wtFs",
+  authDomain: "ymtest-5345d.firebaseapp.com",
+  databaseURL: "https://ymtest-5345d-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ymtest-5345d"
+});
+const db = firebase.database();
+
+let role = null, roomCode = null, messages = [], typing = false;
+
+const LOGO = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>';
+
+function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function joinRoom(r, code){
+  role = r;
+  roomCode = code.toUpperCase();
+  db.ref('fakechat/'+roomCode+'/messages').on('value', snap => {
+    const val = snap.val();
+    messages = val ? Object.values(val).sort((a,b)=>a.ts-b.ts) : [];
+    render();
+    requestAnimationFrame(scrollBottom);
+  });
+  db.ref('fakechat/'+roomCode+'/typing').on('value', snap => {
+    typing = !!snap.val();
+    render();
+    requestAnimationFrame(scrollBottom);
+  });
+  render();
+}
+
+function sendMsg(){
+  const inp = document.getElementById('ci');
+  if(!inp || !inp.value.trim()) return;
+  db.ref('fakechat/'+roomCode+'/messages').push({
+    role: role==='admin' ? 'assistant' : 'user',
+    text: inp.value.trim(),
+    ts: Date.now()
+  });
+  if(role==='admin') db.ref('fakechat/'+roomCode+'/typing').set(false);
+  inp.value = '';
+  inp.focus();
+}
+
+function clearChat(){
+  if(confirm('채팅 내역을 모두 삭제할까요?'))
+    db.ref('fakechat/'+roomCode+'/messages').remove();
+}
+
+let tTimer;
+function onAdminType(){
+  db.ref('fakechat/'+roomCode+'/typing').set(true);
+  clearTimeout(tTimer);
+  tTimer = setTimeout(() => db.ref('fakechat/'+roomCode+'/typing').set(false), 3000);
+}
+
+function scrollBottom(){
+  const m = document.getElementById('msgs');
+  if(m) m.scrollTop = m.scrollHeight;
+}
+
+function handleKey(e){ if(e.key==='Enter') sendMsg(); }
+
+function go(r){
+  const ri = document.getElementById('ri');
+  const code = (ri?.value||'').trim();
+  if(!code){ ri.style.borderColor='#e24b4a'; ri.focus(); return; }
+  joinRoom(r, code);
+}
+
+function render(){
+  const app = document.getElementById('app');
+
+  if(!role || !roomCode){
+    app.innerHTML =
+      '<div class="role-select">' +
+        '<h1>Fake AI Chat</h1>' +
+        '<p>같은 방 코드로 접속하세요</p>' +
+        '<div class="room-section">' +
+          '<input class="room-input" id="ri" placeholder="코드" maxlength="6" onkeydown="if(event.key===\'Enter\')document.querySelector(\'.btn-admin\').click()" />' +
+        '</div>' +
+        '<div class="role-btns">' +
+          '<button class="btn-admin" onclick="go(\'admin\')">관리자</button>' +
+          '<button class="btn-user" onclick="go(\'user\')">유저</button>' +
+        '</div>' +
+      '</div>';
+    return;
+  }
+
+  const isAdmin = role === 'admin';
+  let msgHtml = '';
+
+  if(messages.length === 0){
+    msgHtml = '<div class="empty">' + (isAdmin ? '유저의 질문을 기다리는 중...' : '무엇이든 물어보세요') + '</div>';
+  } else {
+    for(let i=0; i<messages.length; i++){
+      const m = messages[i];
+      if(isAdmin){
+        if(m.role==='user'){
+          msgHtml += '<div class="msg-in"><div class="lbl">유저 질문</div><div class="msg-text">' + esc(m.text) + '</div></div>';
+        } else {
+          msgHtml += '<div class="msg-out"><div class="lbl">내 답변</div><div class="msg-text">' + esc(m.text) + '</div></div>';
+        }
+      } else {
+        if(m.role==='user'){
+          msgHtml += '<div class="msg-user-bubble"><div class="bubble">' + esc(m.text) + '</div></div>';
+        } else {
+          msgHtml += '<div class="msg-ai-row"><div class="logo">' + LOGO + '</div><div class="text">' + esc(m.text) + '</div></div>';
+        }
+      }
+    }
+  }
+
+  const typingHtml = (!isAdmin && typing)
+    ? '<div class="typing-ind"><div class="logo">' + LOGO + '</div><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>'
+    : '';
+
+  const adminBar = isAdmin
+    ? '<div class="admin-bar"><button onclick="clearChat()">채팅 초기화</button><span style="margin-left:auto;font-size:11px;color:#555">방: ' + roomCode + '</span></div>'
+    : '';
+
+  app.innerHTML =
+    '<div class="chat-wrap">' +
+      '<div class="chat-header">' +
+        (isAdmin ? '' : '<div class="logo">' + LOGO + '</div>') +
+        '<span>' + (isAdmin ? '관리자 모드' : 'AI에게 물어보세요') + '</span>' +
+      '</div>' +
+      adminBar +
+      '<div class="messages" id="msgs">' + msgHtml + typingHtml + '</div>' +
+      '<div class="input-bar">' +
+        '<input id="ci" placeholder="' + (isAdmin ? '답변 입력...' : '메시지 입력...') + '" onkeydown="handleKey(event)" ' + (isAdmin ? 'oninput="onAdminType()"' : '') + ' />' +
+        '<button onclick="sendMsg()"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button>' +
+      '</div>' +
+    '</div>';
+
+  requestAnimationFrame(scrollBottom);
+}
+
+render();
+</script>
+</body>
+</html>
