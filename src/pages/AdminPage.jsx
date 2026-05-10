@@ -18,8 +18,8 @@ import { CSS } from '@dnd-kit/utilities'
 import { db, isFirebaseConfigured } from '../firebase'
 import { toHttps } from '../utils/imageUrl'
 import {
-  doc, setDoc, deleteDoc, addDoc, collection,
-  onSnapshot, writeBatch, serverTimestamp,
+  doc, setDoc, deleteDoc, addDoc, collection, getDoc,
+  onSnapshot, writeBatch, serverTimestamp, runTransaction,
   query, orderBy, where, getDocs, updateDoc, arrayUnion, deleteField,
 } from 'firebase/firestore'
 
@@ -2040,16 +2040,17 @@ const RISK_BADGE = {
 // pending: { id, actorId, actorName, imageUrl, profileUrl, reason, candidates }
 // onApprove: (pending, imageUrl) => Promise
 // onReject:  (pendingId) => Promise
-function PendingActorCard({ pending, currentShows = [], onApprove, onReject }) {
+function PendingActorCard({ pending, currentShows = [], onApprove, onReject, onNamesake }) {
   // 현재 선택된 사진 URL (candidates 중 선택 또는 직접 입력)
   const [selectedUrl, setSelectedUrl] = useState(pending.imageUrl ?? '')
   // 직접 URL 입력 모드 여부
   const [customMode,  setCustomMode]  = useState(false)
   // 직접 입력 URL
   const [customUrl,   setCustomUrl]   = useState('')
-  // 승인/거절 진행 중 여부
+  // 승인/거절/동명이인 보류 진행 중 여부
   const [approving,   setApproving]   = useState(false)
   const [rejecting,   setRejecting]   = useState(false)
+  const [namesaking,  setNamesaking]  = useState(false)
 
   // 표시할 최종 URL: 직접 입력 모드면 customUrl, 아니면 selectedUrl
   const displayUrl = customMode ? customUrl : selectedUrl
@@ -2066,6 +2067,12 @@ function PendingActorCard({ pending, currentShows = [], onApprove, onReject }) {
     setRejecting(true)
     await onReject(pending.id)
     setRejecting(false)
+  }
+
+  async function handleNamesakeClick() {
+    setNamesaking(true)
+    await onNamesake(pending)
+    setNamesaking(false)
   }
 
   return (
@@ -2167,6 +2174,17 @@ function PendingActorCard({ pending, currentShows = [], onApprove, onReject }) {
             >
               🔍 URL 직접 입력
             </button>
+            {/* 동명이인 보류 — 후보가 2명 이상일 때만 표시 */}
+            {(pending.candidates?.length ?? 0) > 1 && (
+              <button
+                onClick={handleNamesakeClick}
+                disabled={namesaking}
+                className="px-3 py-1.5 text-xs font-semibold bg-violet-50 text-violet-600
+                           rounded-lg hover:bg-violet-100 disabled:opacity-50 transition-colors"
+              >
+                {namesaking ? '저장 중...' : '👥 동명이인 (보류)'}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -2236,6 +2254,31 @@ export default function AdminPage() {
   const ACTORS_PER_PAGE = 20
   const [actorEditOpen,  setActorEditOpen]  = useState(null) // 열린 카드의 actor.id
   const [actorListToast, setActorListToast] = useState('')
+  // 동명이인 보류 목록 (namesakes 컬렉션)
+  const [namesakesList,        setNamesakesList]        = useState([])
+  const [namesakesLoading,     setNamesakesLoading]     = useState(false)
+  // 캐스팅 매핑 (resolved namesakes)
+  const [resolvedNamesakes,        setResolvedNamesakes]        = useState([])
+  const [resolvedNamesakesLoading, setResolvedNamesakesLoading] = useState(false)
+  // 매핑 상태: { [namesakeId]: { [showId_collection]: actorId } }
+  // 예: { "nsABC": { "showX_shows": "actorA", "showY_pending": "actorB" } }
+  const [castMappings, setCastMappings] = useState({})
+  // 펼쳐진 namesake 항목 ID
+  const [expandedMapping, setExpandedMapping] = useState(null)
+  // 매핑 미리보기 모달
+  const [mappingPreview, setMappingPreview] = useState(null)
+  // 매핑 적용 중 로딩
+  const [applyingMapping, setApplyingMapping] = useState(false)
+  // 노선 마이그레이션 (4단계)
+  const [migrationNamesakes,        setMigrationNamesakes]        = useState([])
+  const [migrationNamesakesLoading, setMigrationNamesakesLoading] = useState(false)
+  // 진단 결과: { [namesakeId]: { keywords, userKeywords, pairVotes, votes, done } }
+  const [diagResults,    setDiagResults]    = useState({})
+  const [diagLoading,    setDiagLoading]    = useState(null) // 현재 진단 중인 namesakeId
+  // 마이그레이션 미리보기 모달
+  const [migrationPreview, setMigrationPreview] = useState(null)
+  // 마이그레이션 적용 중 ID
+  const [migratingId, setMigratingId] = useState(null)
   function showActorListToast(msg) {
     setActorListToast(msg)
     setTimeout(() => setActorListToast(''), 2500)
@@ -2312,6 +2355,51 @@ export default function AdminPage() {
         setPendingActorsLoading(false)
       })
       .catch(err => { console.error('pending_actors 로드 오류:', err); setPendingActorsLoading(false) })
+  }, [tab, actorSubTab, authed])
+
+  // 동명이인 보류 서브탭 진입 시 namesakes 컬렉션 로드 (pending + reviewing)
+  useEffect(() => {
+    if (tab !== 'actors' || actorSubTab !== 'namesakes' || !authed || !isFirebaseConfigured || !db) return
+    setNamesakesLoading(true)
+    getDocs(query(collection(db, 'namesakes'), where('status', 'in', ['pending', 'reviewing']), orderBy('createdAt', 'desc')))
+      .then(snap => {
+        setNamesakesList(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+        setNamesakesLoading(false)
+      })
+      .catch(err => { console.error('namesakes 로드 오류:', err); setNamesakesLoading(false) })
+  }, [tab, actorSubTab, authed])
+
+  // 캐스팅 매핑 서브탭 진입 시 resolved namesakes 로드
+  useEffect(() => {
+    if (tab !== 'actors' || actorSubTab !== 'mapping' || !authed || !isFirebaseConfigured || !db) return
+    setResolvedNamesakesLoading(true)
+    getDocs(query(collection(db, 'namesakes'), where('status', '==', 'resolved'), orderBy('createdAt', 'desc')))
+      .then(snap => {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        setResolvedNamesakes(items)
+        // 임시 저장된 매핑이 있으면 복원
+        const saved = {}
+        for (const ns of items) {
+          if (ns.tempMappings) saved[ns.id] = ns.tempMappings
+        }
+        setCastMappings(prev => ({ ...prev, ...saved }))
+        setResolvedNamesakesLoading(false)
+      })
+      .catch(err => { console.error('resolved namesakes 로드 오류:', err); setResolvedNamesakesLoading(false) })
+  }, [tab, actorSubTab, authed])
+
+  // 노선 마이그레이션 서브탭 진입 시 resolved + mappingDone namesakes 로드
+  useEffect(() => {
+    if (tab !== 'actors' || actorSubTab !== 'migration' || !authed || !isFirebaseConfigured || !db) return
+    setMigrationNamesakesLoading(true)
+    getDocs(query(collection(db, 'namesakes'), where('status', '==', 'resolved'), orderBy('createdAt', 'desc')))
+      .then(snap => {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+          .filter(ns => ns.mappingDone === true)
+        setMigrationNamesakes(items)
+        setMigrationNamesakesLoading(false)
+      })
+      .catch(err => { console.error('migration namesakes 로드 오류:', err); setMigrationNamesakesLoading(false) })
   }, [tab, actorSubTab, authed])
 
   // ── 배우별 출연 공연 수 + 공연 제목 집계 (shows + pending 전체 cast 스캔) ──
@@ -2715,6 +2803,564 @@ export default function AdminPage() {
     } catch (err) {
       console.error('배우 사진 거절 오류:', err)
       alert('삭제 중 오류가 발생했습니다.')
+    }
+  }
+
+  // ── 동명이인 보류: actors에 플래그 + namesakes 컬렉션에 후보 저장 + pending_actors 삭제 ──
+  async function handleNamesake(pending) {
+    try {
+      // 1. actors 문서에 동명이인 플래그 추가 (기존 필드 변경 없음)
+      await updateDoc(doc(db, 'actors', pending.actorId), {
+        hasNamesake: true,
+        namesakeNote: `동명이인 후보 ${pending.candidates?.length ?? 0}명 — 검토 보류`,
+      })
+
+      // 2. namesakes 컬렉션에 후보 정보 저장
+      const candidates = (pending.candidates ?? []).map(c => ({
+        name:                 c.name ?? '',
+        photoUrl:             c.imageUrl ?? '',
+        playdbUrl:            '',
+        representativeWorks:  c.shows ?? [],
+        summary:              '',
+      }))
+      await addDoc(collection(db, 'namesakes'), {
+        baseActorId:   pending.actorId,
+        originalName:  pending.actorName,
+        candidates,
+        status:        'pending',
+        createdAt:     serverTimestamp(),
+        updatedAt:     serverTimestamp(),
+      })
+
+      // 3. pending_actors 문서 삭제 (검토 큐에서 제거)
+      await deleteDoc(doc(db, 'pending_actors', pending.id))
+      setPendingActors(prev => prev.filter(p => p.id !== pending.id))
+
+      // 4. 배우 전체 목록에 플래그 즉시 반영
+      setActorsList(prev =>
+        prev.map(a => a.id === pending.actorId ? { ...a, hasNamesake: true } : a)
+      )
+    } catch (err) {
+      console.error('동명이인 보류 처리 오류:', err)
+      alert('저장 중 오류가 발생했습니다.')
+    }
+  }
+
+  // ── 동명이인 원본 지정: 기존 actors 문서를 선택한 후보 정보로 업데이트 ──
+  async function handleSetOriginal(namesakeId, candidateIndex) {
+    try {
+      const nsRef = doc(db, 'namesakes', namesakeId)
+      await runTransaction(db, async (tx) => {
+        const nsSnap = await tx.get(nsRef)
+        if (!nsSnap.exists()) throw new Error('namesakes 문서를 찾을 수 없습니다.')
+        const nsData = nsSnap.data()
+        if (nsData.status === 'resolved') throw new Error('이미 처리 완료된 항목입니다.')
+
+        const candidates = [...(nsData.candidates ?? [])]
+        const c = candidates[candidateIndex]
+        if (!c) throw new Error('후보를 찾을 수 없습니다.')
+
+        // 기존 actors 문서를 이 후보 정보로 업데이트
+        const actorRef = doc(db, 'actors', nsData.baseActorId)
+        tx.update(actorRef, {
+          imageUrl:             c.photoUrl ?? '',
+          profileUrl:           c.playdbUrl ?? '',
+          representativeWorks:  c.representativeWorks ?? [],
+        })
+
+        // candidates 배열에 isOriginal 표시
+        candidates[candidateIndex] = { ...c, isOriginal: true }
+        tx.update(nsRef, {
+          candidates,
+          status:    'reviewing',
+          updatedAt: serverTimestamp(),
+        })
+      })
+
+      // 로컬 상태 반영
+      setNamesakesList(prev => prev.map(ns => {
+        if (ns.id !== namesakeId) return ns
+        const updated = [...(ns.candidates ?? [])]
+        updated[candidateIndex] = { ...updated[candidateIndex], isOriginal: true }
+        return { ...ns, candidates: updated, status: 'reviewing' }
+      }))
+      setActorsList(prev => {
+        const ns = namesakesList.find(n => n.id === namesakeId)
+        if (!ns) return prev
+        const c = ns.candidates?.[candidateIndex]
+        return prev.map(a => a.id === ns.baseActorId
+          ? { ...a, imageUrl: c?.photoUrl ?? '', profileUrl: c?.playdbUrl ?? '' }
+          : a)
+      })
+    } catch (err) {
+      console.error('원본 지정 오류:', err)
+      alert(`원본 지정 실패: ${err.message}`)
+    }
+  }
+
+  // ── 동명이인 별도 등록: 새 actors 문서 생성 ──
+  async function handleRegisterSeparate(namesakeId, candidateIndex) {
+    try {
+      const nsRef = doc(db, 'namesakes', namesakeId)
+      let newActorId = ''
+
+      await runTransaction(db, async (tx) => {
+        const nsSnap = await tx.get(nsRef)
+        if (!nsSnap.exists()) throw new Error('namesakes 문서를 찾을 수 없습니다.')
+        const nsData = nsSnap.data()
+        if (nsData.status === 'resolved') throw new Error('이미 처리 완료된 항목입니다.')
+
+        const candidates = [...(nsData.candidates ?? [])]
+        const c = candidates[candidateIndex]
+        if (!c) throw new Error('후보를 찾을 수 없습니다.')
+        if (c.newActorId) throw new Error('이미 별도 등록된 후보입니다.')
+
+        // 새 actors 문서 생성 (자동 ID)
+        const newActorRef = doc(collection(db, 'actors'))
+        newActorId = newActorRef.id
+        tx.set(newActorRef, {
+          name:                 nsData.originalName,
+          displayName:          nsData.originalName,
+          imageUrl:             c.photoUrl ?? '',
+          profileUrl:           c.playdbUrl ?? '',
+          representativeWorks:  c.representativeWorks ?? [],
+          hasNamesake:          true,
+          namesakeOf:           nsData.baseActorId,
+          createdAt:            serverTimestamp(),
+        })
+
+        // candidates 배열에 newActorId 기록
+        candidates[candidateIndex] = { ...c, newActorId }
+        tx.update(nsRef, {
+          candidates,
+          status:    'reviewing',
+          updatedAt: serverTimestamp(),
+        })
+      })
+
+      // 로컬 상태 반영
+      setNamesakesList(prev => prev.map(ns => {
+        if (ns.id !== namesakeId) return ns
+        const updated = [...(ns.candidates ?? [])]
+        updated[candidateIndex] = { ...updated[candidateIndex], newActorId }
+        return { ...ns, candidates: updated, status: 'reviewing' }
+      }))
+    } catch (err) {
+      console.error('별도 등록 오류:', err)
+      alert(`별도 등록 실패: ${err.message}`)
+    }
+  }
+
+  // ── 동명이인 전체 처리 완료: status → resolved ──
+  async function handleResolveNamesake(namesakeId) {
+    try {
+      await updateDoc(doc(db, 'namesakes', namesakeId), {
+        status:    'resolved',
+        updatedAt: serverTimestamp(),
+      })
+      setNamesakesList(prev => prev.filter(ns => ns.id !== namesakeId))
+    } catch (err) {
+      console.error('처리 완료 오류:', err)
+      alert(`처리 완료 실패: ${err.message}`)
+    }
+  }
+
+  // ── 동명이인 처리 취소 (원본 지정 / 별도 등록 되돌리기) ──
+  async function handleUndoNamesakeAction(namesakeId, candidateIndex) {
+    try {
+      const nsRef = doc(db, 'namesakes', namesakeId)
+      await runTransaction(db, async (tx) => {
+        const nsSnap = await tx.get(nsRef)
+        if (!nsSnap.exists()) throw new Error('namesakes 문서를 찾을 수 없습니다.')
+        const nsData = nsSnap.data()
+        if (nsData.status === 'resolved') throw new Error('이미 처리 완료된 항목입니다.')
+
+        const candidates = [...(nsData.candidates ?? [])]
+        const c = candidates[candidateIndex]
+        if (!c) throw new Error('후보를 찾을 수 없습니다.')
+
+        // 별도 등록된 actor 문서 삭제
+        if (c.newActorId) {
+          tx.delete(doc(db, 'actors', c.newActorId))
+        }
+
+        // 원본 지정이었으면 actors 문서에서 사진/프로필 제거
+        if (c.isOriginal) {
+          tx.update(doc(db, 'actors', nsData.baseActorId), {
+            imageUrl:            '',
+            profileUrl:          '',
+            representativeWorks: deleteField(),
+          })
+        }
+
+        // candidates에서 처리 표시 제거
+        const { isOriginal, newActorId, ...rest } = c
+        candidates[candidateIndex] = rest
+
+        // 남은 처리된 후보가 있으면 reviewing, 없으면 pending
+        const hasProcessed = candidates.some(cc => cc.isOriginal || cc.newActorId)
+        tx.update(nsRef, {
+          candidates,
+          status:    hasProcessed ? 'reviewing' : 'pending',
+          updatedAt: serverTimestamp(),
+        })
+      })
+
+      // 로컬 상태 반영
+      setNamesakesList(prev => prev.map(ns => {
+        if (ns.id !== namesakeId) return ns
+        const updated = [...(ns.candidates ?? [])]
+        const { isOriginal, newActorId, ...rest } = updated[candidateIndex]
+        updated[candidateIndex] = rest
+        const hasProcessed = updated.some(cc => cc.isOriginal || cc.newActorId)
+        return { ...ns, candidates: updated, status: hasProcessed ? 'reviewing' : 'pending' }
+      }))
+    } catch (err) {
+      console.error('취소 오류:', err)
+      alert(`취소 실패: ${err.message}`)
+    }
+  }
+
+  // ── 캐스팅 매핑: baseActorId가 cast에 포함된 공연 목록 계산 ──
+  function getShowsForBaseActor(baseActorId) {
+    const results = []
+    for (const show of showsList) {
+      if (!Array.isArray(show.cast)) continue
+      if (show.cast.some(m => m.actorId === baseActorId)) {
+        results.push({ ...show, _collection: 'shows' })
+      }
+    }
+    for (const show of pendingList) {
+      if (!Array.isArray(show.cast)) continue
+      if (show.cast.some(m => m.actorId === baseActorId)) {
+        results.push({ ...show, _collection: 'pending' })
+      }
+    }
+    return results
+  }
+
+  // ── 캐스팅 매핑: 로컬 매핑 값 변경 ──
+  function setMapping(namesakeId, showKey, actorId) {
+    setCastMappings(prev => ({
+      ...prev,
+      [namesakeId]: { ...(prev[namesakeId] ?? {}), [showKey]: actorId },
+    }))
+  }
+
+  // ── 캐스팅 매핑: 임시 저장 (Firestore에 tempMappings 저장) ──
+  async function handleSaveMappingDraft(namesakeId) {
+    try {
+      const mappings = castMappings[namesakeId] ?? {}
+      await updateDoc(doc(db, 'namesakes', namesakeId), {
+        tempMappings: mappings,
+        updatedAt:    serverTimestamp(),
+      })
+      alert('임시 저장 완료')
+    } catch (err) {
+      console.error('임시 저장 오류:', err)
+      alert(`임시 저장 실패: ${err.message}`)
+    }
+  }
+
+  // ── 캐스팅 매핑: 미리보기 생성 ──
+  function buildMappingPreview(ns) {
+    const mappings = castMappings[ns.id] ?? {}
+    const candidates = ns.candidates ?? []
+    // actorId → 후보 정보 매핑 (baseActorId 포함)
+    const actorMap = {}
+    for (const c of candidates) {
+      if (c.isOriginal) actorMap[ns.baseActorId] = c
+      if (c.newActorId) actorMap[c.newActorId] = c
+    }
+    const shows = getShowsForBaseActor(ns.baseActorId)
+    const preview = []
+    for (const show of shows) {
+      const key = `${show.id}_${show._collection}`
+      const targetId = mappings[key]
+      const targetActor = targetId ? actorMap[targetId] : null
+      preview.push({
+        showTitle:   show.title,
+        showId:      show.id,
+        collection:  show._collection,
+        targetId,
+        targetName:  targetActor?.name ?? ns.originalName,
+        targetPhoto: targetActor?.photoUrl ?? '',
+        unmapped:    !targetId,
+      })
+    }
+    return preview
+  }
+
+  // ── 캐스팅 매핑: 실제 적용 (cast 배열 업데이트) ──
+  async function handleApplyMapping(ns) {
+    const mappings = castMappings[ns.id] ?? {}
+    const shows = getShowsForBaseActor(ns.baseActorId)
+
+    // 매핑 안 된 공연 확인
+    const unmapped = shows.filter(s => !mappings[`${s.id}_${s._collection}`])
+    if (unmapped.length > 0) {
+      const proceed = confirm(
+        `매핑하지 않은 공연이 ${unmapped.length}건 있습니다.\n` +
+        unmapped.map(s => `  - ${s.title}`).join('\n') +
+        '\n\n매핑된 공연만 먼저 적용할까요?'
+      )
+      if (!proceed) return
+    }
+
+    setApplyingMapping(true)
+    try {
+      const batch = writeBatch(db)
+
+      for (const show of shows) {
+        const key = `${show.id}_${show._collection}`
+        const targetActorId = mappings[key]
+        if (!targetActorId) continue // 매핑 안 된 공연 건너뜀
+
+        // cast 배열에서 baseActorId → targetActorId 교체
+        const newCast = show.cast.map(m =>
+          m.actorId === ns.baseActorId
+            ? { ...m, actorId: targetActorId }
+            : m
+        )
+        batch.update(doc(db, show._collection, show.id), { cast: newCast })
+      }
+
+      // namesakes 문서에 mappingDone 표시
+      batch.update(doc(db, 'namesakes', ns.id), {
+        mappingDone: true,
+        updatedAt:   serverTimestamp(),
+      })
+
+      await batch.commit()
+
+      // 로컬 상태 반영: showsList, pendingList 업데이트
+      const updateList = (list, setList) => {
+        setList(prev => prev.map(show => {
+          const key = `${show.id}_${show._collection ?? (showsList.includes(show) ? 'shows' : 'pending')}`
+          const cKey1 = `${show.id}_shows`
+          const cKey2 = `${show.id}_pending`
+          const targetActorId = mappings[cKey1] ?? mappings[cKey2]
+          if (!targetActorId || !Array.isArray(show.cast)) return show
+          if (!show.cast.some(m => m.actorId === ns.baseActorId)) return show
+          return {
+            ...show,
+            cast: show.cast.map(m =>
+              m.actorId === ns.baseActorId ? { ...m, actorId: targetActorId } : m
+            ),
+          }
+        }))
+      }
+      updateList(showsList, setShowsList)
+      updateList(pendingList, setPendingList)
+
+      // resolved 목록에서 mappingDone 반영
+      setResolvedNamesakes(prev =>
+        prev.map(n => n.id === ns.id ? { ...n, mappingDone: true } : n)
+      )
+
+      alert('캐스팅 매핑이 적용되었습니다.')
+    } catch (err) {
+      console.error('매핑 적용 오류:', err)
+      alert(`매핑 적용 실패: ${err.message}`)
+    } finally {
+      setApplyingMapping(false)
+    }
+  }
+
+  // ── 노선 마이그레이션: showId → newActorId 매핑 테이블 추출 ──
+  function getMigrationMap(ns) {
+    // tempMappings: { "showId_collection": newActorId }
+    // → { showId: newActorId } (collection 접미사 제거)
+    const map = {}
+    const tm = ns.tempMappings ?? {}
+    for (const [key, actorId] of Object.entries(tm)) {
+      // key = "showId_shows" or "showId_pending"
+      const showId = key.replace(/_(shows|pending)$/, '')
+      map[showId] = actorId
+    }
+    return map
+  }
+
+  // ── 노선 마이그레이션: 진단 (각 컬렉션 스캔) ──
+  async function diagnoseNamesake(ns) {
+    setDiagLoading(ns.id)
+    try {
+      const baseId = ns.baseActorId
+      const showMap = getMigrationMap(ns)
+      const showIds = Object.keys(showMap)
+
+      // 1. keywords — docId = "{showId}_{actorId}"
+      const keywordDocs = []
+      for (const showId of showIds) {
+        const docId = `${showId}_${baseId}`
+        const snap = await getDoc(doc(db, 'keywords', docId))
+        if (snap.exists()) {
+          keywordDocs.push({ docId, showId, newActorId: showMap[showId], data: snap.data() })
+        }
+      }
+
+      // 2. userKeywords — actorId 필드로 조회
+      const ukSnap = await getDocs(query(
+        collection(db, 'userKeywords'), where('actorId', '==', baseId)
+      ))
+      const userKeywordDocs = []
+      for (const d of ukSnap.docs) {
+        const data = d.data()
+        const sid = data.showId
+        if (sid && showMap[sid]) {
+          userKeywordDocs.push({
+            docId: d.id, showId: sid, newActorId: showMap[sid],
+            userId: data.userId, tags: data.tags,
+          })
+        }
+      }
+
+      // 3. pairVotes — docId = "{showId}_{idA}_{idB}", 범위 쿼리
+      const pairVoteDocs = []
+      for (const showId of showIds) {
+        const pvSnap = await getDocs(query(
+          collection(db, 'pairVotes'),
+          where('__name__', '>=', `${showId}_`),
+          where('__name__', '<=', `${showId}_\uf8ff`)
+        ))
+        for (const d of pvSnap.docs) {
+          if (d.id.includes(baseId)) {
+            // docId에서 baseActorId를 newActorId로 교체
+            const newDocId = d.id.replace(baseId, showMap[showId])
+            // idA, idB 정렬 맞추기
+            const parts = newDocId.split('_')
+            // parts[0]=showId, parts[1]=idA, parts[2]=idB
+            if (parts.length >= 3) {
+              const [sid, ...actors] = parts
+              actors.sort()
+              const sortedDocId = `${sid}_${actors.join('_')}`
+              pairVoteDocs.push({
+                oldDocId: d.id, newDocId: sortedDocId,
+                showId, newActorId: showMap[showId], data: d.data(),
+              })
+            }
+          }
+        }
+      }
+
+      // 4. votes — actorId만, showId 없음 (케이스 B)
+      const votesSnap = await getDocs(query(
+        collection(db, 'votes'), where('actorId', '==', baseId)
+      ))
+      const voteDocs = votesSnap.docs.map(d => ({
+        docId: d.id, keyword: d.data().keyword, count: d.data().count,
+      }))
+
+      setDiagResults(prev => ({
+        ...prev,
+        [ns.id]: {
+          keywords: keywordDocs,
+          userKeywords: userKeywordDocs,
+          pairVotes: pairVoteDocs,
+          votes: voteDocs,
+          done: true,
+        },
+      }))
+    } catch (err) {
+      console.error('진단 오류:', err)
+      alert(`진단 실패: ${err.message}`)
+    } finally {
+      setDiagLoading(null)
+    }
+  }
+
+  // ── 노선 마이그레이션: 미리보기 빌드 ──
+  function buildMigrationChanges(ns) {
+    const diag = diagResults[ns.id]
+    if (!diag?.done) return null
+    const changes = []
+
+    for (const kd of diag.keywords) {
+      changes.push({
+        collection: 'keywords', type: 'docId 교체',
+        from: kd.docId, to: `${kd.showId}_${kd.newActorId}`,
+      })
+    }
+    for (const uk of diag.userKeywords) {
+      const newDocId = uk.docId.replace(ns.baseActorId, uk.newActorId)
+      changes.push({
+        collection: 'userKeywords', type: 'docId+필드 교체',
+        from: uk.docId, to: newDocId,
+      })
+    }
+    for (const pv of diag.pairVotes) {
+      changes.push({
+        collection: 'pairVotes', type: 'docId 교체',
+        from: pv.oldDocId, to: pv.newDocId,
+      })
+    }
+    return changes
+  }
+
+  // ── 노선 마이그레이션: 실제 적용 ──
+  async function handleMigrateNamesake(ns) {
+    const diag = diagResults[ns.id]
+    if (!diag?.done) { alert('먼저 진단을 실행해주세요.'); return }
+
+    const totalChanges =
+      diag.keywords.length + diag.userKeywords.length + diag.pairVotes.length
+    if (totalChanges === 0) {
+      // 변경할 문서 없으면 바로 완료 처리
+      await updateDoc(doc(db, 'namesakes', ns.id), {
+        dataMigrationDone: true, updatedAt: serverTimestamp(),
+      })
+      setMigrationNamesakes(prev =>
+        prev.map(n => n.id === ns.id ? { ...n, dataMigrationDone: true } : n)
+      )
+      alert('마이그레이션 대상 문서가 없어 완료 처리되었습니다.')
+      return
+    }
+
+    setMigratingId(ns.id)
+    try {
+      const batch = writeBatch(db)
+
+      // keywords: 기존 doc 삭제 → 새 docId로 생성
+      for (const kd of diag.keywords) {
+        batch.delete(doc(db, 'keywords', kd.docId))
+        batch.set(doc(db, 'keywords', `${kd.showId}_${kd.newActorId}`), kd.data)
+      }
+
+      // userKeywords: 기존 doc 삭제 → 새 docId로 생성 + actorId 필드 교체
+      for (const uk of diag.userKeywords) {
+        const newDocId = uk.docId.replace(ns.baseActorId, uk.newActorId)
+        batch.delete(doc(db, 'userKeywords', uk.docId))
+        batch.set(doc(db, 'userKeywords', newDocId), {
+          tags: uk.tags ?? [],
+          showId: uk.showId,
+          actorId: uk.newActorId,
+          userId: uk.userId ?? '',
+          updatedAt: serverTimestamp(),
+        })
+      }
+
+      // pairVotes: 기존 doc 삭제 → 새 docId로 생성
+      for (const pv of diag.pairVotes) {
+        batch.delete(doc(db, 'pairVotes', pv.oldDocId))
+        batch.set(doc(db, 'pairVotes', pv.newDocId), pv.data)
+      }
+
+      // namesakes 문서에 dataMigrationDone 표시
+      batch.update(doc(db, 'namesakes', ns.id), {
+        dataMigrationDone: true, updatedAt: serverTimestamp(),
+      })
+
+      await batch.commit()
+
+      setMigrationNamesakes(prev =>
+        prev.map(n => n.id === ns.id ? { ...n, dataMigrationDone: true } : n)
+      )
+      alert(`마이그레이션 완료: ${totalChanges}건 처리`)
+    } catch (err) {
+      console.error('마이그레이션 오류:', err)
+      alert(`마이그레이션 실패: ${err.message}`)
+    } finally {
+      setMigratingId(null)
     }
   }
 
@@ -3514,6 +4160,685 @@ export default function AdminPage() {
                 )}
               </>
             )}
+
+            {/* ── 동명이인 보류 서브탭 (분리 등록) ── */}
+            {actorSubTab === 'namesakes' && (
+              <div className="space-y-3">
+                {/* 안내 배너 */}
+                <div className="bg-violet-50 border border-violet-200 rounded-xl px-4 py-3 text-sm text-violet-800">
+                  <strong>동명이인 분리 등록</strong> — 각 후보를 원본 배우로 지정하거나 별도 배우로 등록하세요.
+                  모든 후보 처리 후 "전체 처리 완료"를 누르면 캐스팅 매핑 단계로 넘어갑니다.
+                </div>
+
+                {namesakesLoading ? (
+                  <div className="animate-pulse space-y-3">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="h-32 bg-stone-100 rounded-2xl" />
+                    ))}
+                  </div>
+                ) : namesakesList.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-stone-100 shadow-sm
+                                  text-center py-16 text-stone-400">
+                    <div className="text-5xl mb-3">👥</div>
+                    <p className="font-medium text-stone-600">처리 대기 중인 동명이인이 없습니다</p>
+                    <p className="text-sm mt-1">
+                      사진 검토에서 "👥 동명이인 (보류)" 버튼을 누르면 여기에 표시됩니다
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {namesakesList.map(ns => {
+                      const candidates = ns.candidates ?? []
+                      // 이미 원본 지정된 후보가 있는지
+                      const hasOriginal = candidates.some(c => c.isOriginal)
+                      // 모든 후보가 처리되었는지 (원본 지정 또는 별도 등록)
+                      const allProcessed = candidates.length > 0
+                        && candidates.every(c => c.isOriginal || c.newActorId)
+
+                      return (
+                        <div key={ns.id}
+                             className="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 space-y-4">
+                          {/* 헤더: 원본 이름 + 상태 뱃지 */}
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-stone-900 text-base">
+                              {ns.originalName}
+                              <span className="ml-2 text-xs text-stone-400">
+                                후보 {candidates.length}명
+                              </span>
+                            </h3>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                              ns.status === 'reviewing'
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-violet-100 text-violet-700'
+                            }`}>
+                              {ns.status === 'pending' ? '대기' : '처리중'}
+                            </span>
+                          </div>
+
+                          {/* 후보 카드 목록 */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {candidates.map((c, i) => {
+                              // 이 후보의 처리 상태
+                              const isProcessed = c.isOriginal || c.newActorId
+                              return (
+                                <div key={i}
+                                     className={`p-3 rounded-xl border space-y-2 ${
+                                       c.isOriginal
+                                         ? 'border-emerald-300 bg-emerald-50'
+                                         : c.newActorId
+                                           ? 'border-blue-300 bg-blue-50'
+                                           : 'border-stone-100 bg-stone-50'
+                                     }`}>
+                                  <div className="flex gap-3">
+                                    {/* 후보 사진 */}
+                                    <div className="w-14 h-18 rounded-lg overflow-hidden bg-stone-200 shrink-0
+                                                    flex items-center justify-center">
+                                      {c.photoUrl ? (
+                                        <img src={toHttps(c.photoUrl)} alt={c.name}
+                                             className="w-full h-full object-cover"
+                                             onError={e => { e.target.style.display = 'none' }} />
+                                      ) : (
+                                        <span className="text-xl text-stone-400">{c.name?.[0]}</span>
+                                      )}
+                                    </div>
+                                    {/* 후보 정보 */}
+                                    <div className="flex-1 min-w-0 space-y-1">
+                                      <p className="font-medium text-sm text-stone-800 truncate">{c.name}</p>
+                                      {c.representativeWorks?.length > 0 && (
+                                        <p className="text-xs text-stone-500 line-clamp-2">
+                                          {c.representativeWorks.join(', ')}
+                                        </p>
+                                      )}
+                                      {c.playdbUrl && (
+                                        <a href={c.playdbUrl} target="_blank" rel="noopener noreferrer"
+                                           className="text-xs text-blue-500 hover:underline">
+                                          플레이DB →
+                                        </a>
+                                      )}
+                                      {/* 처리 상태 표시 */}
+                                      {c.isOriginal && (
+                                        <p className="text-xs font-semibold text-emerald-600">✅ 원본으로 지정됨</p>
+                                      )}
+                                      {c.newActorId && (
+                                        <p className="text-xs font-semibold text-blue-600">📋 별도 등록됨</p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* 액션 버튼 */}
+                                  {isProcessed ? (
+                                    <button
+                                      onClick={() => handleUndoNamesakeAction(ns.id, i)}
+                                      className="w-full text-xs py-1.5 rounded-lg border border-stone-200
+                                                 text-stone-500 hover:bg-stone-100 transition-colors"
+                                    >
+                                      ↩ 취소
+                                    </button>
+                                  ) : (
+                                    <div className="flex gap-1.5">
+                                      {/* 원본 지정 — 아직 원본이 없을 때만 */}
+                                      {!hasOriginal && (
+                                        <button
+                                          onClick={() => handleSetOriginal(ns.id, i)}
+                                          className="flex-1 text-xs py-1.5 rounded-lg font-semibold
+                                                     bg-emerald-600 text-white hover:bg-emerald-500 transition-colors"
+                                        >
+                                          원본 지정
+                                        </button>
+                                      )}
+                                      <button
+                                        onClick={() => handleRegisterSeparate(ns.id, i)}
+                                        className="flex-1 text-xs py-1.5 rounded-lg font-semibold
+                                                   bg-blue-600 text-white hover:bg-blue-500 transition-colors"
+                                      >
+                                        별도 등록
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          {/* 하단: 전체 처리 완료 버튼 + 생성일 */}
+                          <div className="flex items-center justify-between pt-1">
+                            <div>
+                              {ns.createdAt && (
+                                <p className="text-xs text-stone-400">
+                                  {ns.createdAt.toDate?.()
+                                    ? ns.createdAt.toDate().toLocaleDateString('ko-KR')
+                                    : ''}
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => handleResolveNamesake(ns.id)}
+                              disabled={!allProcessed}
+                              className={`px-4 py-2 text-sm font-semibold rounded-xl transition-colors ${
+                                allProcessed
+                                  ? 'bg-violet-600 text-white hover:bg-violet-500'
+                                  : 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                              }`}
+                            >
+                              전체 처리 완료
+                            </button>
+                          </div>
+
+                          {/* 처리 완료 시 안내 메시지 */}
+                          {allProcessed && (
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700">
+                              모든 후보가 처리되었습니다. "전체 처리 완료"를 누르면 이 항목이 완료 처리되며,
+                              다음 단계(캐스팅 매핑)에서 공연 cast 배열을 업데이트할 수 있습니다.
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── 캐스팅 매핑 서브탭 ── */}
+            {actorSubTab === 'mapping' && (
+              <div className="space-y-3">
+                {/* 안내 배너 */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+                  <strong>캐스팅 매핑</strong> — 분리 등록이 완료된 동명이인의 공연 캐스팅을 올바른 배우에게 매핑합니다.
+                  각 공연마다 해당하는 배우를 선택하고 "매핑 적용"을 눌러 반영하세요.
+                </div>
+
+                {resolvedNamesakesLoading ? (
+                  <div className="animate-pulse space-y-3">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="h-24 bg-stone-100 rounded-2xl" />
+                    ))}
+                  </div>
+                ) : resolvedNamesakes.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-stone-100 shadow-sm
+                                  text-center py-16 text-stone-400">
+                    <div className="text-5xl mb-3">🔗</div>
+                    <p className="font-medium text-stone-600">매핑 대상이 없습니다</p>
+                    <p className="text-sm mt-1">
+                      동명이인 보류 탭에서 분리 등록을 완료하면 여기에 표시됩니다
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {resolvedNamesakes.map(ns => {
+                      const candidates = ns.candidates ?? []
+                      const isExpanded = expandedMapping === ns.id
+                      const isDone = !!ns.mappingDone
+
+                      // 분리된 배우 목록 (원본 + 별도 등록): 라벨 A/B/C...
+                      const actorOptions = []
+                      for (let ci = 0; ci < candidates.length; ci++) {
+                        const c = candidates[ci]
+                        const label = String.fromCharCode(65 + ci) // A, B, C...
+                        if (c.isOriginal) {
+                          actorOptions.push({
+                            label, actorId: ns.baseActorId, candidate: c, type: '원본',
+                          })
+                        } else if (c.newActorId) {
+                          actorOptions.push({
+                            label, actorId: c.newActorId, candidate: c, type: '별도',
+                          })
+                        }
+                      }
+
+                      return (
+                        <div key={ns.id}
+                             className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${
+                               isDone ? 'border-emerald-200 opacity-75' : 'border-stone-100'
+                             }`}>
+                          {/* 접기/펼치기 헤더 */}
+                          <button
+                            onClick={() => setExpandedMapping(isExpanded ? null : ns.id)}
+                            className="w-full flex items-center justify-between px-5 py-4
+                                       hover:bg-stone-50 transition-colors text-left"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg">{isDone ? '🔒' : '🔗'}</span>
+                              <div>
+                                <p className="font-semibold text-stone-900">
+                                  {ns.originalName}
+                                  <span className="ml-2 text-xs text-stone-400">
+                                    {actorOptions.length}명 분리됨
+                                  </span>
+                                </p>
+                                <p className="text-xs text-stone-500">
+                                  {isDone
+                                    ? '매핑 완료'
+                                    : `${getShowsForBaseActor(ns.baseActorId).length}개 공연 매핑 필요`}
+                                </p>
+                              </div>
+                            </div>
+                            <span className={`text-sm transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                              ▼
+                            </span>
+                          </button>
+
+                          {/* 펼친 내용 */}
+                          {isExpanded && (
+                            <div className="px-5 pb-5 space-y-4 border-t border-stone-100 pt-4">
+
+                              {/* 분리된 배우 카드 */}
+                              <div>
+                                <p className="text-xs font-semibold text-stone-500 mb-2">분리된 배우</p>
+                                <div className="flex gap-3 flex-wrap">
+                                  {actorOptions.map(opt => (
+                                    <div key={opt.actorId}
+                                         className="flex items-center gap-2 px-3 py-2 rounded-xl
+                                                    border border-stone-200 bg-stone-50">
+                                      {/* 라벨 뱃지 */}
+                                      <span className="w-7 h-7 rounded-full bg-violet-600 text-white
+                                                       text-sm font-bold flex items-center justify-center shrink-0">
+                                        {opt.label}
+                                      </span>
+                                      {/* 사진 */}
+                                      <div className="w-10 h-12 rounded-lg overflow-hidden bg-stone-200 shrink-0">
+                                        {opt.candidate.photoUrl ? (
+                                          <img src={toHttps(opt.candidate.photoUrl)} alt={opt.candidate.name}
+                                               className="w-full h-full object-cover"
+                                               onError={e => { e.target.style.display = 'none' }} />
+                                        ) : (
+                                          <span className="text-xs text-stone-400 flex items-center justify-center h-full">
+                                            {opt.candidate.name?.[0]}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className="text-sm font-medium text-stone-800 truncate">
+                                          {opt.candidate.name}
+                                        </p>
+                                        <p className="text-xs text-stone-400 truncate">
+                                          {opt.type} · {(opt.candidate.representativeWorks ?? []).slice(0, 2).join(', ') || '대표작 없음'}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* 공연별 매핑 */}
+                              {(() => {
+                                const shows = getShowsForBaseActor(ns.baseActorId)
+                                const myMappings = castMappings[ns.id] ?? {}
+
+                                if (shows.length === 0) {
+                                  return (
+                                    <div className="text-center py-6 text-stone-400 text-sm">
+                                      이 배우가 cast에 포함된 공연이 없습니다
+                                    </div>
+                                  )
+                                }
+
+                                const mappedCount = shows.filter(s => myMappings[`${s.id}_${s._collection}`]).length
+
+                                return (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-xs font-semibold text-stone-500">
+                                        공연 매핑 ({mappedCount}/{shows.length})
+                                      </p>
+                                      {mappedCount < shows.length && (
+                                        <span className="text-xs text-amber-600">
+                                          ⚠ {shows.length - mappedCount}건 미매핑
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                      {shows.map(show => {
+                                        const showKey = `${show.id}_${show._collection}`
+                                        const selected = myMappings[showKey] ?? ''
+                                        return (
+                                          <div key={showKey}
+                                               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border text-sm ${
+                                                 selected
+                                                   ? 'border-stone-200 bg-white'
+                                                   : 'border-amber-200 bg-amber-50'
+                                               }`}>
+                                            {/* 공연 정보 */}
+                                            <div className="flex-1 min-w-0">
+                                              <p className="font-medium text-stone-800 truncate">{show.title}</p>
+                                              <p className="text-xs text-stone-400 truncate">
+                                                {show.venue ?? ''}{show.startDate ? ` · ${show.startDate}` : ''}
+                                                {show.endDate ? ` ~ ${show.endDate}` : ''}
+                                                <span className="ml-1 text-stone-300">
+                                                  [{show._collection}]
+                                                </span>
+                                              </p>
+                                            </div>
+                                            {/* 라디오 버튼 */}
+                                            <div className="flex gap-1.5 shrink-0">
+                                              {actorOptions.map(opt => (
+                                                <button
+                                                  key={opt.actorId}
+                                                  onClick={() => !isDone && setMapping(ns.id, showKey, opt.actorId)}
+                                                  disabled={isDone}
+                                                  className={`w-8 h-8 rounded-full text-xs font-bold transition-colors ${
+                                                    selected === opt.actorId
+                                                      ? 'bg-violet-600 text-white ring-2 ring-violet-300'
+                                                      : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                                                  } ${isDone ? 'cursor-not-allowed' : ''}`}
+                                                >
+                                                  {opt.label}
+                                                </button>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+
+                                    {/* 하단 액션 버튼 */}
+                                    {!isDone && (
+                                      <div className="flex items-center justify-between pt-3 border-t border-stone-100">
+                                        <button
+                                          onClick={() => handleSaveMappingDraft(ns.id)}
+                                          className="px-3 py-1.5 text-xs font-semibold rounded-lg
+                                                     border border-stone-200 text-stone-600
+                                                     hover:bg-stone-50 transition-colors"
+                                        >
+                                          💾 임시 저장
+                                        </button>
+                                        <div className="flex gap-2">
+                                          {/* 미리보기 */}
+                                          <button
+                                            onClick={() => setMappingPreview(buildMappingPreview(ns))}
+                                            disabled={mappedCount === 0}
+                                            className="px-3 py-1.5 text-xs font-semibold rounded-lg
+                                                       bg-stone-100 text-stone-600
+                                                       hover:bg-stone-200 disabled:opacity-40 transition-colors"
+                                          >
+                                            👁 미리보기
+                                          </button>
+                                          {/* 적용 */}
+                                          <button
+                                            onClick={() => handleApplyMapping(ns)}
+                                            disabled={applyingMapping || mappedCount === 0}
+                                            className="px-4 py-1.5 text-xs font-semibold rounded-lg
+                                                       bg-blue-600 text-white
+                                                       hover:bg-blue-500 disabled:opacity-40 transition-colors"
+                                          >
+                                            {applyingMapping ? '적용 중...' : '🔗 매핑 적용'}
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {isDone && (
+                                      <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-xs text-emerald-700">
+                                        ✅ 캐스팅 매핑이 완료되었습니다.
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              })()}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 매핑 미리보기 모달 */}
+            {mappingPreview && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+                   onClick={() => setMappingPreview(null)}>
+                <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-auto"
+                     onClick={e => e.stopPropagation()}>
+                  <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+                    <h3 className="font-semibold text-stone-900">매핑 미리보기</h3>
+                    <button onClick={() => setMappingPreview(null)}
+                            className="text-stone-400 hover:text-stone-600 text-lg">×</button>
+                  </div>
+                  <div className="px-5 py-4 space-y-2">
+                    {mappingPreview.map((p, i) => (
+                      <div key={i}
+                           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+                             p.unmapped ? 'bg-amber-50 border border-amber-200' : 'bg-stone-50 border border-stone-100'
+                           }`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-stone-800 truncate">{p.showTitle}</p>
+                          <p className="text-xs text-stone-400">[{p.collection}]</p>
+                        </div>
+                        <span className="text-stone-400 shrink-0">→</span>
+                        {p.unmapped ? (
+                          <span className="text-xs text-amber-600 font-semibold shrink-0">미매핑</span>
+                        ) : (
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {p.targetPhoto && (
+                              <img src={toHttps(p.targetPhoto)} alt=""
+                                   className="w-6 h-6 rounded-full object-cover" />
+                            )}
+                            <span className="text-xs font-medium text-stone-700">{p.targetName}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="px-5 py-3 border-t border-stone-100 text-right">
+                    <button onClick={() => setMappingPreview(null)}
+                            className="px-4 py-2 text-sm font-semibold rounded-lg
+                                       bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors">
+                      닫기
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── 노선 마이그레이션 서브탭 ── */}
+            {actorSubTab === 'migration' && (
+              <div className="space-y-3">
+                {/* 백업 권장 안내 */}
+                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-800">
+                  ⚠️ <strong>이 작업 전 노선 데이터 백업을 권장합니다.</strong> keywords, userKeywords, pairVotes
+                  문서의 ID가 변경되며, 원래대로 되돌리기 어렵습니다.
+                </div>
+
+                {/* 안내 배너 */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+                  <strong>노선 마이그레이션</strong> — 캐스팅 매핑이 완료된 동명이인의 키워드/투표 데이터를
+                  올바른 배우 ID로 이전합니다. 먼저 "진단"으로 변경 대상을 확인한 뒤 "마이그레이션 적용"을 실행하세요.
+                </div>
+
+                {/* votes 레거시 안내 */}
+                <div className="bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-600">
+                  ℹ️ <strong>votes 컬렉션</strong>은 showId 없이 actorId만 저장하므로 자동 분배가 불가능합니다.
+                  해당 데이터는 원본 배우(baseActor)에 그대로 유지됩니다.
+                </div>
+
+                {migrationNamesakesLoading ? (
+                  <div className="animate-pulse space-y-3">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="h-24 bg-stone-100 rounded-2xl" />
+                    ))}
+                  </div>
+                ) : migrationNamesakes.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-stone-100 shadow-sm
+                                  text-center py-16 text-stone-400">
+                    <div className="text-5xl mb-3">📦</div>
+                    <p className="font-medium text-stone-600">마이그레이션 대상이 없습니다</p>
+                    <p className="text-sm mt-1">
+                      캐스팅 매핑(3단계)이 완료된 항목이 여기에 표시됩니다
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {migrationNamesakes.map(ns => {
+                      const isDone = !!ns.dataMigrationDone
+                      const diag = diagResults[ns.id]
+                      const isDiagnosing = diagLoading === ns.id
+                      const isMigrating = migratingId === ns.id
+                      const totalCaseA = diag
+                        ? diag.keywords.length + diag.userKeywords.length + diag.pairVotes.length
+                        : 0
+                      const changes = diag?.done ? buildMigrationChanges(ns) : null
+
+                      return (
+                        <div key={ns.id}
+                             className={`bg-white rounded-2xl border shadow-sm p-5 space-y-4 ${
+                               isDone ? 'border-emerald-200 opacity-75' : 'border-stone-100'
+                             }`}>
+                          {/* 헤더 */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{isDone ? '✅' : '📦'}</span>
+                              <div>
+                                <h3 className="font-semibold text-stone-900">
+                                  {ns.originalName}
+                                  <span className="ml-2 text-xs text-stone-400">
+                                    base: {ns.baseActorId}
+                                  </span>
+                                </h3>
+                                <p className="text-xs text-stone-500">
+                                  {isDone ? '마이그레이션 완료' : '마이그레이션 대기'}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* 진단 버튼 */}
+                            {!isDone && (
+                              <button
+                                onClick={() => diagnoseNamesake(ns)}
+                                disabled={isDiagnosing}
+                                className="px-3 py-1.5 text-xs font-semibold rounded-lg
+                                           bg-amber-100 text-amber-700
+                                           hover:bg-amber-200 disabled:opacity-50 transition-colors"
+                              >
+                                {isDiagnosing ? '스캔 중...' : '🔍 진단'}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* 진단 결과 */}
+                          {diag?.done && (
+                            <div className="space-y-3">
+                              {/* 케이스 A 요약 */}
+                              <div className="grid grid-cols-3 gap-2">
+                                {[
+                                  { label: 'keywords', count: diag.keywords.length, desc: '키워드 투표' },
+                                  { label: 'userKeywords', count: diag.userKeywords.length, desc: '사용자 투표' },
+                                  { label: 'pairVotes', count: diag.pairVotes.length, desc: '페어 투표' },
+                                ].map(({ label, count, desc }) => (
+                                  <div key={label}
+                                       className={`rounded-xl px-3 py-2 text-center border ${
+                                         count > 0
+                                           ? 'bg-blue-50 border-blue-200'
+                                           : 'bg-stone-50 border-stone-100'
+                                       }`}>
+                                    <p className="text-lg font-bold text-stone-800">{count}</p>
+                                    <p className="text-xs text-stone-500">{desc}</p>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* 케이스 B: votes 레거시 */}
+                              {diag.votes.length > 0 && (
+                                <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-700">
+                                  ℹ️ votes {diag.votes.length}건은 showId 없는 레거시 데이터로 baseActor에 유지됩니다.
+                                  {diag.votes.slice(0, 5).map((v, i) => (
+                                    <span key={i} className="ml-1 px-1.5 py-0.5 bg-amber-100 rounded text-amber-800">
+                                      {v.keyword}({v.count})
+                                    </span>
+                                  ))}
+                                  {diag.votes.length > 5 && <span> 외 {diag.votes.length - 5}건</span>}
+                                </div>
+                              )}
+
+                              {/* 변경 미리보기 + 적용 버튼 */}
+                              {!isDone && (
+                                <div className="flex items-center justify-between pt-2 border-t border-stone-100">
+                                  <div className="flex items-center gap-2">
+                                    {totalCaseA > 0 && changes && (
+                                      <button
+                                        onClick={() => setMigrationPreview(changes)}
+                                        className="px-3 py-1.5 text-xs font-semibold rounded-lg
+                                                   bg-stone-100 text-stone-600
+                                                   hover:bg-stone-200 transition-colors"
+                                      >
+                                        👁 변경될 문서 {totalCaseA}개 (자세히 보기)
+                                      </button>
+                                    )}
+                                    {totalCaseA === 0 && (
+                                      <span className="text-xs text-stone-400">
+                                        변경할 문서가 없습니다
+                                      </span>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={() => handleMigrateNamesake(ns)}
+                                    disabled={isMigrating}
+                                    className="px-4 py-2 text-sm font-semibold rounded-xl
+                                               bg-blue-600 text-white
+                                               hover:bg-blue-500 disabled:opacity-50 transition-colors"
+                                  >
+                                    {isMigrating
+                                      ? '마이그레이션 중...'
+                                      : totalCaseA > 0
+                                        ? `📦 ${totalCaseA}건 마이그레이션 적용`
+                                        : '📦 완료 처리'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 마이그레이션 미리보기 모달 */}
+            {migrationPreview && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+                   onClick={() => setMigrationPreview(null)}>
+                <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-auto"
+                     onClick={e => e.stopPropagation()}>
+                  <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+                    <h3 className="font-semibold text-stone-900">
+                      변경 미리보기 ({migrationPreview.length}건)
+                    </h3>
+                    <button onClick={() => setMigrationPreview(null)}
+                            className="text-stone-400 hover:text-stone-600 text-lg">×</button>
+                  </div>
+                  <div className="px-5 py-4 space-y-2">
+                    {migrationPreview.map((ch, i) => (
+                      <div key={i}
+                           className="px-3 py-2 rounded-lg bg-stone-50 border border-stone-100 text-sm">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono">
+                            {ch.collection}
+                          </span>
+                          <span className="text-xs text-stone-400">{ch.type}</span>
+                        </div>
+                        <p className="text-xs text-stone-500 font-mono truncate">
+                          <span className="text-red-500 line-through">{ch.from}</span>
+                        </p>
+                        <p className="text-xs text-stone-500 font-mono truncate">
+                          <span className="text-emerald-600">{ch.to}</span>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="px-5 py-3 border-t border-stone-100 text-right">
+                    <button onClick={() => setMigrationPreview(null)}
+                            className="px-4 py-2 text-sm font-semibold rounded-lg
+                                       bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors">
+                      닫기
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -3574,9 +4899,12 @@ export default function AdminPage() {
             {/* 배우 관리 서브탭 네비게이션 */}
             <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-1.5 flex gap-1">
               {[
-                { key: 'review', icon: '🔍', label: '사진 검토',     count: pendingActors.length },
-                { key: 'search', icon: '📸', label: '사진 직접 등록', count: null },
-                { key: 'list',   icon: '👤', label: '배우 전체 목록', count: actorsList.length   },
+                { key: 'review',    icon: '🔍', label: '사진 검토',     count: pendingActors.length },
+                { key: 'search',    icon: '📸', label: '사진 직접 등록', count: null },
+                { key: 'list',      icon: '👤', label: '배우 전체 목록', count: actorsList.length   },
+                { key: 'namesakes', icon: '👥', label: '동명이인 보류',  count: namesakesList.length },
+                { key: 'mapping',   icon: '🔗', label: '캐스팅 매핑',   count: resolvedNamesakes.filter(n => !n.mappingDone).length },
+                { key: 'migration', icon: '📦', label: '노선 마이그레이션', count: migrationNamesakes.filter(n => !n.dataMigrationDone).length },
               ].map(({ key, icon, label, count }) => (
                 <button
                   key={key}
@@ -3688,6 +5016,7 @@ export default function AdminPage() {
                                 currentShows={actorShowsMap[pending.actorName] ?? []}
                                 onApprove={handleApprovePendingActor}
                                 onReject={handleRejectPendingActor}
+                                onNamesake={handleNamesake}
                               />
                             </div>
                           ))}
